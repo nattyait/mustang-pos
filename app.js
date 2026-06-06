@@ -523,21 +523,26 @@ function renderCarts() {
 }
 
 function renderTokenSelect() {
-  const selected = $("staffToken").value;
+  renderTokenPicker("staffToken", "staffTokenButtons", "pickToken");
+  renderTokenPicker("customerToken", "customerTokenButtons", "pickCustomerToken");
+}
+
+function renderTokenPicker(inputId, buttonsId, actionName) {
+  const selected = $(inputId).value;
   const tokenOptions = branch().tokens
     .filter((token) => token.active)
     .map((token) => ({ token, status: tokenStatus(token) }));
-  const options = tokenOptions
-    .map(({ token, status }) => `<option value="${token.label}" ${status !== "available" ? "disabled" : ""}>${token.label} - ${tokenLabel(status)}</option>`)
-    .join("");
-  $("staffToken").innerHTML = `<option value="">เลือกคิว</option>${options}`;
-  if (selected && isTokenAvailable(selected)) $("staffToken").value = selected;
-  $("staffTokenButtons").innerHTML = tokenOptions
-    .map(({ token, status }) => {
-      const active = $("staffToken").value === token.label ? "active" : "";
-      return `<button class="${active}" data-pick-token="${token.label}" ${status !== "available" ? "disabled" : ""}>${token.label}</button>`;
-    })
-    .join("");
+  if (selected && !isTokenAvailable(selected)) $(inputId).value = "";
+  const current = $(inputId).value;
+  $(buttonsId).innerHTML = `
+    <div class="token-current">${current ? `เลือกคิว ${current}` : "กรุณาเลือกหมายเลขคิว"}</div>
+    ${tokenOptions
+      .map(({ token, status }) => {
+        const active = current === token.label ? "active" : "";
+        return `<button class="${active}" data-${actionName}="${token.label}" ${status !== "available" ? "disabled" : ""}>${token.label}</button>`;
+      })
+      .join("")}
+  `;
 }
 
 function tokenLabel(status) {
@@ -958,6 +963,10 @@ document.addEventListener("click", (event) => {
   }
   if (target.dataset.pickToken) {
     $("staffToken").value = target.dataset.pickToken;
+    renderTokenSelect();
+  }
+  if (target.dataset.pickCustomerToken) {
+    $("customerToken").value = target.dataset.pickCustomerToken;
     renderTokenSelect();
   }
   if (target.id === "completeStaffOrder") createOrder("staff");

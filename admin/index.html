@@ -6,8 +6,8 @@
     <meta name="theme-color" content="#1b1714" />
     <title>Mustang Cafe Franchise POS</title>
     <base href="../" />
-    <link rel="manifest" href="manifest.webmanifest?v=6" />
-    <link rel="stylesheet" href="styles.css?v=6" />
+    <link rel="manifest" href="manifest.webmanifest?v=7" />
+    <link rel="stylesheet" href="styles.css?v=7" />
   </head>
   <body>
     <div class="app-shell">
@@ -72,7 +72,7 @@
               <h2>ออเดอร์ใหม่</h2>
               <label class="field">
                 <span>หมายเลขคิว *</span>
-                <select id="staffToken"></select>
+                <input id="staffToken" type="hidden" />
               </label>
               <div class="token-picker" id="staffTokenButtons"></div>
               <div class="cart-list" id="cartList"></div>
@@ -122,8 +122,9 @@
                 <h2>รายการของคุณ</h2>
                 <label class="field">
                   <span>หมายเลขคิว *</span>
-                  <input id="customerToken" inputmode="numeric" placeholder="1-16" />
+                  <input id="customerToken" type="hidden" />
                 </label>
+                <div class="token-picker large" id="customerTokenButtons"></div>
                 <div class="money-grid">
                   <label class="field">
                     <span>ชื่อ</span>
@@ -250,6 +251,6 @@
     <audio id="ding" preload="auto">
       <source src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=" type="audio/wav" />
     </audio>
-    <script src="app.js?v=6"></script>
+    <script src="app.js?v=7"></script>
   </body>
 </html>

@@ -407,6 +407,20 @@ select,
   gap: 6px;
 }
 
+.token-current {
+  grid-column: 1 / -1;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  padding: 8px 10px;
+  color: var(--coffee);
+  background: rgba(255, 250, 241, 0.72);
+  font-weight: 700;
+}
+
+.token-picker.large {
+  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+}
+
 .token-picker button {
   min-height: 40px;
   border: 1px solid var(--line);
@@ -419,6 +433,7 @@ select,
   color: var(--milk);
   border-color: transparent;
   background: var(--espresso);
+  box-shadow: 0 0 0 3px rgba(194, 147, 75, 0.28);
 }
 
 .token-picker button:disabled {
