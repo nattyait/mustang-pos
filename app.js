@@ -172,6 +172,7 @@ let selectedCategory = "signature";
 let selectedCustomerCategory = "signature";
 let lastKitchenAlertOrderId = null;
 let lastStoredStateRaw = localStorage.getItem(STORAGE_KEY);
+let lastMenuActivation = { id: "", at: 0 };
 
 const $ = (id) => document.getElementById(id);
 const fmt = new Intl.NumberFormat("th-TH", { style: "currency", currency: "THB", maximumFractionDigits: 0 });
@@ -379,7 +380,7 @@ function isTokenAvailable(label) {
 }
 
 function defaultOptions(item) {
-  return item.options.map((group) => {
+  return item.options.filter((group) => group.required).map((group) => {
     const choice = group.choices[0];
     return { groupId: group.id, group: group.th, label: choice.th, price: choice.price || 0, required: group.required };
   });
@@ -395,6 +396,7 @@ function addToCart(cartName, item) {
     carts[cartName].push({ key, menuId: item.id, qty: 1, options: choices, note: "" });
   }
   renderCarts();
+  toast(`เพิ่ม ${menuName(item)} แล้ว`);
 }
 
 function linePrice(line) {
@@ -501,7 +503,7 @@ function renderMenus() {
 
 function menuCard(item, customer = false) {
   return `
-    <button class="menu-card" data-menu-id="${item.id}" data-cart="${customer ? "customer" : "staff"}">
+    <div class="menu-card" role="button" tabindex="0" data-menu-id="${item.id}" data-sku="${item.sku}" data-cart="${customer ? "customer" : "staff"}">
       <img src="${item.image}" alt="${menuName(item)}">
       <span class="info">
         <span class="sku">${item.sku}</span>
@@ -509,7 +511,7 @@ function menuCard(item, customer = false) {
         <span>${item.options.length ? `${item.options.length} ตัวเลือก` : "ไม่มีตัวเลือก"}</span>
         <span class="price">${fmt.format(item.price)}</span>
       </span>
-    </button>
+    </div>
   `;
 }
 
@@ -564,6 +566,7 @@ function renderCart(cartName, listId, totalsId) {
                   return `
                     <label>${group.th}${group.required ? " *" : ""}
                       <select data-cart-option="${cartName}" data-index="${index}" data-group="${group.id}">
+                        ${group.required ? "" : `<option value="" ${current ? "" : "selected"}>ไม่เลือก</option>`}
                         ${group.choices.map((choice) => {
                           const selected = current && current.label === choice.th ? "selected" : "";
                           const price = choice.price ? ` +${choice.price}` : "";
@@ -938,7 +941,29 @@ function requireSuperuser() {
   return false;
 }
 
+function activateMenuCard(menuTarget) {
+  const item = state.menu.find((menuItem) => menuItem.id === menuTarget.dataset.menuId || menuItem.sku === menuTarget.dataset.sku);
+  if (!item || !item.available) return;
+  lastMenuActivation = { id: item.id, at: Date.now() };
+  menuTarget.classList.add("just-added");
+  window.setTimeout(() => menuTarget.classList.remove("just-added"), 180);
+  addToCart(menuTarget.dataset.cart, item);
+}
+
+document.addEventListener("pointerup", (event) => {
+  const menuTarget = event.target.closest("[data-menu-id]");
+  if (!menuTarget) return;
+  event.preventDefault();
+  activateMenuCard(menuTarget);
+});
+
 document.addEventListener("click", (event) => {
+  const menuTarget = event.target.closest("[data-menu-id]");
+  if (menuTarget) {
+    const recentlyHandled = lastMenuActivation.id === menuTarget.dataset.menuId && Date.now() - lastMenuActivation.at < 450;
+    if (!recentlyHandled) activateMenuCard(menuTarget);
+    return;
+  }
   const target = event.target.closest("button, input");
   if (!target) return;
   if (target.dataset.view) {
@@ -954,7 +979,6 @@ document.addEventListener("click", (event) => {
     renderTabs();
     renderMenus();
   }
-  if (target.dataset.menuId) addToCart(target.dataset.cart, state.menu.find((item) => item.id === target.dataset.menuId));
   if (target.dataset.cartAct) {
     const line = carts[target.dataset.cart][Number(target.dataset.index)];
     line.qty += target.dataset.cartAct === "inc" ? 1 : -1;
@@ -1117,6 +1141,14 @@ document.addEventListener("click", (event) => {
   }
 });
 
+document.addEventListener("keydown", (event) => {
+  if (!["Enter", " "].includes(event.key)) return;
+  const menuTarget = event.target.closest("[data-menu-id]");
+  if (!menuTarget) return;
+  event.preventDefault();
+  activateMenuCard(menuTarget);
+});
+
 document.addEventListener("change", (event) => {
   const target = event.target;
   if (target.id === "userSelect") {
@@ -1146,6 +1178,11 @@ document.addEventListener("change", (event) => {
     const line = carts[target.dataset.cartOption][Number(target.dataset.index)];
     const item = state.menu.find((menuItem) => menuItem.id === line.menuId);
     const group = item.options.find((optionGroup) => optionGroup.id === target.dataset.group);
+    if (!target.value) {
+      line.options = line.options.filter((option) => option.groupId !== group.id);
+      renderCarts();
+      return;
+    }
     const choice = group.choices.find((itemChoice) => itemChoice.th === target.value);
     const next = { groupId: group.id, group: group.th, label: choice.th, price: choice.price || 0, required: group.required };
     const optionIndex = line.options.findIndex((option) => option.groupId === group.id);
@@ -1199,13 +1236,6 @@ window.addEventListener("storage", (event) => {
 realtimeChannel?.addEventListener("message", (event) => {
   handleRealtimeEvent(event.data);
 });
-
-if (SERVER_SYNC && "EventSource" in window) {
-  const events = new EventSource("/api/events");
-  events.onmessage = (message) => {
-    handleRealtimeEvent(JSON.parse(message.data));
-  };
-}
 
 window.setInterval(() => {
   if (SERVER_SYNC) fetchServerState({ notify: true });

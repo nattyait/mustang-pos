@@ -1,4 +1,4 @@
-const CACHE_NAME = "mustang-pos-v7";
+const CACHE_NAME = "mustang-pos-v10";
 const ASSETS = [
   "./",
   "./index.html",

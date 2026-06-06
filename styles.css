@@ -305,6 +305,24 @@ select,
   background: #fffaf4;
   text-align: left;
   box-shadow: 0 10px 24px rgba(67, 39, 17, 0.08);
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+}
+
+.menu-card > * {
+  pointer-events: none;
+}
+
+.menu-card:active,
+.menu-card:focus-visible,
+.menu-card.just-added {
+  outline: 3px solid rgba(194, 147, 75, 0.42);
+  outline-offset: 2px;
+}
+
+.menu-card.just-added {
+  transform: translateY(1px) scale(0.99);
 }
 
 .menu-card img {
