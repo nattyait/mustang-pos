@@ -2,6 +2,8 @@ const CACHE_NAME = "mustang-pos-v1";
 const ASSETS = [
   "./",
   "./index.html",
+  "./admin/",
+  "./admin/index.html",
   "./styles.css",
   "./app.js",
   "./manifest.webmanifest",

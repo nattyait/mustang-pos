@@ -3,6 +3,7 @@ const STORAGE_KEY = "mustang-franchise-pos-v1";
 const seedState = {
   language: "th",
   activeBranchId: "branch-kiosk",
+  activeUserId: "u-super",
   orderSequenceByDay: {},
   kitchenTab: "active",
   branches: [
@@ -12,6 +13,8 @@ const seedState = {
       nameEn: "Mustang Kiosk",
       tokens: Array.from({ length: 16 }, (_, i) => ({ id: String(i + 1), label: String(i + 1), active: true })),
       qrLabel: "บัญชี Mustang Cafe Kiosk",
+      templateMode: "linked",
+      templateVersion: 1,
     },
     {
       id: "branch-main",
@@ -19,8 +22,15 @@ const seedState = {
       nameEn: "Mustang Cafe Main",
       tokens: Array.from({ length: 12 }, (_, i) => ({ id: `A${i + 1}`, label: `A${i + 1}`, active: true })),
       qrLabel: "บัญชี Mustang Cafe Main",
+      templateMode: "linked",
+      templateVersion: 1,
     },
   ],
+  masterTemplate: {
+    version: 1,
+    updatedAt: new Date().toISOString(),
+    menuIds: ["m-nutella-oreo", "m-nutella-latte", "m-cha-chak", "m-roti-banana", "m-rice"],
+  },
   categories: [
     { id: "signature", th: "Signature Mustang drink", en: "Signature Mustang drink", sort: 1 },
     { id: "cha-chak", th: "เครื่องดื่มกูโรตีชาชัก", en: "Guroti Cha Chak drinks", sort: 2 },
@@ -96,7 +106,60 @@ const seedState = {
     { id: "promo-10", nameTh: "ลด 10%", type: "percent", value: 10, active: true },
     { id: "promo-20b", nameTh: "ลด 20 บาท", type: "amount", value: 20, active: true },
   ],
+  users: [
+    { id: "u-super", name: "Mustang Owner", role: "super_admin", branchIds: ["branch-kiosk", "branch-main"], active: true },
+    { id: "u-franchise", name: "Kiosk Franchise Owner", role: "branch_owner", branchIds: ["branch-kiosk"], active: true },
+    { id: "u-manager", name: "Kiosk Manager", role: "branch_manager", branchIds: ["branch-kiosk"], active: true },
+    { id: "u-cashier", name: "Cashier", role: "cashier", branchIds: ["branch-kiosk"], active: true },
+    { id: "u-kitchen", name: "Kitchen Staff", role: "kitchen", branchIds: ["branch-kiosk"], active: true },
+    { id: "u-customer", name: "Customer Kiosk", role: "customer_kiosk", branchIds: ["branch-kiosk"], active: true },
+  ],
   orders: [],
+};
+
+const roles = {
+  super_admin: {
+    label: "Mustang Superuser",
+    views: ["pos", "customer", "payments", "kitchen", "pickup", "reports", "admin"],
+    canSwitchBranches: true,
+    canManageRoles: true,
+    canManageFranchise: true,
+  },
+  branch_owner: {
+    label: "Franchise Owner",
+    views: ["pos", "customer", "payments", "kitchen", "pickup", "reports"],
+    canSwitchBranches: false,
+    canManageRoles: false,
+    canManageFranchise: false,
+  },
+  branch_manager: {
+    label: "Branch Manager",
+    views: ["pos", "payments", "kitchen", "pickup", "reports"],
+    canSwitchBranches: false,
+    canManageRoles: false,
+    canManageFranchise: false,
+  },
+  cashier: {
+    label: "Cashier",
+    views: ["pos", "payments", "pickup"],
+    canSwitchBranches: false,
+    canManageRoles: false,
+    canManageFranchise: false,
+  },
+  kitchen: {
+    label: "Kitchen Staff",
+    views: ["kitchen"],
+    canSwitchBranches: false,
+    canManageRoles: false,
+    canManageFranchise: false,
+  },
+  customer_kiosk: {
+    label: "Customer Kiosk",
+    views: ["customer"],
+    canSwitchBranches: false,
+    canManageRoles: false,
+    canManageFranchise: false,
+  },
 };
 
 let state = loadState();
@@ -112,7 +175,18 @@ function loadState() {
   const raw = localStorage.getItem(STORAGE_KEY);
   if (!raw) return structuredClone(seedState);
   try {
-    return { ...structuredClone(seedState), ...JSON.parse(raw) };
+    const parsed = JSON.parse(raw);
+    const next = { ...structuredClone(seedState), ...parsed };
+    next.masterTemplate = next.masterTemplate || structuredClone(seedState.masterTemplate);
+    next.users = next.users || structuredClone(seedState.users);
+    next.activeUserId = next.activeUserId || "u-super";
+    next.branches = next.branches.map((item) => ({
+      templateMode: "linked",
+      templateVersion: next.masterTemplate?.version || 1,
+      ...item,
+      tokens: item.tokens || [],
+    }));
+    return next;
   } catch {
     return structuredClone(seedState);
   }
@@ -124,6 +198,29 @@ function saveState() {
 
 function branch() {
   return state.branches.find((item) => item.id === state.activeBranchId) || state.branches[0];
+}
+
+function currentUser() {
+  return state.users.find((item) => item.id === state.activeUserId) || state.users[0];
+}
+
+function currentRole() {
+  return roles[currentUser().role] || roles.cashier;
+}
+
+function isAdminRoute() {
+  return location.pathname.replace(/\/+$/, "").endsWith("/admin");
+}
+
+function canView(viewId) {
+  return currentRole().views.includes(viewId);
+}
+
+function enforceBranchAccess() {
+  if (currentRole().canSwitchBranches) return;
+  if (!currentUser().branchIds.includes(state.activeBranchId)) {
+    state.activeBranchId = currentUser().branchIds[0] || state.branches[0].id;
+  }
 }
 
 function menuName(item) {
@@ -206,9 +303,13 @@ function cartSummary(cartName) {
 }
 
 function render() {
+  enforceBranchAccess();
   $("todayLabel").textContent = dateFmt.format(new Date());
   $("activeBranchName").textContent = branch().nameTh;
+  $("rolePill").textContent = currentRole().label;
+  renderUserSelect();
   renderBranchSelect();
+  renderNavigation();
   renderTabs();
   renderMenus();
   renderCarts();
@@ -219,8 +320,49 @@ function render() {
   renderAdmin();
 }
 
+function renderUserSelect() {
+  $("userSelect").innerHTML = state.users
+    .filter((item) => item.active)
+    .map((item) => `<option value="${item.id}">${item.name} - ${roles[item.role]?.label || item.role}</option>`)
+    .join("");
+  $("userSelect").value = state.activeUserId;
+}
+
+function showView(viewId, updateHash = true) {
+  const requested = $(viewId) ? viewId : "pos";
+  const fallback = currentRole().views[0] || "pos";
+  const view = isAdminRoute() && requested === "admin" ? "admin" : canView(requested) ? requested : fallback;
+  document.querySelectorAll(".view").forEach((item) => item.classList.remove("active"));
+  document.querySelectorAll(".nav button").forEach((button) => button.classList.remove("active"));
+  $(view).classList.add("active");
+  const navButton = document.querySelector(`[data-view="${view}"]`);
+  if (navButton) {
+    navButton.classList.add("active");
+    $("viewTitle").textContent = navButton.textContent;
+  }
+  if (updateHash) history.replaceState(null, "", `#${view}`);
+}
+
+function renderNavigation() {
+  document.querySelectorAll("[data-view]").forEach((button) => {
+    const isAdminButton = button.dataset.view === "admin";
+    const allowed = canView(button.dataset.view) && (!isAdminButton || isAdminRoute());
+    button.classList.toggle("hidden", !allowed);
+  });
+  $("branchSelect").disabled = !currentRole().canSwitchBranches;
+}
+
+function tokensFromText(text) {
+  return text
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((label) => ({ id: label, label, active: true }));
+}
+
 function renderBranchSelect() {
-  $("branchSelect").innerHTML = state.branches.map((item) => `<option value="${item.id}">${item.nameTh}</option>`).join("");
+  const branches = currentRole().canSwitchBranches ? state.branches : state.branches.filter((item) => currentUser().branchIds.includes(item.id));
+  $("branchSelect").innerHTML = branches.map((item) => `<option value="${item.id}">${item.nameTh}</option>`).join("");
   $("branchSelect").value = state.activeBranchId;
 }
 
@@ -496,12 +638,89 @@ function statusName(status) {
 }
 
 function renderAdmin() {
+  const allowed = currentUser().role === "super_admin";
+  $("adminGuard").classList.toggle("active", !allowed);
+  $("adminGuard").innerHTML = !allowed
+    ? `<strong>Access denied</strong><br>หน้านี้สำหรับ Mustang franchise owner / superuser เท่านั้น ตอนนี้คุณกำลังทดสอบ role: ${currentRole().label}`
+    : "";
+  document.querySelectorAll("#admin .admin-grid .panel").forEach((panel) => panel.classList.toggle("hidden", !allowed));
+  if (!allowed) return;
+
+  $("roleAdmin").innerHTML = `
+    <div class="admin-list">
+      ${state.users.map((user) => `
+        <div class="admin-row">
+          <span>
+            <strong>${user.name}</strong><br>
+            <small>${roles[user.role]?.label || user.role} / ${user.branchIds.map((id) => state.branches.find((branchItem) => branchItem.id === id)?.nameTh || id).join(", ")}</small>
+          </span>
+          <div class="role-matrix">
+            <select data-user-role="${user.id}">
+              ${Object.entries(roles).map(([roleId, role]) => `<option value="${roleId}" ${user.role === roleId ? "selected" : ""}>${role.label}</option>`).join("")}
+            </select>
+            <select data-user-branch="${user.id}">
+              ${state.branches.map((branchItem) => `<option value="${branchItem.id}" ${user.branchIds.includes(branchItem.id) ? "selected" : ""}>${branchItem.nameTh}</option>`).join("")}
+            </select>
+          </div>
+        </div>
+      `).join("")}
+    </div>
+    <div class="admin-form">
+      <label class="field"><span>ชื่อผู้ใช้ใหม่</span><input id="newUserName" placeholder="Branch Staff"></label>
+      <label class="field"><span>Role</span><select id="newUserRole">${Object.entries(roles).map(([roleId, role]) => `<option value="${roleId}">${role.label}</option>`).join("")}</select></label>
+      <label class="field"><span>Branch</span><select id="newUserBranch">${state.branches.map((branchItem) => `<option value="${branchItem.id}">${branchItem.nameTh}</option>`).join("")}</select></label>
+      <button class="primary" id="addUser">เพิ่ม mock user</button>
+    </div>
+  `;
+
+  $("branchAdmin").innerHTML = `
+    <div class="admin-list">
+      ${state.branches.map((item) => `
+        <div class="admin-row">
+          <span>
+            <strong>${item.nameTh}</strong><br>
+            <small>${item.nameEn} / ${item.tokens.length} tokens / ${item.templateMode === "linked" ? "Linked template" : "Copied template"}</small>
+          </span>
+          <button class="secondary" data-switch-branch="${item.id}">${item.id === state.activeBranchId ? "กำลังใช้" : "เปิดสาขา"}</button>
+        </div>
+      `).join("")}
+    </div>
+    <div class="admin-form">
+      <label class="field"><span>ชื่อสาขาไทย</span><input id="newBranchTh" placeholder="Mustang Cafe สาขาใหม่"></label>
+      <label class="field"><span>Branch English name</span><input id="newBranchEn" placeholder="Mustang Cafe New Branch"></label>
+      <label class="field"><span>Queue tokens</span><input id="newBranchTokens" placeholder="1,2,3,4,5,6,7,8"></label>
+      <button class="primary" id="addBranch">เพิ่มสาขา</button>
+    </div>
+  `;
+
+  $("templateAdmin").innerHTML = `
+    <div class="admin-list">
+      <div class="admin-row">
+        <span><strong>Master template v${state.masterTemplate.version}</strong><br><small>${state.masterTemplate.menuIds.length} menu items / branches can link or copy</small></span>
+        <button class="secondary" id="publishTemplate">Publish update</button>
+      </div>
+      <div class="admin-row">
+        <span>โหมดของสาขานี้<br><small>${branch().templateMode === "linked" ? "Linked: รับเมนูหลักจาก Mustang" : "Copied: คัดลอกแล้วแก้เองได้"}</small></span>
+        <button class="secondary" id="toggleTemplateMode">${branch().templateMode === "linked" ? "เปลี่ยนเป็น Copy" : "เปลี่ยนเป็น Linked"}</button>
+      </div>
+      <div class="admin-row">
+        <span>Apply master menu to this branch<br><small>สำหรับต้นแบบนี้จะบันทึกสถานะ version ให้สาขา</small></span>
+        <button class="secondary" id="applyTemplate">Apply template</button>
+      </div>
+    </div>
+  `;
+
   $("tokenAdmin").innerHTML = `<div class="admin-list">${branch().tokens.map((token) => `
     <div class="admin-row">
       <span>Token ${token.label} - ${tokenLabel(tokenStatus(token))}</span>
       <button class="secondary" data-toggle-token="${token.id}">${token.active ? "เปิดใช้" : "ปิด"}</button>
     </div>
-  `).join("")}</div>`;
+  `).join("")}</div>
+  <div class="admin-form">
+    <label class="field"><span>Token list ของสาขานี้</span><input id="branchTokenList" value="${branch().tokens.map((token) => token.label).join(",")}"></label>
+    <label class="field"><span>QR / bank label</span><input id="branchQrLabel" value="${branch().qrLabel || ""}"></label>
+    <button class="primary" id="saveBranchSettings">บันทึกคิวและ QR ของสาขา</button>
+  </div>`;
   $("menuAdmin").innerHTML = `<div class="admin-list">${state.menu.map((item) => `
     <div class="admin-row">
       <span><strong>${item.th}</strong><br><small>${item.sku} / ${fmt.format(item.price)}</small></span>
@@ -578,15 +797,17 @@ function exportCsv() {
   URL.revokeObjectURL(url);
 }
 
+function requireSuperuser() {
+  if (currentUser().role === "super_admin") return true;
+  toast("เฉพาะ Mustang superuser เท่านั้น");
+  return false;
+}
+
 document.addEventListener("click", (event) => {
   const target = event.target.closest("button, input");
   if (!target) return;
   if (target.dataset.view) {
-    document.querySelectorAll(".view").forEach((view) => view.classList.remove("active"));
-    document.querySelectorAll(".nav button").forEach((button) => button.classList.remove("active"));
-    $(target.dataset.view).classList.add("active");
-    target.classList.add("active");
-    $("viewTitle").textContent = target.textContent;
+    showView(target.dataset.view);
   }
   if (target.dataset.cat) {
     selectedCategory = target.dataset.cat;
@@ -660,7 +881,81 @@ document.addEventListener("click", (event) => {
     saveState();
     render();
   }
+  if (target.dataset.switchBranch) {
+    if (!requireSuperuser()) return;
+    state.activeBranchId = target.dataset.switchBranch;
+    carts = { staff: [], customer: [] };
+    saveState();
+    render();
+  }
+  if (target.id === "addBranch") {
+    if (!requireSuperuser()) return;
+    const nameTh = $("newBranchTh").value.trim();
+    const nameEn = $("newBranchEn").value.trim() || nameTh;
+    const tokens = tokensFromText($("newBranchTokens").value || "1,2,3,4,5,6,7,8");
+    if (!nameTh || !tokens.length) return toast("กรุณาใส่ชื่อสาขาและ token");
+    const id = `branch-${Date.now()}`;
+    state.branches.push({ id, nameTh, nameEn, tokens, qrLabel: `บัญชี ${nameTh}`, templateMode: "linked", templateVersion: state.masterTemplate.version });
+    state.activeBranchId = id;
+    saveState();
+    render();
+    toast("เพิ่มสาขาแล้ว");
+  }
+  if (target.id === "saveBranchSettings") {
+    if (!requireSuperuser()) return;
+    const tokens = tokensFromText($("branchTokenList").value);
+    if (!tokens.length) return toast("ต้องมี token อย่างน้อย 1 หมายเลข");
+    if (branch().tokens.some((token) => tokenStatus(token) !== "available" && !tokens.some((next) => next.label === token.label))) {
+      return toast("ไม่สามารถลบ token ที่กำลังใช้งาน");
+    }
+    branch().tokens = tokens;
+    branch().qrLabel = $("branchQrLabel").value.trim();
+    saveState();
+    render();
+    toast("บันทึกข้อมูลสาขาแล้ว");
+  }
+  if (target.id === "publishTemplate") {
+    if (!requireSuperuser()) return;
+    state.masterTemplate.version += 1;
+    state.masterTemplate.updatedAt = new Date().toISOString();
+    state.masterTemplate.menuIds = state.menu.filter((item) => item.available).map((item) => item.id);
+    state.branches.filter((item) => item.templateMode === "linked").forEach((item) => {
+      item.templateVersion = state.masterTemplate.version;
+    });
+    saveState();
+    render();
+    toast("Publish Mustang menu template แล้ว");
+  }
+  if (target.id === "toggleTemplateMode") {
+    if (!requireSuperuser()) return;
+    branch().templateMode = branch().templateMode === "linked" ? "copied" : "linked";
+    if (branch().templateMode === "linked") branch().templateVersion = state.masterTemplate.version;
+    saveState();
+    render();
+  }
+  if (target.id === "applyTemplate") {
+    if (!requireSuperuser()) return;
+    branch().templateVersion = state.masterTemplate.version;
+    saveState();
+    render();
+    toast("Apply template ให้สาขานี้แล้ว");
+  }
   if (target.id === "exportCsv") exportCsv();
+  if (target.id === "addUser") {
+    if (!requireSuperuser()) return;
+    const name = $("newUserName").value.trim();
+    if (!name) return toast("กรุณาใส่ชื่อผู้ใช้");
+    state.users.push({
+      id: `u-${Date.now()}`,
+      name,
+      role: $("newUserRole").value,
+      branchIds: [$("newUserBranch").value],
+      active: true,
+    });
+    saveState();
+    render();
+    toast("เพิ่ม mock user แล้ว");
+  }
   if (target.id === "seedReset") {
     state = structuredClone(seedState);
     carts = { staff: [], customer: [] };
@@ -677,6 +972,29 @@ document.addEventListener("click", (event) => {
 
 document.addEventListener("change", (event) => {
   const target = event.target;
+  if (target.id === "userSelect") {
+    state.activeUserId = target.value;
+    enforceBranchAccess();
+    saveState();
+    render();
+    showView(isAdminRoute() ? "admin" : currentRole().views[0], false);
+  }
+  if (target.dataset.userRole) {
+    if (!requireSuperuser()) return;
+    const user = state.users.find((item) => item.id === target.dataset.userRole);
+    user.role = target.value;
+    if (user.id === state.activeUserId) enforceBranchAccess();
+    saveState();
+    render();
+  }
+  if (target.dataset.userBranch) {
+    if (!requireSuperuser()) return;
+    const user = state.users.find((item) => item.id === target.dataset.userBranch);
+    user.branchIds = [target.value];
+    if (user.id === state.activeUserId) enforceBranchAccess();
+    saveState();
+    render();
+  }
   if (target.dataset.cartOption) {
     const line = carts[target.dataset.cartOption][Number(target.dataset.index)];
     const item = state.menu.find((menuItem) => menuItem.id === line.menuId);
@@ -700,6 +1018,10 @@ document.addEventListener("change", (event) => {
 });
 
 $("branchSelect").addEventListener("change", (event) => {
+  if (!currentRole().canSwitchBranches) {
+    event.target.value = state.activeBranchId;
+    return toast("Role นี้ดูได้เฉพาะสาขาที่ได้รับสิทธิ์");
+  }
   state.activeBranchId = event.target.value;
   carts = { staff: [], customer: [] };
   saveState();
@@ -727,3 +1049,4 @@ $("reportStart").value = today;
 $("reportEnd").value = today;
 $("syncStatus").textContent = navigator.onLine ? "Online" : "Offline ready";
 render();
+showView(isAdminRoute() ? "admin" : location.hash.replace("#", "") || currentRole().views[0] || "pos", false);
