@@ -401,6 +401,32 @@ select,
   gap: 10px;
 }
 
+.token-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
+  gap: 6px;
+}
+
+.token-picker button {
+  min-height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--espresso);
+  background: #fffaf1;
+}
+
+.token-picker button.active {
+  color: var(--milk);
+  border-color: transparent;
+  background: var(--espresso);
+}
+
+.token-picker button:disabled {
+  cursor: not-allowed;
+  opacity: 0.44;
+  text-decoration: line-through;
+}
+
 .totals {
   display: grid;
   gap: 6px;
@@ -610,6 +636,46 @@ th {
 .toast.show {
   transform: translateY(0);
   opacity: 1;
+}
+
+.kitchen-alert {
+  position: fixed;
+  right: 18px;
+  bottom: 78px;
+  z-index: 11;
+  display: none;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: center;
+  max-width: min(440px, calc(100vw - 28px));
+  border: 1px solid rgba(194, 147, 75, 0.42);
+  border-radius: 8px;
+  padding: 14px;
+  color: var(--milk);
+  background: #231811;
+  box-shadow: var(--shadow);
+}
+
+.kitchen-alert.show {
+  display: grid;
+}
+
+.kitchen-alert strong,
+.kitchen-alert span {
+  display: block;
+}
+
+.kitchen-alert span {
+  color: #ead3bd;
+  font-size: 13px;
+}
+
+.kitchen-alert button {
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--ink);
+  background: var(--gold);
+  white-space: nowrap;
 }
 
 .receipt {

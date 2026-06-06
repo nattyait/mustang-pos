@@ -1,4 +1,8 @@
 const STORAGE_KEY = "mustang-franchise-pos-v1";
+const EVENT_KEY = "mustang-franchise-pos-event";
+const SERVER_SYNC = location.protocol.startsWith("http");
+const realtimeChannel = "BroadcastChannel" in window ? new BroadcastChannel("mustang-franchise-pos") : null;
+const PAGE_ID = crypto.randomUUID();
 
 const seedState = {
   language: "th",
@@ -166,6 +170,8 @@ let state = loadState();
 let carts = { staff: [], customer: [] };
 let selectedCategory = "signature";
 let selectedCustomerCategory = "signature";
+let lastKitchenAlertOrderId = null;
+let lastStoredStateRaw = localStorage.getItem(STORAGE_KEY);
 
 const $ = (id) => document.getElementById(id);
 const fmt = new Intl.NumberFormat("th-TH", { style: "currency", currency: "THB", maximumFractionDigits: 0 });
@@ -175,25 +181,131 @@ function loadState() {
   const raw = localStorage.getItem(STORAGE_KEY);
   if (!raw) return structuredClone(seedState);
   try {
-    const parsed = JSON.parse(raw);
-    const next = { ...structuredClone(seedState), ...parsed };
-    next.masterTemplate = next.masterTemplate || structuredClone(seedState.masterTemplate);
-    next.users = next.users || structuredClone(seedState.users);
-    next.activeUserId = next.activeUserId || "u-super";
-    next.branches = next.branches.map((item) => ({
-      templateMode: "linked",
-      templateVersion: next.masterTemplate?.version || 1,
-      ...item,
-      tokens: item.tokens || [],
-    }));
-    return next;
+    return normalizeState(JSON.parse(raw));
   } catch {
     return structuredClone(seedState);
   }
 }
 
-function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+function normalizeState(rawState) {
+  const next = { ...structuredClone(seedState), ...rawState };
+  next.masterTemplate = next.masterTemplate || structuredClone(seedState.masterTemplate);
+  next.users = next.users || structuredClone(seedState.users);
+  next.activeUserId = next.activeUserId || "u-super";
+  next.branches = next.branches.map((item) => ({
+    templateMode: "linked",
+    templateVersion: next.masterTemplate?.version || 1,
+    ...item,
+    tokens: item.tokens || [],
+  }));
+  return next;
+}
+
+async function saveState() {
+  lastStoredStateRaw = JSON.stringify(state);
+  localStorage.setItem(STORAGE_KEY, lastStoredStateRaw);
+  if (SERVER_SYNC) {
+    fetch("/api/state", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ state }),
+    }).catch(() => {});
+  }
+}
+
+function reloadState() {
+  state = loadState();
+  enforceBranchAccess();
+}
+
+async function fetchServerState({ notify = false } = {}) {
+  if (!SERVER_SYNC) return;
+  try {
+    const previousKitchenIds = new Set(
+      state.orders.filter((order) => order.branchId === state.activeBranchId && order.status === "in_kitchen").map((order) => order.id)
+    );
+    const response = await fetch("/api/state", { cache: "no-store" });
+    if (!response.ok) return;
+    const data = await response.json();
+    if (!data.state) {
+      await saveState();
+      return;
+    }
+    state = normalizeState(data.state);
+    lastStoredStateRaw = JSON.stringify(state);
+    localStorage.setItem(STORAGE_KEY, lastStoredStateRaw);
+    enforceBranchAccess();
+    render();
+    if (!notify) return;
+    const newKitchenOrder = state.orders.find(
+      (order) => order.branchId === state.activeBranchId && order.status === "in_kitchen" && !previousKitchenIds.has(order.id)
+    );
+    if (newKitchenOrder) notifyKitchen(newKitchenOrder);
+  } catch {
+    $("syncStatus").textContent = "Local only";
+  }
+}
+
+async function broadcastEvent(type, payload = {}) {
+  const event = { type, payload, at: Date.now(), sourceId: PAGE_ID };
+  localStorage.setItem(EVENT_KEY, JSON.stringify(event));
+  realtimeChannel?.postMessage(event);
+  if (SERVER_SYNC) {
+    fetch("/api/event", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...event, state }),
+    }).catch(() => {});
+  }
+}
+
+function handleRealtimeEvent(event) {
+  if (!event || event.sourceId === PAGE_ID) return;
+  if (event.type === "state_updated") {
+    reloadState();
+    render();
+  }
+  if (event.type === "new_kitchen_order") {
+    reloadState();
+    render();
+    notifyKitchen(event.payload);
+  }
+}
+
+function syncStateFromStorage({ notify = false } = {}) {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw || raw === lastStoredStateRaw) return;
+  const previousKitchenIds = new Set(
+    state.orders.filter((order) => order.branchId === state.activeBranchId && order.status === "in_kitchen").map((order) => order.id)
+  );
+  lastStoredStateRaw = raw;
+  reloadState();
+  render();
+  if (!notify) return;
+  const newKitchenOrder = state.orders.find(
+    (order) => order.branchId === state.activeBranchId && order.status === "in_kitchen" && !previousKitchenIds.has(order.id)
+  );
+  if (newKitchenOrder) notifyKitchen(newKitchenOrder);
+}
+
+function showKitchenAlert(order) {
+  if (!order || order.branchId !== state.activeBranchId || lastKitchenAlertOrderId === order.id) return;
+  lastKitchenAlertOrderId = order.id;
+  $("kitchenAlertText").textContent = `${order.orderNo} / คิว ${order.queueToken}`;
+  $("kitchenAlert").classList.add("show");
+}
+
+function showBrowserKitchenNotification(order) {
+  if (!order || !("Notification" in window)) return;
+  const title = "มีออเดอร์ใหม่เข้าครัว";
+  const body = `${order.orderNo} / คิว ${order.queueToken}`;
+  if (Notification.permission === "granted") {
+    new Notification(title, { body, icon: "assets/mustang-logo.png" });
+  } else if (Notification.permission === "default") {
+    Notification.requestPermission().then((permission) => {
+      if (permission === "granted") new Notification(title, { body, icon: "assets/mustang-logo.png" });
+    });
+  }
 }
 
 function branch() {
@@ -340,6 +452,7 @@ function showView(viewId, updateHash = true) {
     navButton.classList.add("active");
     $("viewTitle").textContent = navButton.textContent;
   }
+  if (view === "kitchen") $("kitchenAlert").classList.remove("show");
   if (updateHash) history.replaceState(null, "", `#${view}`);
 }
 
@@ -410,15 +523,21 @@ function renderCarts() {
 }
 
 function renderTokenSelect() {
-  const options = branch().tokens
+  const selected = $("staffToken").value;
+  const tokenOptions = branch().tokens
     .filter((token) => token.active)
-    .map((token) => {
-      const status = tokenStatus(token);
-      const disabled = status !== "available" ? "disabled" : "";
-      return `<option value="${token.label}" ${disabled}>${token.label} - ${tokenLabel(status)}</option>`;
-    })
+    .map((token) => ({ token, status: tokenStatus(token) }));
+  const options = tokenOptions
+    .map(({ token, status }) => `<option value="${token.label}" ${status !== "available" ? "disabled" : ""}>${token.label} - ${tokenLabel(status)}</option>`)
     .join("");
   $("staffToken").innerHTML = `<option value="">เลือกคิว</option>${options}`;
+  if (selected && isTokenAvailable(selected)) $("staffToken").value = selected;
+  $("staffTokenButtons").innerHTML = tokenOptions
+    .map(({ token, status }) => {
+      const active = $("staffToken").value === token.label ? "active" : "";
+      return `<button class="${active}" data-pick-token="${token.label}" ${status !== "available" ? "disabled" : ""}>${token.label}</button>`;
+    })
+    .join("");
 }
 
 function tokenLabel(status) {
@@ -516,7 +635,10 @@ function createOrder(source) {
   $("cashReceived").value = "";
   $("transferReceived").value = "";
   saveState();
-  if (paidNow) notifyKitchen();
+  if (paidNow) {
+    notifyKitchen(order);
+    broadcastEvent("new_kitchen_order", { orderId: order.id, branchId: order.branchId, orderNo: order.orderNo, queueToken: order.queueToken });
+  }
   render();
   printReceipt(order.id);
   toast(paidNow ? "ส่งออเดอร์เข้าครัวแล้ว" : "ส่งออเดอร์แล้ว รอพนักงานยืนยันชำระเงิน");
@@ -529,7 +651,8 @@ function confirmPayment(orderId) {
   order.cashReceived = order.paymentMethod === "cash" ? order.total : 0;
   order.transferReceived = order.paymentMethod === "transfer" ? order.total : 0;
   saveState();
-  notifyKitchen();
+  notifyKitchen(order);
+  broadcastEvent("new_kitchen_order", { orderId: order.id, branchId: order.branchId, orderNo: order.orderNo, queueToken: order.queueToken });
   render();
 }
 
@@ -763,8 +886,15 @@ function printReceipt(orderId) {
   window.setTimeout(() => node.remove(), 500);
 }
 
-function notifyKitchen() {
+function notifyKitchen(payload = {}) {
   $("ding").play().catch(() => {});
+  const order = payload.id
+    ? payload
+    : state.orders.find((item) => item.id === payload.orderId) || state.orders.find((item) => item.orderNo === payload.orderNo && item.queueToken === payload.queueToken);
+  if (order && !document.querySelector("#kitchen").classList.contains("active")) {
+    showKitchenAlert(order);
+    showBrowserKitchenNotification(order);
+  }
 }
 
 function exportCsv() {
@@ -825,6 +955,10 @@ document.addEventListener("click", (event) => {
     line.qty += target.dataset.cartAct === "inc" ? 1 : -1;
     if (line.qty <= 0) carts[target.dataset.cart].splice(Number(target.dataset.index), 1);
     renderCarts();
+  }
+  if (target.dataset.pickToken) {
+    $("staffToken").value = target.dataset.pickToken;
+    renderTokenSelect();
   }
   if (target.id === "completeStaffOrder") createOrder("staff");
   if (target.id === "submitCustomerOrder") createOrder("customer");
@@ -968,6 +1102,10 @@ document.addEventListener("click", (event) => {
     saveState();
     render();
   }
+  if (target.id === "openKitchenFromAlert") {
+    $("kitchenAlert").classList.remove("show");
+    showView("kitchen");
+  }
 });
 
 document.addEventListener("change", (event) => {
@@ -1040,6 +1178,31 @@ window.addEventListener("offline", () => {
   $("syncStatus").classList.remove("dark");
 });
 
+window.addEventListener("storage", (event) => {
+  if (event.key === STORAGE_KEY) {
+    syncStateFromStorage({ notify: true });
+  }
+  if (event.key === EVENT_KEY && event.newValue) {
+    handleRealtimeEvent(JSON.parse(event.newValue));
+  }
+});
+
+realtimeChannel?.addEventListener("message", (event) => {
+  handleRealtimeEvent(event.data);
+});
+
+if (SERVER_SYNC && "EventSource" in window) {
+  const events = new EventSource("/api/events");
+  events.onmessage = (message) => {
+    handleRealtimeEvent(JSON.parse(message.data));
+  };
+}
+
+window.setInterval(() => {
+  if (SERVER_SYNC) fetchServerState({ notify: true });
+  else syncStateFromStorage({ notify: true });
+}, 1200);
+
 if ("serviceWorker" in navigator && location.protocol !== "file:") {
   navigator.serviceWorker.register("sw.js").catch(() => {});
 }
@@ -1050,3 +1213,4 @@ $("reportEnd").value = today;
 $("syncStatus").textContent = navigator.onLine ? "Online" : "Offline ready";
 render();
 showView(isAdminRoute() ? "admin" : location.hash.replace("#", "") || currentRole().views[0] || "pos", false);
+fetchServerState({ notify: false });

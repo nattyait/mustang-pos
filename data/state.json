@@ -1,0 +1,1298 @@
+{
+  "language": "th",
+  "activeBranchId": "branch-kiosk",
+  "activeUserId": "u-super",
+  "orderSequenceByDay": {
+    "branch-kiosk-2026-06-06": 14
+  },
+  "kitchenTab": "active",
+  "branches": [
+    {
+      "templateMode": "linked",
+      "templateVersion": 1,
+      "id": "branch-kiosk",
+      "nameTh": "Mustang Kiosk",
+      "nameEn": "Mustang Kiosk",
+      "tokens": [
+        {
+          "id": "1",
+          "label": "1",
+          "active": true
+        },
+        {
+          "id": "2",
+          "label": "2",
+          "active": true
+        },
+        {
+          "id": "3",
+          "label": "3",
+          "active": true
+        },
+        {
+          "id": "4",
+          "label": "4",
+          "active": true
+        },
+        {
+          "id": "5",
+          "label": "5",
+          "active": true
+        },
+        {
+          "id": "6",
+          "label": "6",
+          "active": true
+        },
+        {
+          "id": "7",
+          "label": "7",
+          "active": true
+        },
+        {
+          "id": "8",
+          "label": "8",
+          "active": true
+        },
+        {
+          "id": "9",
+          "label": "9",
+          "active": true
+        },
+        {
+          "id": "10",
+          "label": "10",
+          "active": true
+        },
+        {
+          "id": "11",
+          "label": "11",
+          "active": true
+        },
+        {
+          "id": "12",
+          "label": "12",
+          "active": true
+        },
+        {
+          "id": "13",
+          "label": "13",
+          "active": true
+        },
+        {
+          "id": "14",
+          "label": "14",
+          "active": true
+        },
+        {
+          "id": "15",
+          "label": "15",
+          "active": true
+        },
+        {
+          "id": "16",
+          "label": "16",
+          "active": true
+        }
+      ],
+      "qrLabel": "บัญชี Mustang Cafe Kiosk"
+    },
+    {
+      "templateMode": "linked",
+      "templateVersion": 1,
+      "id": "branch-main",
+      "nameTh": "Mustang Cafe สาขาหลัก",
+      "nameEn": "Mustang Cafe Main",
+      "tokens": [
+        {
+          "id": "A1",
+          "label": "A1",
+          "active": true
+        },
+        {
+          "id": "A2",
+          "label": "A2",
+          "active": true
+        },
+        {
+          "id": "A3",
+          "label": "A3",
+          "active": true
+        },
+        {
+          "id": "A4",
+          "label": "A4",
+          "active": true
+        },
+        {
+          "id": "A5",
+          "label": "A5",
+          "active": true
+        },
+        {
+          "id": "A6",
+          "label": "A6",
+          "active": true
+        },
+        {
+          "id": "A7",
+          "label": "A7",
+          "active": true
+        },
+        {
+          "id": "A8",
+          "label": "A8",
+          "active": true
+        },
+        {
+          "id": "A9",
+          "label": "A9",
+          "active": true
+        },
+        {
+          "id": "A10",
+          "label": "A10",
+          "active": true
+        },
+        {
+          "id": "A11",
+          "label": "A11",
+          "active": true
+        },
+        {
+          "id": "A12",
+          "label": "A12",
+          "active": true
+        }
+      ],
+      "qrLabel": "บัญชี Mustang Cafe Main"
+    }
+  ],
+  "masterTemplate": {
+    "version": 1,
+    "updatedAt": "2026-06-06T14:03:20.692Z",
+    "menuIds": [
+      "m-nutella-oreo",
+      "m-nutella-latte",
+      "m-cha-chak",
+      "m-roti-banana",
+      "m-rice"
+    ]
+  },
+  "categories": [
+    {
+      "id": "signature",
+      "th": "Signature Mustang drink",
+      "en": "Signature Mustang drink",
+      "sort": 1
+    },
+    {
+      "id": "cha-chak",
+      "th": "เครื่องดื่มกูโรตีชาชัก",
+      "en": "Guroti Cha Chak drinks",
+      "sort": 2
+    },
+    {
+      "id": "roti",
+      "th": "โรตีหวาน",
+      "en": "Sweet roti",
+      "sort": 3
+    },
+    {
+      "id": "food",
+      "th": "อาหาร",
+      "en": "Food",
+      "sort": 4
+    }
+  ],
+  "menu": [
+    {
+      "id": "m-nutella-oreo",
+      "sku": "SIG-001",
+      "categoryId": "signature",
+      "th": "นูเทลล่าโอรีโอนมสด",
+      "en": "Nutella Oreo Fresh Milk",
+      "price": 99,
+      "image": "assets/nutella-oreo-fresh-milk.png",
+      "available": true,
+      "options": [
+        {
+          "id": "sweet",
+          "th": "ความหวาน",
+          "required": true,
+          "choices": [
+            {
+              "th": "หวานน้อย"
+            },
+            {
+              "th": "ปกติ"
+            },
+            {
+              "th": "หวานมาก"
+            }
+          ]
+        },
+        {
+          "id": "ice",
+          "th": "น้ำแข็ง",
+          "required": true,
+          "choices": [
+            {
+              "th": "ปกติ"
+            },
+            {
+              "th": "น้อย"
+            },
+            {
+              "th": "ไม่ใส่น้ำแข็ง"
+            }
+          ]
+        },
+        {
+          "id": "topping",
+          "th": "ท็อปปิ้ง",
+          "required": false,
+          "choices": [
+            {
+              "th": "โอรีโอเพิ่ม",
+              "price": 10
+            },
+            {
+              "th": "นูเทลล่าเพิ่ม",
+              "price": 15
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m-nutella-latte",
+      "sku": "SIG-002",
+      "categoryId": "signature",
+      "th": "นูเทลล่าคอฟฟี่ลาเต้",
+      "en": "Nutella Coffee Latte",
+      "price": 99,
+      "image": "assets/nutella-coffee-latte.jpg",
+      "available": true,
+      "options": [
+        {
+          "id": "sweet",
+          "th": "ความหวาน",
+          "required": true,
+          "choices": [
+            {
+              "th": "หวานน้อย"
+            },
+            {
+              "th": "ปกติ"
+            },
+            {
+              "th": "หวานมาก"
+            }
+          ]
+        },
+        {
+          "id": "shot",
+          "th": "กาแฟ",
+          "required": false,
+          "choices": [
+            {
+              "th": "เพิ่มช็อต",
+              "price": 20
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m-cha-chak",
+      "sku": "CHA-001",
+      "categoryId": "cha-chak",
+      "th": "ชาชักเย็น",
+      "en": "Iced Cha Chak",
+      "price": 65,
+      "image": "assets/mustang-logo.png",
+      "available": true,
+      "options": [
+        {
+          "id": "sweet",
+          "th": "ความหวาน",
+          "required": true,
+          "choices": [
+            {
+              "th": "25%"
+            },
+            {
+              "th": "50%"
+            },
+            {
+              "th": "100%"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m-roti-banana",
+      "sku": "ROT-001",
+      "categoryId": "roti",
+      "th": "โรตีกล้วยนูเทลล่า",
+      "en": "Banana Nutella Roti",
+      "price": 89,
+      "image": "assets/nutella-oreo-fresh-milk.png",
+      "available": true,
+      "options": [
+        {
+          "id": "cut",
+          "th": "ตัดชิ้น",
+          "required": false,
+          "choices": [
+            {
+              "th": "ตัด 4 ชิ้น"
+            },
+            {
+              "th": "ตัด 8 ชิ้น"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m-rice",
+      "sku": "FOOD-001",
+      "categoryId": "food",
+      "th": "ข้าวไก่กรอบซอสมัสแตง",
+      "en": "Mustang Crispy Chicken Rice",
+      "price": 109,
+      "image": "assets/mustang-logo.png",
+      "available": true,
+      "options": [
+        {
+          "id": "spicy",
+          "th": "ระดับความเผ็ด",
+          "required": true,
+          "choices": [
+            {
+              "th": "ไม่เผ็ด"
+            },
+            {
+              "th": "ปกติ"
+            },
+            {
+              "th": "เผ็ด"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "promotions": [
+    {
+      "id": "none",
+      "nameTh": "ไม่ใช้โปรโมชั่น",
+      "type": "none",
+      "value": 0,
+      "active": true
+    },
+    {
+      "id": "promo-10",
+      "nameTh": "ลด 10%",
+      "type": "percent",
+      "value": 10,
+      "active": true
+    },
+    {
+      "id": "promo-20b",
+      "nameTh": "ลด 20 บาท",
+      "type": "amount",
+      "value": 20,
+      "active": true
+    }
+  ],
+  "users": [
+    {
+      "id": "u-super",
+      "name": "Mustang Owner",
+      "role": "super_admin",
+      "branchIds": [
+        "branch-kiosk",
+        "branch-main"
+      ],
+      "active": true
+    },
+    {
+      "id": "u-franchise",
+      "name": "Kiosk Franchise Owner",
+      "role": "branch_owner",
+      "branchIds": [
+        "branch-kiosk"
+      ],
+      "active": true
+    },
+    {
+      "id": "u-manager",
+      "name": "Kiosk Manager",
+      "role": "branch_manager",
+      "branchIds": [
+        "branch-kiosk"
+      ],
+      "active": true
+    },
+    {
+      "id": "u-cashier",
+      "name": "Cashier",
+      "role": "cashier",
+      "branchIds": [
+        "branch-kiosk"
+      ],
+      "active": true
+    },
+    {
+      "id": "u-kitchen",
+      "name": "Kitchen Staff",
+      "role": "kitchen",
+      "branchIds": [
+        "branch-kiosk"
+      ],
+      "active": true
+    },
+    {
+      "id": "u-customer",
+      "name": "Customer Kiosk",
+      "role": "customer_kiosk",
+      "branchIds": [
+        "branch-kiosk"
+      ],
+      "active": true
+    }
+  ],
+  "orders": [
+    {
+      "id": "5fab822d-41c0-417d-8675-008b6363a191",
+      "branchId": "branch-kiosk",
+      "orderNo": "M014",
+      "queueToken": "4",
+      "source": "staff",
+      "customerName": "",
+      "customerPhone": "",
+      "paymentMethod": "cash",
+      "cashReceived": 109,
+      "transferReceived": 0,
+      "subtotal": 109,
+      "discount": 0,
+      "total": 109,
+      "promotion": {
+        "id": "none",
+        "nameTh": "ไม่ใช้โปรโมชั่น",
+        "type": "none",
+        "value": 0,
+        "active": true
+      },
+      "status": "in_kitchen",
+      "createdAt": "2026-06-06T14:44:11.112Z",
+      "paidAt": "2026-06-06T14:44:11.112Z",
+      "items": [
+        {
+          "key": "m-nutella-oreo:sweet-หวานน้อย|ice-ปกติ|topping-โอรีโอเพิ่ม",
+          "menuId": "m-nutella-oreo",
+          "qty": 1,
+          "options": [
+            {
+              "groupId": "sweet",
+              "group": "ความหวาน",
+              "label": "หวานน้อย",
+              "price": 0,
+              "required": true
+            },
+            {
+              "groupId": "ice",
+              "group": "น้ำแข็ง",
+              "label": "ปกติ",
+              "price": 0,
+              "required": true
+            },
+            {
+              "groupId": "topping",
+              "group": "ท็อปปิ้ง",
+              "label": "โอรีโอเพิ่ม",
+              "price": 10,
+              "required": false
+            }
+          ],
+          "note": "",
+          "done": false
+        }
+      ]
+    },
+    {
+      "id": "64c4cce6-1a29-4ad1-b66f-9d72f74ba440",
+      "branchId": "branch-kiosk",
+      "orderNo": "M013",
+      "queueToken": "5",
+      "source": "customer",
+      "customerName": "",
+      "customerPhone": "",
+      "paymentMethod": "transfer",
+      "cashReceived": 0,
+      "transferReceived": 109,
+      "subtotal": 109,
+      "discount": 0,
+      "total": 109,
+      "promotion": {
+        "id": "none",
+        "nameTh": "ไม่ใช้โปรโมชั่น",
+        "type": "none",
+        "value": 0,
+        "active": true
+      },
+      "status": "in_kitchen",
+      "createdAt": "2026-06-06T14:39:25.295Z",
+      "paidAt": "2026-06-06T14:39:35.712Z",
+      "items": [
+        {
+          "key": "m-nutella-oreo:sweet-หวานน้อย|ice-ปกติ|topping-โอรีโอเพิ่ม",
+          "menuId": "m-nutella-oreo",
+          "qty": 1,
+          "options": [
+            {
+              "groupId": "sweet",
+              "group": "ความหวาน",
+              "label": "หวานน้อย",
+              "price": 0,
+              "required": true
+            },
+            {
+              "groupId": "ice",
+              "group": "น้ำแข็ง",
+              "label": "ปกติ",
+              "price": 0,
+              "required": true
+            },
+            {
+              "groupId": "topping",
+              "group": "ท็อปปิ้ง",
+              "label": "โอรีโอเพิ่ม",
+              "price": 10,
+              "required": false
+            }
+          ],
+          "note": "",
+          "done": false
+        }
+      ]
+    },
+    {
+      "id": "dd298c47-d697-4b68-8471-6fa81d1809ca",
+      "branchId": "branch-kiosk",
+      "orderNo": "M012",
+      "queueToken": "1",
+      "source": "staff",
+      "customerName": "",
+      "customerPhone": "",
+      "paymentMethod": "cash",
+      "cashReceived": 0,
+      "transferReceived": 109,
+      "subtotal": 109,
+      "discount": 0,
+      "total": 109,
+      "promotion": {
+        "id": "none",
+        "nameTh": "ไม่ใช้โปรโมชั่น",
+        "type": "none",
+        "value": 0,
+        "active": true
+      },
+      "status": "in_kitchen",
+      "createdAt": "2026-06-06T14:37:19.546Z",
+      "paidAt": "2026-06-06T14:37:19.546Z",
+      "items": [
+        {
+          "key": "m-nutella-oreo:sweet-หวานน้อย|ice-ปกติ|topping-โอรีโอเพิ่ม",
+          "menuId": "m-nutella-oreo",
+          "qty": 1,
+          "options": [
+            {
+              "groupId": "sweet",
+              "group": "ความหวาน",
+              "label": "หวานน้อย",
+              "price": 0,
+              "required": true
+            },
+            {
+              "groupId": "ice",
+              "group": "น้ำแข็ง",
+              "label": "ปกติ",
+              "price": 0,
+              "required": true
+            },
+            {
+              "groupId": "topping",
+              "group": "ท็อปปิ้ง",
+              "label": "โอรีโอเพิ่ม",
+              "price": 10,
+              "required": false
+            }
+          ],
+          "note": "",
+          "done": false
+        }
+      ]
+    },
+    {
+      "id": "6db26543-665c-4d77-ad91-14ff49759c89",
+      "branchId": "branch-kiosk",
+      "orderNo": "M011",
+      "queueToken": "6",
+      "source": "staff",
+      "customerName": "",
+      "customerPhone": "",
+      "paymentMethod": "cash",
+      "cashReceived": 0,
+      "transferReceived": 109,
+      "subtotal": 109,
+      "discount": 0,
+      "total": 109,
+      "promotion": {
+        "id": "none",
+        "nameTh": "ไม่ใช้โปรโมชั่น",
+        "type": "none",
+        "value": 0,
+        "active": true
+      },
+      "status": "picked_up",
+      "createdAt": "2026-06-06T14:35:59.580Z",
+      "paidAt": "2026-06-06T14:35:59.580Z",
+      "items": [
+        {
+          "key": "m-nutella-oreo:sweet-หวานน้อย|ice-ปกติ|topping-โอรีโอเพิ่ม",
+          "menuId": "m-nutella-oreo",
+          "qty": 1,
+          "options": [
+            {
+              "groupId": "sweet",
+              "group": "ความหวาน",
+              "label": "หวานน้อย",
+              "price": 0,
+              "required": true
+            },
+            {
+              "groupId": "ice",
+              "group": "น้ำแข็ง",
+              "label": "ปกติ",
+              "price": 0,
+              "required": true
+            },
+            {
+              "groupId": "topping",
+              "group": "ท็อปปิ้ง",
+              "label": "โอรีโอเพิ่ม",
+              "price": 10,
+              "required": false
+            }
+          ],
+          "note": "",
+          "done": true
+        }
+      ],
+      "readyAt": "2026-06-06T14:36:40.996Z",
+      "pickedUpAt": "2026-06-06T14:36:52.497Z"
+    },
+    {
+      "id": "3907db24-c939-4127-acfc-87532e34c25e",
+      "branchId": "branch-kiosk",
+      "orderNo": "M010",
+      "queueToken": "5",
+      "source": "staff",
+      "customerName": "",
+      "customerPhone": "",
+      "paymentMethod": "cash",
+      "cashReceived": 0,
+      "transferReceived": 109,
+      "subtotal": 109,
+      "discount": 0,
+      "total": 109,
+      "promotion": {
+        "id": "none",
+        "nameTh": "ไม่ใช้โปรโมชั่น",
+        "type": "none",
+        "value": 0,
+        "active": true
+      },
+      "status": "picked_up",
+      "createdAt": "2026-06-06T14:35:23.946Z",
+      "paidAt": "2026-06-06T14:35:23.946Z",
+      "items": [
+        {
+          "key": "m-nutella-oreo:sweet-หวานน้อย|ice-ปกติ|topping-โอรีโอเพิ่ม",
+          "menuId": "m-nutella-oreo",
+          "qty": 1,
+          "options": [
+            {
+              "groupId": "sweet",
+              "group": "ความหวาน",
+              "label": "หวานน้อย",
+              "price": 0,
+              "required": true
+            },
+            {
+              "groupId": "ice",
+              "group": "น้ำแข็ง",
+              "label": "ปกติ",
+              "price": 0,
+              "required": true
+            },
+            {
+              "groupId": "topping",
+              "group": "ท็อปปิ้ง",
+              "label": "โอรีโอเพิ่ม",
+              "price": 10,
+              "required": false
+            }
+          ],
+          "note": "",
+          "done": true
+        }
+      ],
+      "readyAt": "2026-06-06T14:36:41.830Z",
+      "pickedUpAt": "2026-06-06T14:36:52.262Z"
+    },
+    {
+      "id": "7823fd1c-1599-4740-90fa-d4a7289db907",
+      "branchId": "branch-kiosk",
+      "orderNo": "M009",
+      "queueToken": "4",
+      "source": "staff",
+      "customerName": "",
+      "customerPhone": "",
+      "paymentMethod": "cash",
+      "cashReceived": 109,
+      "transferReceived": 0,
+      "subtotal": 109,
+      "discount": 0,
+      "total": 109,
+      "promotion": {
+        "id": "none",
+        "nameTh": "ไม่ใช้โปรโมชั่น",
+        "type": "none",
+        "value": 0,
+        "active": true
+      },
+      "status": "picked_up",
+      "createdAt": "2026-06-06T14:21:50.319Z",
+      "paidAt": "2026-06-06T14:21:50.319Z",
+      "items": [
+        {
+          "key": "m-nutella-oreo:sweet-หวานน้อย|ice-ปกติ|topping-โอรีโอเพิ่ม",
+          "menuId": "m-nutella-oreo",
+          "qty": 1,
+          "options": [
+            {
+              "groupId": "sweet",
+              "group": "ความหวาน",
+              "label": "หวานน้อย",
+              "price": 0,
+              "required": true
+            },
+            {
+              "groupId": "ice",
+              "group": "น้ำแข็ง",
+              "label": "ปกติ",
+              "price": 0,
+              "required": true
+            },
+            {
+              "groupId": "topping",
+              "group": "ท็อปปิ้ง",
+              "label": "โอรีโอเพิ่ม",
+              "price": 10,
+              "required": false
+            }
+          ],
+          "note": "",
+          "done": true
+        }
+      ],
+      "readyAt": "2026-06-06T14:36:42.647Z",
+      "pickedUpAt": "2026-06-06T14:36:52.113Z"
+    },
+    {
+      "id": "1e59eb39-bbbb-4f61-85c1-3f6624784acb",
+      "branchId": "branch-kiosk",
+      "orderNo": "M008",
+      "queueToken": "1",
+      "source": "staff",
+      "customerName": "",
+      "customerPhone": "",
+      "paymentMethod": "cash",
+      "cashReceived": 109,
+      "transferReceived": 0,
+      "subtotal": 109,
+      "discount": 0,
+      "total": 109,
+      "promotion": {
+        "id": "none",
+        "nameTh": "ไม่ใช้โปรโมชั่น",
+        "type": "none",
+        "value": 0,
+        "active": true
+      },
+      "status": "picked_up",
+      "createdAt": "2026-06-06T14:21:01.987Z",
+      "paidAt": "2026-06-06T14:21:01.987Z",
+      "items": [
+        {
+          "key": "m-nutella-oreo:sweet-หวานน้อย|ice-ปกติ|topping-โอรีโอเพิ่ม",
+          "menuId": "m-nutella-oreo",
+          "qty": 1,
+          "options": [
+            {
+              "groupId": "sweet",
+              "group": "ความหวาน",
+              "label": "หวานน้อย",
+              "price": 0,
+              "required": true
+            },
+            {
+              "groupId": "ice",
+              "group": "น้ำแข็ง",
+              "label": "ปกติ",
+              "price": 0,
+              "required": true
+            },
+            {
+              "groupId": "topping",
+              "group": "ท็อปปิ้ง",
+              "label": "โอรีโอเพิ่ม",
+              "price": 10,
+              "required": false
+            }
+          ],
+          "note": "",
+          "done": true
+        }
+      ],
+      "readyAt": "2026-06-06T14:36:43.447Z",
+      "pickedUpAt": "2026-06-06T14:36:51.713Z"
+    },
+    {
+      "id": "3ca70c2a-f581-4f9a-bf4e-ec7e762791d2",
+      "branchId": "branch-kiosk",
+      "orderNo": "M007",
+      "queueToken": "4",
+      "source": "staff",
+      "customerName": "",
+      "customerPhone": "",
+      "paymentMethod": "cash",
+      "cashReceived": 109,
+      "transferReceived": 0,
+      "subtotal": 109,
+      "discount": 0,
+      "total": 109,
+      "promotion": {
+        "id": "none",
+        "nameTh": "ไม่ใช้โปรโมชั่น",
+        "type": "none",
+        "value": 0,
+        "active": true
+      },
+      "status": "picked_up",
+      "createdAt": "2026-06-06T14:14:30.641Z",
+      "paidAt": "2026-06-06T14:14:30.641Z",
+      "items": [
+        {
+          "key": "m-nutella-oreo:sweet-หวานน้อย|ice-ปกติ|topping-โอรีโอเพิ่ม",
+          "menuId": "m-nutella-oreo",
+          "qty": 1,
+          "options": [
+            {
+              "groupId": "sweet",
+              "group": "ความหวาน",
+              "label": "หวานน้อย",
+              "price": 0,
+              "required": true
+            },
+            {
+              "groupId": "ice",
+              "group": "น้ำแข็ง",
+              "label": "ปกติ",
+              "price": 0,
+              "required": true
+            },
+            {
+              "groupId": "topping",
+              "group": "ท็อปปิ้ง",
+              "label": "โอรีโอเพิ่ม",
+              "price": 10,
+              "required": false
+            }
+          ],
+          "note": "",
+          "done": true
+        }
+      ],
+      "readyAt": "2026-06-06T14:19:14.687Z",
+      "pickedUpAt": "2026-06-06T14:20:03.056Z"
+    },
+    {
+      "id": "c3531ed9-c0a6-4734-b775-8f69b5721135",
+      "branchId": "branch-kiosk",
+      "orderNo": "M006",
+      "queueToken": "5",
+      "source": "customer",
+      "customerName": "",
+      "customerPhone": "",
+      "paymentMethod": "transfer",
+      "cashReceived": 0,
+      "transferReceived": 109,
+      "subtotal": 109,
+      "discount": 0,
+      "total": 109,
+      "promotion": {
+        "id": "none",
+        "nameTh": "ไม่ใช้โปรโมชั่น",
+        "type": "none",
+        "value": 0,
+        "active": true
+      },
+      "status": "picked_up",
+      "createdAt": "2026-06-06T14:12:13.440Z",
+      "paidAt": "2026-06-06T14:12:33.224Z",
+      "items": [
+        {
+          "key": "m-nutella-oreo:sweet-หวานน้อย|ice-ปกติ|topping-โอรีโอเพิ่ม",
+          "menuId": "m-nutella-oreo",
+          "qty": 1,
+          "options": [
+            {
+              "groupId": "sweet",
+              "group": "ความหวาน",
+              "label": "หวานน้อย",
+              "price": 0,
+              "required": true
+            },
+            {
+              "groupId": "ice",
+              "group": "น้ำแข็ง",
+              "label": "ปกติ",
+              "price": 0,
+              "required": true
+            },
+            {
+              "groupId": "topping",
+              "group": "ท็อปปิ้ง",
+              "label": "โอรีโอเพิ่ม",
+              "price": 10,
+              "required": false
+            }
+          ],
+          "note": "",
+          "done": true
+        }
+      ],
+      "readyAt": "2026-06-06T14:19:14.569Z",
+      "pickedUpAt": "2026-06-06T14:20:03.522Z"
+    },
+    {
+      "id": "5b54fef3-b5cc-44ca-8ddd-8ec12b3402b2",
+      "branchId": "branch-kiosk",
+      "orderNo": "M005",
+      "queueToken": "1",
+      "source": "customer",
+      "customerName": "",
+      "customerPhone": "",
+      "paymentMethod": "transfer",
+      "cashReceived": 0,
+      "transferReceived": 119,
+      "subtotal": 119,
+      "discount": 0,
+      "total": 119,
+      "promotion": {
+        "id": "none",
+        "nameTh": "ไม่ใช้โปรโมชั่น",
+        "type": "none",
+        "value": 0,
+        "active": true
+      },
+      "status": "picked_up",
+      "createdAt": "2026-06-06T14:11:13.840Z",
+      "paidAt": "2026-06-06T14:11:25.175Z",
+      "items": [
+        {
+          "key": "m-nutella-latte:sweet-หวานน้อย|shot-เพิ่มช็อต",
+          "menuId": "m-nutella-latte",
+          "qty": 1,
+          "options": [
+            {
+              "groupId": "sweet",
+              "group": "ความหวาน",
+              "label": "หวานน้อย",
+              "price": 0,
+              "required": true
+            },
+            {
+              "groupId": "shot",
+              "group": "กาแฟ",
+              "label": "เพิ่มช็อต",
+              "price": 20,
+              "required": false
+            }
+          ],
+          "note": "",
+          "done": true
+        }
+      ],
+      "readyAt": "2026-06-06T14:19:14.005Z",
+      "pickedUpAt": "2026-06-06T14:20:04.305Z"
+    },
+    {
+      "id": "6f134723-9367-40b1-8f56-6663f3359357",
+      "branchId": "branch-kiosk",
+      "orderNo": "M004",
+      "queueToken": "3",
+      "source": "customer",
+      "customerName": "",
+      "customerPhone": "",
+      "paymentMethod": "cash",
+      "cashReceived": 238,
+      "transferReceived": 0,
+      "subtotal": 238,
+      "discount": 0,
+      "total": 238,
+      "promotion": {
+        "id": "none",
+        "nameTh": "ไม่ใช้โปรโมชั่น",
+        "type": "none",
+        "value": 0,
+        "active": true
+      },
+      "status": "picked_up",
+      "createdAt": "2026-06-06T13:48:48.068Z",
+      "paidAt": "2026-06-06T14:06:08.723Z",
+      "items": [
+        {
+          "key": "m-nutella-latte:sweet-หวานน้อย|shot-เพิ่มช็อต",
+          "menuId": "m-nutella-latte",
+          "qty": 2,
+          "options": [
+            {
+              "groupId": "sweet",
+              "group": "ความหวาน",
+              "label": "หวานน้อย",
+              "price": 0,
+              "required": true
+            },
+            {
+              "groupId": "shot",
+              "group": "กาแฟ",
+              "label": "เพิ่มช็อต",
+              "price": 20,
+              "required": false
+            }
+          ],
+          "note": "",
+          "done": true
+        }
+      ],
+      "readyAt": "2026-06-06T14:19:15.555Z",
+      "pickedUpAt": "2026-06-06T14:36:53.229Z"
+    },
+    {
+      "id": "47a359c0-f495-4c05-8a0c-3aeb3aeb6196",
+      "branchId": "branch-kiosk",
+      "orderNo": "M003",
+      "queueToken": "1",
+      "source": "customer",
+      "customerName": "",
+      "customerPhone": "",
+      "paymentMethod": "transfer",
+      "cashReceived": 0,
+      "transferReceived": 0,
+      "subtotal": 218,
+      "discount": 0,
+      "total": 218,
+      "promotion": {
+        "id": "none",
+        "nameTh": "ไม่ใช้โปรโมชั่น",
+        "type": "none",
+        "value": 0,
+        "active": true
+      },
+      "status": "cancelled",
+      "createdAt": "2026-06-06T13:48:22.384Z",
+      "paidAt": null,
+      "items": [
+        {
+          "key": "m-nutella-oreo:sweet-หวานน้อย|ice-ปกติ|topping-โอรีโอเพิ่ม",
+          "menuId": "m-nutella-oreo",
+          "qty": 2,
+          "options": [
+            {
+              "groupId": "sweet",
+              "group": "ความหวาน",
+              "label": "หวานน้อย",
+              "price": 0,
+              "required": true
+            },
+            {
+              "groupId": "ice",
+              "group": "น้ำแข็ง",
+              "label": "ปกติ",
+              "price": 0,
+              "required": true
+            },
+            {
+              "groupId": "topping",
+              "group": "ท็อปปิ้ง",
+              "label": "โอรีโอเพิ่ม",
+              "price": 10,
+              "required": false
+            }
+          ],
+          "note": "",
+          "done": false
+        }
+      ]
+    },
+    {
+      "id": "f0d75074-85a9-44b9-9205-5aa53bb854d5",
+      "branchId": "branch-kiosk",
+      "orderNo": "M002",
+      "queueToken": "2",
+      "source": "customer",
+      "customerName": "",
+      "customerPhone": "",
+      "paymentMethod": "transfer",
+      "cashReceived": 0,
+      "transferReceived": 228,
+      "subtotal": 228,
+      "discount": 0,
+      "total": 228,
+      "promotion": {
+        "id": "none",
+        "nameTh": "ไม่ใช้โปรโมชั่น",
+        "type": "none",
+        "value": 0,
+        "active": true
+      },
+      "status": "picked_up",
+      "createdAt": "2026-06-06T13:46:27.337Z",
+      "paidAt": "2026-06-06T14:06:30.506Z",
+      "items": [
+        {
+          "key": "m-nutella-latte:sweet-หวานน้อย|shot-เพิ่มช็อต",
+          "menuId": "m-nutella-latte",
+          "qty": 1,
+          "options": [
+            {
+              "groupId": "sweet",
+              "group": "ความหวาน",
+              "label": "หวานน้อย",
+              "price": 0,
+              "required": true
+            },
+            {
+              "groupId": "shot",
+              "group": "กาแฟ",
+              "label": "เพิ่มช็อต",
+              "price": 20,
+              "required": false
+            }
+          ],
+          "note": "",
+          "done": true
+        },
+        {
+          "key": "m-nutella-oreo:sweet-หวานน้อย|ice-ปกติ|topping-โอรีโอเพิ่ม",
+          "menuId": "m-nutella-oreo",
+          "qty": 1,
+          "options": [
+            {
+              "groupId": "sweet",
+              "group": "ความหวาน",
+              "label": "หวานน้อย",
+              "price": 0,
+              "required": true
+            },
+            {
+              "groupId": "ice",
+              "group": "น้ำแข็ง",
+              "label": "ปกติ",
+              "price": 0,
+              "required": true
+            },
+            {
+              "groupId": "topping",
+              "group": "ท็อปปิ้ง",
+              "label": "โอรีโอเพิ่ม",
+              "price": 10,
+              "required": false
+            }
+          ],
+          "note": "",
+          "done": true
+        }
+      ],
+      "readyAt": "2026-06-06T14:19:13.226Z",
+      "pickedUpAt": "2026-06-06T14:36:50.996Z"
+    },
+    {
+      "id": "d1a89103-77ad-4175-bcc9-caebaa56f3e8",
+      "branchId": "branch-kiosk",
+      "orderNo": "M001",
+      "queueToken": "1",
+      "source": "staff",
+      "customerName": "",
+      "customerPhone": "",
+      "paymentMethod": "transfer",
+      "cashReceived": 0,
+      "transferReceived": 109,
+      "subtotal": 109,
+      "discount": 0,
+      "total": 109,
+      "promotion": {
+        "id": "none",
+        "nameTh": "ไม่ใช้โปรโมชั่น",
+        "type": "none",
+        "value": 0,
+        "active": true
+      },
+      "status": "picked_up",
+      "createdAt": "2026-06-06T13:38:06.726Z",
+      "paidAt": "2026-06-06T13:38:06.728Z",
+      "items": [
+        {
+          "key": "m-nutella-oreo:sweet-หวานน้อย|ice-ปกติ|topping-โอรีโอเพิ่ม",
+          "menuId": "m-nutella-oreo",
+          "qty": 1,
+          "options": [
+            {
+              "groupId": "sweet",
+              "group": "ความหวาน",
+              "label": "หวานน้อย",
+              "price": 0,
+              "required": true
+            },
+            {
+              "groupId": "ice",
+              "group": "น้ำแข็ง",
+              "label": "ปกติ",
+              "price": 0,
+              "required": true
+            },
+            {
+              "groupId": "topping",
+              "group": "ท็อปปิ้ง",
+              "label": "โอรีโอเพิ่ม",
+              "price": 10,
+              "required": false
+            }
+          ],
+          "note": "",
+          "done": true
+        }
+      ],
+      "readyAt": "2026-06-06T13:38:49.474Z",
+      "pickedUpAt": "2026-06-06T13:44:51.256Z"
+    }
+  ]
+}
