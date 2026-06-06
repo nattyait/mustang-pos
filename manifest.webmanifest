@@ -1,0 +1,16 @@
+{
+  "name": "Mustang Cafe Franchise POS",
+  "short_name": "Mustang POS",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f6efe4",
+  "theme_color": "#1b1714",
+  "icons": [
+    {
+      "src": "assets/mustang-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

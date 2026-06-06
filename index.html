@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#1b1714" />
+    <title>Mustang Cafe Franchise POS</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <img src="assets/mustang-logo.png" alt="Mustang cafe" />
+          <div>
+            <strong>Mustang Cafe</strong>
+            <span data-i18n="franchise_pos">Franchise POS</span>
+          </div>
+        </div>
+        <label class="field compact">
+          <span data-i18n="branch">Branch</span>
+          <select id="branchSelect"></select>
+        </label>
+        <nav class="nav" id="mainNav">
+          <button class="active" data-view="pos">ขายหน้าร้าน</button>
+          <button data-view="customer">ลูกค้าสั่งเอง</button>
+          <button data-view="payments">ยืนยันชำระเงิน</button>
+          <button data-view="kitchen">ครัว</button>
+          <button data-view="pickup">รับอาหาร</button>
+          <button data-view="reports">รายงาน</button>
+          <button data-view="admin">จัดการ</button>
+        </nav>
+        <div class="sidebar-actions">
+          <button class="ghost" id="langToggle">TH / EN</button>
+          <button class="ghost" id="seedReset">รีเซ็ตข้อมูลตัวอย่าง</button>
+        </div>
+      </aside>
+
+      <main class="content">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow" id="todayLabel"></p>
+            <h1 id="viewTitle">ขายหน้าร้าน</h1>
+          </div>
+          <div class="status-row">
+            <span class="pill" id="syncStatus">Offline ready</span>
+            <span class="pill dark" id="activeBranchName"></span>
+          </div>
+        </header>
+
+        <section id="pos" class="view active">
+          <div class="order-layout">
+            <section class="menu-pane">
+              <div class="section-head">
+                <div>
+                  <h2>เมนู</h2>
+                  <p>แตะเมนูเพื่อเพิ่ม ดับเบิลแตะเพื่อเพิ่มอีกครั้ง</p>
+                </div>
+                <input id="menuSearch" class="search" placeholder="ค้นหาเมนู / SKU" />
+              </div>
+              <div class="tabs" id="categoryTabs"></div>
+              <div class="menu-grid" id="menuGrid"></div>
+            </section>
+            <aside class="cart-pane">
+              <h2>ออเดอร์ใหม่</h2>
+              <label class="field">
+                <span>หมายเลขคิว *</span>
+                <select id="staffToken"></select>
+              </label>
+              <div class="cart-list" id="cartList"></div>
+              <label class="field">
+                <span>โปรโมชั่น</span>
+                <select id="promotionSelect"></select>
+              </label>
+              <label class="field">
+                <span>ช่องทางชำระเงิน</span>
+                <select id="paymentMethod">
+                  <option value="cash">เงินสด</option>
+                  <option value="transfer">โอน/QR</option>
+                  <option value="mixed">ผสม</option>
+                </select>
+              </label>
+              <div class="money-grid">
+                <label class="field">
+                  <span>รับเงินสด</span>
+                  <input id="cashReceived" type="number" min="0" inputmode="decimal" />
+                </label>
+                <label class="field">
+                  <span>เงินโอน</span>
+                  <input id="transferReceived" type="number" min="0" inputmode="decimal" />
+                </label>
+              </div>
+              <div class="totals" id="cartTotals"></div>
+              <button class="primary" id="completeStaffOrder">ชำระเงินและส่งเข้าครัว</button>
+            </aside>
+          </div>
+        </section>
+
+        <section id="customer" class="view">
+          <div class="customer-screen">
+            <div class="customer-hero">
+              <img src="assets/mustang-logo.png" alt="Mustang cafe" />
+              <div>
+                <p class="eyebrow">Self Order</p>
+                <h2>เลือกเมนูและใส่หมายเลขคิว</h2>
+              </div>
+            </div>
+            <div class="customer-body">
+              <section>
+                <div class="tabs" id="customerTabs"></div>
+                <div class="menu-grid customer" id="customerMenuGrid"></div>
+              </section>
+              <aside class="cart-pane">
+                <h2>รายการของคุณ</h2>
+                <label class="field">
+                  <span>หมายเลขคิว *</span>
+                  <input id="customerToken" inputmode="numeric" placeholder="1-16" />
+                </label>
+                <div class="money-grid">
+                  <label class="field">
+                    <span>ชื่อ</span>
+                    <input id="customerName" />
+                  </label>
+                  <label class="field">
+                    <span>โทรศัพท์</span>
+                    <input id="customerPhone" inputmode="tel" />
+                  </label>
+                </div>
+                <div class="cart-list" id="customerCartList"></div>
+                <label class="field">
+                  <span>ชำระเงิน</span>
+                  <select id="customerPayment">
+                    <option value="transfer">โอน/QR</option>
+                    <option value="cash">เงินสดที่เคาน์เตอร์</option>
+                  </select>
+                </label>
+                <div class="qr-box">
+                  <div class="fake-qr">QR</div>
+                  <div>
+                    <strong>สแกน QR ของสาขา</strong>
+                    <span>หลังชำระเงิน กรุณาแจ้งพนักงานเพื่อยืนยัน</span>
+                  </div>
+                </div>
+                <div class="totals" id="customerTotals"></div>
+                <button class="primary" id="submitCustomerOrder">ส่งออเดอร์รอยืนยันชำระเงิน</button>
+              </aside>
+            </div>
+          </div>
+        </section>
+
+        <section id="payments" class="view">
+          <div class="board" id="paymentBoard"></div>
+        </section>
+
+        <section id="kitchen" class="view">
+          <div class="board-tabs">
+            <button class="active" data-kitchen-tab="active">กำลังทำ</button>
+            <button data-kitchen-tab="done">เสร็จแล้ว</button>
+          </div>
+          <div class="board" id="kitchenBoard"></div>
+        </section>
+
+        <section id="pickup" class="view">
+          <div class="board" id="pickupBoard"></div>
+        </section>
+
+        <section id="reports" class="view">
+          <div class="report-tools">
+            <label class="field">
+              <span>ตั้งแต่</span>
+              <input id="reportStart" type="date" />
+            </label>
+            <label class="field">
+              <span>ถึง</span>
+              <input id="reportEnd" type="date" />
+            </label>
+            <button class="secondary" id="exportCsv">Export CSV</button>
+          </div>
+          <div class="metric-grid" id="metricGrid"></div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>เวลา</th>
+                  <th>ออเดอร์</th>
+                  <th>คิว</th>
+                  <th>รายการ</th>
+                  <th>ชำระ</th>
+                  <th>ยอดสุทธิ</th>
+                  <th>สถานะ</th>
+                </tr>
+              </thead>
+              <tbody id="reportRows"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="admin" class="view">
+          <div class="admin-grid">
+            <section class="panel">
+              <h2>สาขาและคิว</h2>
+              <div id="tokenAdmin"></div>
+            </section>
+            <section class="panel">
+              <h2>เมนู</h2>
+              <div id="menuAdmin"></div>
+            </section>
+            <section class="panel">
+              <h2>โปรโมชั่น</h2>
+              <div id="promoAdmin"></div>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <template id="receiptTemplate">
+      <div class="receipt"></div>
+    </template>
+
+    <div id="toast" class="toast"></div>
+    <audio id="ding" preload="auto">
+      <source src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=" type="audio/wav" />
+    </audio>
+    <script src="app.js"></script>
+  </body>
+</html>
