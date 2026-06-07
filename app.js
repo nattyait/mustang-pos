@@ -571,8 +571,8 @@ function renderCarts() {
 }
 
 function renderTokenSelect() {
-  renderTokenPicker("staffToken", "staffTokenButtons", "pickToken");
-  renderTokenPicker("customerToken", "customerTokenButtons", "pickCustomerToken");
+  renderTokenPicker("staffToken", "staffTokenButtons", "pick-token");
+  renderTokenPicker("customerToken", "customerTokenButtons", "pick-customer-token");
 }
 
 function renderTokenPicker(inputId, buttonsId, actionName) {
@@ -587,7 +587,7 @@ function renderTokenPicker(inputId, buttonsId, actionName) {
     ${tokenOptions
       .map(({ token, status }) => {
         const active = current === token.label ? "active" : "";
-        return `<button class="${active}" data-${actionName}="${token.label}" ${status !== "available" ? "disabled" : ""}>${token.label}</button>`;
+        return `<button type="button" class="${active}" data-${actionName}="${token.label}" ${status !== "available" ? "disabled" : ""}>${token.label}</button>`;
       })
       .join("")}
   `;
@@ -1037,12 +1037,14 @@ document.addEventListener("click", (event) => {
     saveDraftCarts();
     renderCarts();
   }
-  if (target.dataset.pickToken) {
-    $("staffToken").value = target.dataset.pickToken;
+  const staffQueueToken = target.dataset.pickToken || target.getAttribute("data-pick-token");
+  const customerQueueToken = target.dataset.pickCustomerToken || target.getAttribute("data-pick-customer-token");
+  if (staffQueueToken) {
+    $("staffToken").value = staffQueueToken;
     renderTokenSelect();
   }
-  if (target.dataset.pickCustomerToken) {
-    $("customerToken").value = target.dataset.pickCustomerToken;
+  if (customerQueueToken) {
+    $("customerToken").value = customerQueueToken;
     renderTokenSelect();
   }
   if (target.id === "completeStaffOrder") createOrder("staff");

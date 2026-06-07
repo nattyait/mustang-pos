@@ -3,7 +3,8 @@
   "activeBranchId": "branch-kiosk",
   "activeUserId": "u-super",
   "orderSequenceByDay": {
-    "branch-kiosk-2026-06-06": 14
+    "branch-kiosk-2026-06-06": 14,
+    "branch-kiosk-2026-06-07": 1
   },
   "kitchenTab": "active",
   "branches": [
@@ -468,6 +469,158 @@
   ],
   "orders": [
     {
+      "id": "07454587-7e92-484c-a5cc-cb47a6c49370",
+      "branchId": "branch-kiosk",
+      "orderNo": "M001",
+      "queueToken": "6",
+      "source": "staff",
+      "customerName": "",
+      "customerPhone": "",
+      "paymentMethod": "cash",
+      "cashReceived": 298,
+      "transferReceived": 0,
+      "subtotal": 297,
+      "discount": 0,
+      "total": 297,
+      "promotion": {
+        "id": "none",
+        "nameTh": "ไม่ใช้โปรโมชั่น",
+        "type": "none",
+        "value": 0,
+        "active": true
+      },
+      "status": "in_kitchen",
+      "createdAt": "2026-06-07T06:55:56.553Z",
+      "paidAt": "2026-06-07T06:55:56.553Z",
+      "items": [
+        {
+          "key": "m-nutella-latte:sweet-หวานน้อย",
+          "menuId": "m-nutella-latte",
+          "sku": "SIG-002",
+          "nameTh": "นูเทลล่าคอฟฟี่ลาเต้",
+          "nameEn": "Nutella Coffee Latte",
+          "basePrice": 99,
+          "optionGroups": [
+            {
+              "id": "sweet",
+              "th": "ความหวาน",
+              "required": true,
+              "choices": [
+                {
+                  "th": "หวานน้อย"
+                },
+                {
+                  "th": "ปกติ"
+                },
+                {
+                  "th": "หวานมาก"
+                }
+              ]
+            },
+            {
+              "id": "shot",
+              "th": "กาแฟ",
+              "required": false,
+              "choices": [
+                {
+                  "th": "เพิ่มช็อต",
+                  "price": 20
+                }
+              ]
+            }
+          ],
+          "qty": 1,
+          "options": [
+            {
+              "groupId": "sweet",
+              "group": "ความหวาน",
+              "label": "หวานน้อย",
+              "price": 0,
+              "required": true
+            }
+          ],
+          "note": "",
+          "done": false
+        },
+        {
+          "key": "m-nutella-oreo:sweet-หวานน้อย|ice-ปกติ",
+          "menuId": "m-nutella-oreo",
+          "sku": "SIG-001",
+          "nameTh": "นูเทลล่าโอรีโอนมสด",
+          "nameEn": "Nutella Oreo Fresh Milk",
+          "basePrice": 99,
+          "optionGroups": [
+            {
+              "id": "sweet",
+              "th": "ความหวาน",
+              "required": true,
+              "choices": [
+                {
+                  "th": "หวานน้อย"
+                },
+                {
+                  "th": "ปกติ"
+                },
+                {
+                  "th": "หวานมาก"
+                }
+              ]
+            },
+            {
+              "id": "ice",
+              "th": "น้ำแข็ง",
+              "required": true,
+              "choices": [
+                {
+                  "th": "ปกติ"
+                },
+                {
+                  "th": "น้อย"
+                },
+                {
+                  "th": "ไม่ใส่น้ำแข็ง"
+                }
+              ]
+            },
+            {
+              "id": "topping",
+              "th": "ท็อปปิ้ง",
+              "required": false,
+              "choices": [
+                {
+                  "th": "โอรีโอเพิ่ม",
+                  "price": 10
+                },
+                {
+                  "th": "นูเทลล่าเพิ่ม",
+                  "price": 15
+                }
+              ]
+            }
+          ],
+          "qty": 2,
+          "options": [
+            {
+              "groupId": "sweet",
+              "group": "ความหวาน",
+              "label": "หวานน้อย",
+              "price": 0,
+              "required": true
+            },
+            {
+              "groupId": "ice",
+              "group": "น้ำแข็ง",
+              "label": "ปกติ",
+              "price": 0,
+              "required": true
+            }
+          ],
+          "note": "",
+          "done": false
+        }
+      ]
+    },
+    {
       "id": "5fab822d-41c0-417d-8675-008b6363a191",
       "branchId": "branch-kiosk",
       "orderNo": "M014",
@@ -488,7 +641,7 @@
         "value": 0,
         "active": true
       },
-      "status": "in_kitchen",
+      "status": "ready",
       "createdAt": "2026-06-06T14:44:11.112Z",
       "paidAt": "2026-06-06T14:44:11.112Z",
       "items": [
@@ -520,9 +673,10 @@
             }
           ],
           "note": "",
-          "done": false
+          "done": true
         }
-      ]
+      ],
+      "readyAt": "2026-06-07T06:55:36.251Z"
     },
     {
       "id": "64c4cce6-1a29-4ad1-b66f-9d72f74ba440",
@@ -602,7 +756,7 @@
         "value": 0,
         "active": true
       },
-      "status": "in_kitchen",
+      "status": "ready",
       "createdAt": "2026-06-06T14:37:19.546Z",
       "paidAt": "2026-06-06T14:37:19.546Z",
       "items": [
@@ -634,9 +788,10 @@
             }
           ],
           "note": "",
-          "done": false
+          "done": true
         }
-      ]
+      ],
+      "readyAt": "2026-06-07T06:55:40.437Z"
     },
     {
       "id": "6db26543-665c-4d77-ad91-14ff49759c89",
