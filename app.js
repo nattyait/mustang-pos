@@ -125,7 +125,7 @@ const seedState = {
 const roles = {
   super_admin: {
     label: "Mustang Superuser",
-    views: ["pos", "customer", "payments", "kitchen", "pickup", "reports", "admin"],
+    views: ["pos", "customer", "payments", "kitchen", "pickup", "reports", "admin", "menus"],
     canSwitchBranches: true,
     canManageRoles: true,
     canManageFranchise: true,
@@ -174,6 +174,7 @@ let selectedCustomerCategory = "signature";
 let lastKitchenAlertOrderId = null;
 let lastStoredStateRaw = localStorage.getItem(STORAGE_KEY);
 let lastMenuActivation = { id: "", at: 0 };
+let uploadedMenuImageDataUrl = "";
 
 const $ = (id) => document.getElementById(id);
 const fmt = new Intl.NumberFormat("th-TH", { style: "currency", currency: "THB", maximumFractionDigits: 0 });
@@ -476,6 +477,7 @@ function render() {
   renderPickup();
   renderReports();
   renderAdmin();
+  renderMenuManagement();
 }
 
 function renderUserSelect() {
@@ -517,6 +519,36 @@ function tokensFromText(text) {
     .map((item) => item.trim())
     .filter(Boolean)
     .map((label) => ({ id: label, label, active: true }));
+}
+
+function slugify(text) {
+  return String(text || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9ก-๙]+/gi, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48);
+}
+
+function nextSku(categoryId) {
+  const prefixMap = { signature: "SIG", "cha-chak": "CHA", roti: "ROT", food: "FOOD" };
+  const prefix = prefixMap[categoryId] || categoryId.slice(0, 4).toUpperCase();
+  const numbers = state.menu
+    .filter((item) => item.sku?.startsWith(`${prefix}-`))
+    .map((item) => Number(item.sku.split("-")[1] || 0))
+    .filter(Boolean);
+  return `${prefix}-${String(Math.max(0, ...numbers) + 1).padStart(3, "0")}`;
+}
+
+function buildOptionGroups(flags) {
+  const groups = [];
+  if (flags.sweetness) {
+    groups.push({ id: "sweet", th: "ความหวาน", required: true, choices: [{ th: "หวานน้อย" }, { th: "ปกติ" }, { th: "หวานมาก" }] });
+  }
+  if (flags.ice) {
+    groups.push({ id: "ice", th: "น้ำแข็ง", required: true, choices: [{ th: "ปกติ" }, { th: "น้อย" }, { th: "ไม่ใส่น้ำแข็ง" }] });
+  }
+  return groups;
 }
 
 function renderBranchSelect() {
@@ -902,18 +934,52 @@ function renderAdmin() {
     <label class="field"><span>QR / bank label</span><input id="branchQrLabel" value="${branch().qrLabel || ""}"></label>
     <button class="primary" id="saveBranchSettings">บันทึกคิวและ QR ของสาขา</button>
   </div>`;
-  $("menuAdmin").innerHTML = `<div class="admin-list">${state.menu.map((item) => `
-    <div class="admin-row">
-      <span><strong>${item.th}</strong><br><small>${item.sku} / ${fmt.format(item.price)}</small></span>
-      <button class="secondary" data-toggle-menu="${item.id}">${item.available ? "ขายอยู่" : "ซ่อน"}</button>
-    </div>
-  `).join("")}</div>`;
   $("promoAdmin").innerHTML = `<div class="admin-list">${state.promotions.filter((promo) => promo.id !== "none").map((promo) => `
     <div class="admin-row">
       <span>${promo.nameTh}</span>
       <button class="secondary" data-toggle-promo="${promo.id}">${promo.active ? "เปิดใช้" : "ปิด"}</button>
     </div>
   `).join("")}</div>`;
+}
+
+function renderMenuManagement() {
+  if (!$("menuAdmin") || !$("menuFormAdmin")) return;
+  const allowed = currentUser().role === "super_admin";
+  $("menuGuard").classList.toggle("active", !allowed);
+  $("menuGuard").innerHTML = !allowed
+    ? `<strong>Access denied</strong><br>หน้านี้สำหรับ Mustang franchise owner / superuser เท่านั้น`
+    : "";
+  document.querySelectorAll("#menus .panel").forEach((panel) => panel.classList.toggle("hidden", !allowed));
+  if (!allowed) return;
+
+  $("menuFormAdmin").innerHTML = `
+    <div class="admin-form flat">
+      <label class="field"><span>หมวดหมู่</span><select id="newMenuCategory">${state.categories.map((cat) => `<option value="${cat.id}">${cat.th}</option>`).join("")}</select></label>
+      <label class="field"><span>SKU</span><input id="newMenuSku" placeholder="เว้นว่างเพื่อสร้างอัตโนมัติ"></label>
+      <label class="field"><span>ชื่อเมนูไทย *</span><input id="newMenuTh" placeholder="เช่น นมสดคาราเมล"></label>
+      <label class="field"><span>English name</span><input id="newMenuEn" placeholder="Caramel Fresh Milk"></label>
+      <label class="field"><span>ราคา *</span><input id="newMenuPrice" type="number" min="0" inputmode="decimal" placeholder="79"></label>
+      <label class="field"><span>อัปโหลดรูปจากเครื่อง</span><input id="newMenuImageFile" type="file" accept="image/*"></label>
+      <label class="field"><span>หรือใส่ path/URL รูปภาพ</span><input id="newMenuImage" placeholder="assets/mustang-logo.png"></label>
+      <div class="image-preview" id="newMenuImagePreview"><img src="assets/mustang-logo.png" alt="preview"><span>Preview</span></div>
+      <label class="check-inline"><input id="newMenuSweetness" type="checkbox" checked> ตัวเลือกความหวาน</label>
+      <label class="check-inline"><input id="newMenuIce" type="checkbox" checked> ตัวเลือกน้ำแข็ง</label>
+      <button class="primary" id="addMenu">เพิ่มเมนูเข้า kiosk</button>
+    </div>
+  `;
+
+  $("menuAdmin").innerHTML = `
+    <div class="admin-list">${state.menu.map((item) => `
+      <div class="admin-row menu-row">
+        <img src="${item.image}" alt="${item.th}">
+        <span><strong>${item.th}</strong><br><small>${item.sku} / ${fmt.format(item.price)} / ${state.categories.find((cat) => cat.id === item.categoryId)?.th || item.categoryId}</small></span>
+        <div class="role-matrix">
+          <button class="secondary" data-toggle-menu="${item.id}">${item.available ? "ขายอยู่" : "ซ่อน"}</button>
+          <button class="secondary" data-delete-menu="${item.id}">ลบ</button>
+        </div>
+      </div>
+    `).join("")}</div>
+  `;
 }
 
 function printReceipt(orderId) {
@@ -1096,6 +1162,16 @@ document.addEventListener("click", (event) => {
     saveState();
     render();
   }
+  if (target.dataset.deleteMenu) {
+    if (!requireSuperuser()) return;
+    const inOrder = state.orders.some((order) => order.items.some((line) => line.menuId === target.dataset.deleteMenu));
+    if (inOrder) return toast("เมนูนี้มีประวัติออเดอร์แล้ว กรุณาใช้ซ่อนแทนลบ");
+    state.menu = state.menu.filter((item) => item.id !== target.dataset.deleteMenu);
+    state.masterTemplate.menuIds = state.masterTemplate.menuIds.filter((id) => id !== target.dataset.deleteMenu);
+    saveState();
+    render();
+    toast("ลบเมนูแล้ว");
+  }
   if (target.dataset.togglePromo) {
     const promo = state.promotions.find((item) => item.id === target.dataset.togglePromo);
     promo.active = !promo.active;
@@ -1122,6 +1198,36 @@ document.addEventListener("click", (event) => {
     saveState();
     render();
     toast("เพิ่มสาขาแล้ว");
+  }
+  if (target.id === "addMenu") {
+    if (!requireSuperuser()) return;
+    const categoryId = $("newMenuCategory").value;
+    const th = $("newMenuTh").value.trim();
+    const en = $("newMenuEn").value.trim() || th;
+    const price = Number($("newMenuPrice").value || 0);
+    const sku = $("newMenuSku").value.trim() || nextSku(categoryId);
+    if (!th || price <= 0) return toast("กรุณาใส่ชื่อเมนูและราคา");
+    if (state.menu.some((item) => item.sku.toLowerCase() === sku.toLowerCase())) return toast("SKU นี้มีอยู่แล้ว");
+    const id = `m-${slugify(sku || th) || Date.now()}`;
+    const menuItem = {
+      id,
+      sku,
+      categoryId,
+      th,
+      en,
+      price,
+      image: uploadedMenuImageDataUrl || $("newMenuImage").value.trim() || "assets/mustang-logo.png",
+      available: true,
+      options: buildOptionGroups({ sweetness: $("newMenuSweetness").checked, ice: $("newMenuIce").checked }),
+    };
+    state.menu.push(menuItem);
+    if (!state.masterTemplate.menuIds.includes(id)) state.masterTemplate.menuIds.push(id);
+    selectedCategory = categoryId;
+    selectedCustomerCategory = categoryId;
+    uploadedMenuImageDataUrl = "";
+    saveState();
+    render();
+    toast(`เพิ่มเมนู ${th} แล้ว`);
   }
   if (target.id === "saveBranchSettings") {
     if (!requireSuperuser()) return;
@@ -1207,6 +1313,21 @@ document.addEventListener("keydown", (event) => {
 
 document.addEventListener("change", (event) => {
   const target = event.target;
+  if (target.id === "newMenuImageFile") {
+    const file = target.files?.[0];
+    if (!file) {
+      uploadedMenuImageDataUrl = "";
+      return;
+    }
+    if (!file.type.startsWith("image/")) return toast("กรุณาเลือกรูปภาพ");
+    const reader = new FileReader();
+    reader.onload = () => {
+      uploadedMenuImageDataUrl = String(reader.result || "");
+      $("newMenuImage").value = "";
+      $("newMenuImagePreview").innerHTML = `<img src="${uploadedMenuImageDataUrl}" alt="preview"><span>${file.name}</span>`;
+    };
+    reader.readAsDataURL(file);
+  }
   if (target.id === "userSelect") {
     state.activeUserId = target.value;
     enforceBranchAccess();

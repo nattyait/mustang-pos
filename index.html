@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#1b1714" />
     <title>Mustang Cafe Franchise POS</title>
-    <link rel="manifest" href="manifest.webmanifest?v=14" />
-    <link rel="stylesheet" href="styles.css?v=14" />
+    <link rel="manifest" href="manifest.webmanifest?v=16" />
+    <link rel="stylesheet" href="styles.css?v=16" />
   </head>
   <body>
     <div class="app-shell">
@@ -34,6 +34,7 @@
           <button data-view="pickup">รับอาหาร</button>
           <button data-view="reports">รายงาน</button>
           <button data-view="admin" data-super-only="true">Super Admin</button>
+          <button data-view="menus" data-super-only="true">จัดการเมนู</button>
         </nav>
         <div class="sidebar-actions">
           <button class="ghost" id="langToggle">TH / EN</button>
@@ -223,12 +224,22 @@
               <div id="tokenAdmin"></div>
             </section>
             <section class="panel">
-              <h2>เมนู</h2>
-              <div id="menuAdmin"></div>
-            </section>
-            <section class="panel">
               <h2>โปรโมชั่น</h2>
               <div id="promoAdmin"></div>
+            </section>
+          </div>
+        </section>
+
+        <section id="menus" class="view">
+          <div id="menuGuard" class="guard"></div>
+          <div class="menu-management">
+            <section class="panel">
+              <h2>เพิ่มเมนูใหม่</h2>
+              <div id="menuFormAdmin"></div>
+            </section>
+            <section class="panel">
+              <h2>รายการเมนูทั้งหมด</h2>
+              <div id="menuAdmin"></div>
             </section>
           </div>
         </section>
@@ -250,6 +261,6 @@
     <audio id="ding" preload="auto">
       <source src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=" type="audio/wav" />
     </audio>
-    <script src="app.js?v=14"></script>
+    <script src="app.js?v=16"></script>
   </body>
 </html>
