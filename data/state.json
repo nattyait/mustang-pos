@@ -4,7 +4,7 @@
   "activeUserId": "u-super",
   "orderSequenceByDay": {
     "branch-kiosk-2026-06-06": 14,
-    "branch-kiosk-2026-06-07": 1
+    "branch-kiosk-2026-06-07": 3
   },
   "kitchenTab": "active",
   "branches": [
@@ -469,6 +469,227 @@
   ],
   "orders": [
     {
+      "id": "90b000a6-3120-4af7-a4c4-6469608e6128",
+      "branchId": "branch-kiosk",
+      "orderNo": "M003",
+      "queueToken": "1",
+      "source": "staff",
+      "customerName": "",
+      "customerPhone": "",
+      "paymentMethod": "mixed",
+      "cashReceived": 20,
+      "transferReceived": 80,
+      "subtotal": 99,
+      "discount": 0,
+      "total": 99,
+      "promotion": {
+        "id": "none",
+        "nameTh": "ไม่ใช้โปรโมชั่น",
+        "type": "none",
+        "value": 0,
+        "active": true
+      },
+      "status": "picked_up",
+      "createdAt": "2026-06-07T11:59:16.221Z",
+      "paidAt": "2026-06-07T11:59:16.221Z",
+      "items": [
+        {
+          "key": "m-sig-003:sweet-หวานน้อย",
+          "menuId": "m-sig-003",
+          "sku": "SIG-003",
+          "nameTh": "กาแฟวานิลลาคลาวด์",
+          "nameEn": "Signature Vanilla Cloud Coffee",
+          "basePrice": 99,
+          "optionGroups": [
+            {
+              "id": "sweet",
+              "th": "ความหวาน",
+              "required": true,
+              "choices": [
+                {
+                  "th": "หวานน้อย"
+                },
+                {
+                  "th": "ปกติ"
+                },
+                {
+                  "th": "หวานมาก"
+                }
+              ]
+            }
+          ],
+          "qty": 1,
+          "options": [
+            {
+              "groupId": "sweet",
+              "group": "ความหวาน",
+              "label": "ปกติ",
+              "price": 0,
+              "required": true
+            }
+          ],
+          "note": "",
+          "done": true
+        }
+      ],
+      "readyAt": "2026-06-07T11:59:45.797Z",
+      "pickedUpAt": "2026-06-07T12:00:05.302Z"
+    },
+    {
+      "id": "71aa521b-c71f-4f92-aa48-a3ced697edb8",
+      "branchId": "branch-kiosk",
+      "orderNo": "M002",
+      "queueToken": "2",
+      "source": "staff",
+      "customerName": "",
+      "customerPhone": "",
+      "paymentMethod": "cash",
+      "cashReceived": 300,
+      "transferReceived": 0,
+      "subtotal": 297,
+      "discount": 0,
+      "total": 297,
+      "promotion": {
+        "id": "none",
+        "nameTh": "ไม่ใช้โปรโมชั่น",
+        "type": "none",
+        "value": 0,
+        "active": true
+      },
+      "status": "picked_up",
+      "createdAt": "2026-06-07T11:54:24.132Z",
+      "paidAt": "2026-06-07T11:54:24.132Z",
+      "items": [
+        {
+          "key": "m-nutella-oreo:sweet-หวานน้อย|ice-ปกติ",
+          "menuId": "m-nutella-oreo",
+          "sku": "SIG-001",
+          "nameTh": "นูเทลล่าโอรีโอนมสด",
+          "nameEn": "Nutella Oreo Fresh Milk",
+          "basePrice": 99,
+          "optionGroups": [
+            {
+              "id": "sweet",
+              "th": "ความหวาน",
+              "required": true,
+              "choices": [
+                {
+                  "th": "หวานน้อย"
+                },
+                {
+                  "th": "ปกติ"
+                },
+                {
+                  "th": "หวานมาก"
+                }
+              ]
+            },
+            {
+              "id": "ice",
+              "th": "น้ำแข็ง",
+              "required": true,
+              "choices": [
+                {
+                  "th": "ปกติ"
+                },
+                {
+                  "th": "น้อย"
+                },
+                {
+                  "th": "ไม่ใส่น้ำแข็ง"
+                }
+              ]
+            },
+            {
+              "id": "topping",
+              "th": "ท็อปปิ้ง",
+              "required": false,
+              "choices": [
+                {
+                  "th": "โอรีโอเพิ่ม",
+                  "price": 10
+                },
+                {
+                  "th": "นูเทลล่าเพิ่ม",
+                  "price": 15
+                }
+              ]
+            }
+          ],
+          "qty": 2,
+          "options": [
+            {
+              "groupId": "sweet",
+              "group": "ความหวาน",
+              "label": "หวานน้อย",
+              "price": 0,
+              "required": true
+            },
+            {
+              "groupId": "ice",
+              "group": "น้ำแข็ง",
+              "label": "ปกติ",
+              "price": 0,
+              "required": true
+            }
+          ],
+          "note": "",
+          "done": true
+        },
+        {
+          "key": "m-nutella-latte:sweet-หวานน้อย",
+          "menuId": "m-nutella-latte",
+          "sku": "SIG-002",
+          "nameTh": "นูเทลล่าคอฟฟี่ลาเต้",
+          "nameEn": "Nutella Coffee Latte",
+          "basePrice": 99,
+          "optionGroups": [
+            {
+              "id": "sweet",
+              "th": "ความหวาน",
+              "required": true,
+              "choices": [
+                {
+                  "th": "หวานน้อย"
+                },
+                {
+                  "th": "ปกติ"
+                },
+                {
+                  "th": "หวานมาก"
+                }
+              ]
+            },
+            {
+              "id": "shot",
+              "th": "กาแฟ",
+              "required": false,
+              "choices": [
+                {
+                  "th": "เพิ่มช็อต",
+                  "price": 20
+                }
+              ]
+            }
+          ],
+          "qty": 1,
+          "options": [
+            {
+              "groupId": "sweet",
+              "group": "ความหวาน",
+              "label": "หวานน้อย",
+              "price": 0,
+              "required": true
+            }
+          ],
+          "note": "",
+          "done": true
+        }
+      ],
+      "readyAt": "2026-06-07T11:55:59.930Z",
+      "pickedUpAt": "2026-06-07T11:56:46.311Z"
+    },
+    {
       "id": "07454587-7e92-484c-a5cc-cb47a6c49370",
       "branchId": "branch-kiosk",
       "orderNo": "M001",
@@ -489,7 +710,7 @@
         "value": 0,
         "active": true
       },
-      "status": "in_kitchen",
+      "status": "picked_up",
       "createdAt": "2026-06-07T06:55:56.553Z",
       "paidAt": "2026-06-07T06:55:56.553Z",
       "items": [
@@ -540,7 +761,7 @@
             }
           ],
           "note": "",
-          "done": false
+          "done": true
         },
         {
           "key": "m-nutella-oreo:sweet-หวานน้อย|ice-ปกติ",
@@ -616,9 +837,11 @@
             }
           ],
           "note": "",
-          "done": false
+          "done": true
         }
-      ]
+      ],
+      "readyAt": "2026-06-07T11:50:24.215Z",
+      "pickedUpAt": "2026-06-07T11:51:27.748Z"
     },
     {
       "id": "5fab822d-41c0-417d-8675-008b6363a191",
@@ -641,7 +864,7 @@
         "value": 0,
         "active": true
       },
-      "status": "ready",
+      "status": "picked_up",
       "createdAt": "2026-06-06T14:44:11.112Z",
       "paidAt": "2026-06-06T14:44:11.112Z",
       "items": [
@@ -676,7 +899,8 @@
           "done": true
         }
       ],
-      "readyAt": "2026-06-07T06:55:36.251Z"
+      "readyAt": "2026-06-07T06:55:36.251Z",
+      "pickedUpAt": "2026-06-07T11:56:47.296Z"
     },
     {
       "id": "64c4cce6-1a29-4ad1-b66f-9d72f74ba440",
@@ -699,7 +923,7 @@
         "value": 0,
         "active": true
       },
-      "status": "in_kitchen",
+      "status": "picked_up",
       "createdAt": "2026-06-06T14:39:25.295Z",
       "paidAt": "2026-06-06T14:39:35.712Z",
       "items": [
@@ -731,9 +955,11 @@
             }
           ],
           "note": "",
-          "done": false
+          "done": true
         }
-      ]
+      ],
+      "readyAt": "2026-06-07T11:56:50.465Z",
+      "pickedUpAt": "2026-06-07T11:56:53.212Z"
     },
     {
       "id": "dd298c47-d697-4b68-8471-6fa81d1809ca",
@@ -756,7 +982,7 @@
         "value": 0,
         "active": true
       },
-      "status": "ready",
+      "status": "picked_up",
       "createdAt": "2026-06-06T14:37:19.546Z",
       "paidAt": "2026-06-06T14:37:19.546Z",
       "items": [
@@ -791,7 +1017,8 @@
           "done": true
         }
       ],
-      "readyAt": "2026-06-07T06:55:40.437Z"
+      "readyAt": "2026-06-07T06:55:40.437Z",
+      "pickedUpAt": "2026-06-07T11:56:48.079Z"
     },
     {
       "id": "6db26543-665c-4d77-ad91-14ff49759c89",

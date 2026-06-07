@@ -175,6 +175,7 @@ let lastKitchenAlertOrderId = null;
 let lastStoredStateRaw = localStorage.getItem(STORAGE_KEY);
 let lastMenuActivation = { id: "", at: 0 };
 let uploadedMenuImageDataUrl = "";
+let editingMenuId = "";
 
 const $ = (id) => document.getElementById(id);
 const fmt = new Intl.NumberFormat("th-TH", { style: "currency", currency: "THB", maximumFractionDigits: 0 });
@@ -530,6 +531,15 @@ function slugify(text) {
     .slice(0, 48);
 }
 
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
 function nextSku(categoryId) {
   const prefixMap = { signature: "SIG", "cha-chak": "CHA", roti: "ROT", food: "FOOD" };
   const prefix = prefixMap[categoryId] || categoryId.slice(0, 4).toUpperCase();
@@ -549,6 +559,33 @@ function buildOptionGroups(flags) {
     groups.push({ id: "ice", th: "น้ำแข็ง", required: true, choices: [{ th: "ปกติ" }, { th: "น้อย" }, { th: "ไม่ใส่น้ำแข็ง" }] });
   }
   return groups;
+}
+
+function readMenuForm(existingId = "") {
+  const existing = existingId ? state.menu.find((item) => item.id === existingId) : null;
+  const categoryId = $("newMenuCategory").value;
+  const th = $("newMenuTh").value.trim();
+  const en = $("newMenuEn").value.trim() || th;
+  const price = Number($("newMenuPrice").value || 0);
+  const sku = $("newMenuSku").value.trim() || nextSku(categoryId);
+  if (!th || price <= 0) {
+    toast("กรุณาใส่ชื่อเมนูและราคา");
+    return null;
+  }
+  if (state.menu.some((item) => item.id !== existingId && item.sku.toLowerCase() === sku.toLowerCase())) {
+    toast("SKU นี้มีอยู่แล้ว");
+    return null;
+  }
+  return {
+    sku,
+    categoryId,
+    th,
+    en,
+    price,
+    image: uploadedMenuImageDataUrl || $("newMenuImage").value.trim() || existing?.image || "assets/mustang-logo.png",
+    available: true,
+    options: buildOptionGroups({ sweetness: $("newMenuSweetness").checked, ice: $("newMenuIce").checked }),
+  };
 }
 
 function renderBranchSelect() {
@@ -951,20 +988,28 @@ function renderMenuManagement() {
     : "";
   document.querySelectorAll("#menus .panel").forEach((panel) => panel.classList.toggle("hidden", !allowed));
   if (!allowed) return;
+  const editing = state.menu.find((item) => item.id === editingMenuId);
+  const formTitle = editing ? `แก้ไขเมนู ${editing.th}` : "เพิ่มเมนูใหม่";
+  const imageValue = editing && !editing.image.startsWith("data:") ? editing.image : "";
+  const previewImage = uploadedMenuImageDataUrl || editing?.image || "assets/mustang-logo.png";
+  const hasSweetness = editing ? editing.options.some((group) => group.id === "sweet") : true;
+  const hasIce = editing ? editing.options.some((group) => group.id === "ice") : true;
 
   $("menuFormAdmin").innerHTML = `
     <div class="admin-form flat">
-      <label class="field"><span>หมวดหมู่</span><select id="newMenuCategory">${state.categories.map((cat) => `<option value="${cat.id}">${cat.th}</option>`).join("")}</select></label>
-      <label class="field"><span>SKU</span><input id="newMenuSku" placeholder="เว้นว่างเพื่อสร้างอัตโนมัติ"></label>
-      <label class="field"><span>ชื่อเมนูไทย *</span><input id="newMenuTh" placeholder="เช่น นมสดคาราเมล"></label>
-      <label class="field"><span>English name</span><input id="newMenuEn" placeholder="Caramel Fresh Milk"></label>
-      <label class="field"><span>ราคา *</span><input id="newMenuPrice" type="number" min="0" inputmode="decimal" placeholder="79"></label>
+      <p class="eyebrow">${formTitle}</p>
+      <label class="field"><span>หมวดหมู่</span><select id="newMenuCategory">${state.categories.map((cat) => `<option value="${cat.id}" ${editing?.categoryId === cat.id ? "selected" : ""}>${cat.th}</option>`).join("")}</select></label>
+      <label class="field"><span>SKU</span><input id="newMenuSku" value="${escapeHtml(editing?.sku || "")}" placeholder="เว้นว่างเพื่อสร้างอัตโนมัติ"></label>
+      <label class="field"><span>ชื่อเมนูไทย *</span><input id="newMenuTh" value="${escapeHtml(editing?.th || "")}" placeholder="เช่น นมสดคาราเมล"></label>
+      <label class="field"><span>English name</span><input id="newMenuEn" value="${escapeHtml(editing?.en || "")}" placeholder="Caramel Fresh Milk"></label>
+      <label class="field"><span>ราคา *</span><input id="newMenuPrice" type="number" min="0" inputmode="decimal" value="${editing?.price || ""}" placeholder="79"></label>
       <label class="field"><span>อัปโหลดรูปจากเครื่อง</span><input id="newMenuImageFile" type="file" accept="image/*"></label>
-      <label class="field"><span>หรือใส่ path/URL รูปภาพ</span><input id="newMenuImage" placeholder="assets/mustang-logo.png"></label>
-      <div class="image-preview" id="newMenuImagePreview"><img src="assets/mustang-logo.png" alt="preview"><span>Preview</span></div>
-      <label class="check-inline"><input id="newMenuSweetness" type="checkbox" checked> ตัวเลือกความหวาน</label>
-      <label class="check-inline"><input id="newMenuIce" type="checkbox" checked> ตัวเลือกน้ำแข็ง</label>
-      <button class="primary" id="addMenu">เพิ่มเมนูเข้า kiosk</button>
+      <label class="field"><span>หรือใส่ path/URL รูปภาพ</span><input id="newMenuImage" value="${escapeHtml(imageValue)}" placeholder="assets/mustang-logo.png"></label>
+      <div class="image-preview" id="newMenuImagePreview"><img src="${escapeHtml(previewImage)}" alt="preview"><span>${editing ? "รูปปัจจุบัน" : "Preview"}</span></div>
+      <label class="check-inline"><input id="newMenuSweetness" type="checkbox" ${hasSweetness ? "checked" : ""}> ตัวเลือกความหวาน</label>
+      <label class="check-inline"><input id="newMenuIce" type="checkbox" ${hasIce ? "checked" : ""}> ตัวเลือกน้ำแข็ง</label>
+      <button class="primary" id="${editing ? "saveMenuEdit" : "addMenu"}">${editing ? "บันทึกการแก้ไข" : "เพิ่มเมนูเข้า kiosk"}</button>
+      ${editing ? `<button class="secondary" id="cancelMenuEdit">ยกเลิกการแก้ไข</button>` : ""}
     </div>
   `;
 
@@ -974,6 +1019,7 @@ function renderMenuManagement() {
         <img src="${item.image}" alt="${item.th}">
         <span><strong>${item.th}</strong><br><small>${item.sku} / ${fmt.format(item.price)} / ${state.categories.find((cat) => cat.id === item.categoryId)?.th || item.categoryId}</small></span>
         <div class="role-matrix">
+          <button class="secondary" data-edit-menu="${item.id}">แก้ไข</button>
           <button class="secondary" data-toggle-menu="${item.id}">${item.available ? "ขายอยู่" : "ซ่อน"}</button>
           <button class="secondary" data-delete-menu="${item.id}">ลบ</button>
         </div>
@@ -1201,33 +1247,45 @@ document.addEventListener("click", (event) => {
   }
   if (target.id === "addMenu") {
     if (!requireSuperuser()) return;
-    const categoryId = $("newMenuCategory").value;
-    const th = $("newMenuTh").value.trim();
-    const en = $("newMenuEn").value.trim() || th;
-    const price = Number($("newMenuPrice").value || 0);
-    const sku = $("newMenuSku").value.trim() || nextSku(categoryId);
-    if (!th || price <= 0) return toast("กรุณาใส่ชื่อเมนูและราคา");
-    if (state.menu.some((item) => item.sku.toLowerCase() === sku.toLowerCase())) return toast("SKU นี้มีอยู่แล้ว");
-    const id = `m-${slugify(sku || th) || Date.now()}`;
-    const menuItem = {
-      id,
-      sku,
-      categoryId,
-      th,
-      en,
-      price,
-      image: uploadedMenuImageDataUrl || $("newMenuImage").value.trim() || "assets/mustang-logo.png",
-      available: true,
-      options: buildOptionGroups({ sweetness: $("newMenuSweetness").checked, ice: $("newMenuIce").checked }),
-    };
+    const form = readMenuForm();
+    if (!form) return;
+    const id = `m-${slugify(form.sku || form.th) || Date.now()}`;
+    const menuItem = { id, ...form };
     state.menu.push(menuItem);
     if (!state.masterTemplate.menuIds.includes(id)) state.masterTemplate.menuIds.push(id);
-    selectedCategory = categoryId;
-    selectedCustomerCategory = categoryId;
+    selectedCategory = form.categoryId;
+    selectedCustomerCategory = form.categoryId;
     uploadedMenuImageDataUrl = "";
     saveState();
     render();
-    toast(`เพิ่มเมนู ${th} แล้ว`);
+    toast(`เพิ่มเมนู ${form.th} แล้ว`);
+  }
+  if (target.dataset.editMenu) {
+    if (!requireSuperuser()) return;
+    editingMenuId = target.dataset.editMenu;
+    uploadedMenuImageDataUrl = "";
+    renderMenuManagement();
+    document.querySelector("#menus").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  if (target.id === "cancelMenuEdit") {
+    editingMenuId = "";
+    uploadedMenuImageDataUrl = "";
+    renderMenuManagement();
+  }
+  if (target.id === "saveMenuEdit") {
+    if (!requireSuperuser()) return;
+    const existing = state.menu.find((item) => item.id === editingMenuId);
+    if (!existing) return toast("ไม่พบเมนูที่จะแก้ไข");
+    const form = readMenuForm(existing.id);
+    if (!form) return;
+    Object.assign(existing, form, { available: existing.available });
+    selectedCategory = form.categoryId;
+    selectedCustomerCategory = form.categoryId;
+    editingMenuId = "";
+    uploadedMenuImageDataUrl = "";
+    saveState();
+    render();
+    toast(`บันทึกเมนู ${form.th} แล้ว`);
   }
   if (target.id === "saveBranchSettings") {
     if (!requireSuperuser()) return;
