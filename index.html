@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#1b1714" />
     <title>Mustang Cafe Franchise POS</title>
-    <link rel="manifest" href="manifest.webmanifest?v=10" />
-    <link rel="stylesheet" href="styles.css?v=10" />
+    <link rel="manifest" href="manifest.webmanifest?v=13" />
+    <link rel="stylesheet" href="styles.css?v=13" />
   </head>
   <body>
     <div class="app-shell">
@@ -68,7 +68,7 @@
               <div class="menu-grid" id="menuGrid"></div>
             </section>
             <aside class="cart-pane">
-              <h2>ออเดอร์ใหม่</h2>
+              <h2>ออเดอร์ใหม่ <span class="cart-badge" id="staffCartBadge">0</span></h2>
               <label class="field">
                 <span>หมายเลขคิว *</span>
                 <input id="staffToken" type="hidden" />
@@ -118,7 +118,7 @@
                 <div class="menu-grid customer" id="customerMenuGrid"></div>
               </section>
               <aside class="cart-pane">
-                <h2>รายการของคุณ</h2>
+                <h2>รายการของคุณ <span class="cart-badge" id="customerCartBadge">0</span></h2>
                 <label class="field">
                   <span>หมายเลขคิว *</span>
                   <input id="customerToken" type="hidden" />
@@ -250,6 +250,6 @@
     <audio id="ding" preload="auto">
       <source src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=" type="audio/wav" />
     </audio>
-    <script src="app.js?v=10"></script>
+    <script src="app.js?v=13"></script>
   </body>
 </html>

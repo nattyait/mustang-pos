@@ -1,5 +1,6 @@
 const STORAGE_KEY = "mustang-franchise-pos-v1";
 const EVENT_KEY = "mustang-franchise-pos-event";
+const CART_KEY = "mustang-franchise-pos-draft-carts";
 const SERVER_SYNC = location.protocol.startsWith("http");
 const realtimeChannel = "BroadcastChannel" in window ? new BroadcastChannel("mustang-franchise-pos") : null;
 const PAGE_ID = crypto.randomUUID();
@@ -167,7 +168,7 @@ const roles = {
 };
 
 let state = loadState();
-let carts = { staff: [], customer: [] };
+let carts = loadDraftCarts();
 let selectedCategory = "signature";
 let selectedCustomerCategory = "signature";
 let lastKitchenAlertOrderId = null;
@@ -200,6 +201,22 @@ function normalizeState(rawState) {
     tokens: item.tokens || [],
   }));
   return next;
+}
+
+function loadDraftCarts() {
+  try {
+    const parsed = JSON.parse(sessionStorage.getItem(CART_KEY) || "{}");
+    return {
+      staff: Array.isArray(parsed.staff) ? parsed.staff : [],
+      customer: Array.isArray(parsed.customer) ? parsed.customer : [],
+    };
+  } catch {
+    return { staff: [], customer: [] };
+  }
+}
+
+function saveDraftCarts() {
+  sessionStorage.setItem(CART_KEY, JSON.stringify(carts));
 }
 
 async function saveState() {
@@ -387,20 +404,47 @@ function defaultOptions(item) {
 }
 
 function addToCart(cartName, item) {
+  cartName = cartName === "customer" ? "customer" : "staff";
+  if (!carts[cartName]) carts[cartName] = [];
   const choices = defaultOptions(item);
   const key = `${item.id}:${choices.map((choice) => `${choice.groupId}-${choice.label}`).join("|")}`;
   const existing = carts[cartName].find((line) => line.key === key);
   if (existing) {
     existing.qty += 1;
   } else {
-    carts[cartName].push({ key, menuId: item.id, qty: 1, options: choices, note: "" });
+    carts[cartName].push({
+      key,
+      menuId: item.id,
+      sku: item.sku,
+      nameTh: item.th,
+      nameEn: item.en,
+      basePrice: item.price,
+      optionGroups: structuredClone(item.options || []),
+      qty: 1,
+      options: choices,
+      note: "",
+    });
   }
+  saveDraftCarts();
   renderCarts();
+  window.requestAnimationFrame(() => renderCart(cartName, cartName === "customer" ? "customerCartList" : "cartList", cartName === "customer" ? "customerTotals" : "cartTotals"));
   toast(`เพิ่ม ${menuName(item)} แล้ว`);
 }
 
-function linePrice(line) {
+function lineMenu(line) {
   const item = state.menu.find((menuItem) => menuItem.id === line.menuId);
+  return {
+    id: line.menuId,
+    sku: line.sku || item?.sku || "",
+    th: line.nameTh || item?.th || "เมนู",
+    en: line.nameEn || item?.en || line.nameTh || "Menu",
+    price: Number(line.basePrice ?? item?.price ?? 0),
+    options: line.optionGroups || item?.options || [],
+  };
+}
+
+function linePrice(line) {
+  const item = lineMenu(line);
   const optionTotal = line.options.reduce((sum, option) => sum + (option.price || 0), 0);
   return (item.price + optionTotal) * line.qty;
 }
@@ -516,6 +560,8 @@ function menuCard(item, customer = false) {
 }
 
 function renderCarts() {
+  $("staffCartBadge").textContent = carts.staff.reduce((sum, line) => sum + line.qty, 0);
+  $("customerCartBadge").textContent = carts.customer.reduce((sum, line) => sum + line.qty, 0);
   const selectedPromo = $("promotionSelect").value || "none";
   $("promotionSelect").innerHTML = state.promotions.filter((item) => item.active).map((promo) => `<option value="${promo.id}">${promo.nameTh}</option>`).join("");
   $("promotionSelect").value = state.promotions.some((promo) => promo.id === selectedPromo && promo.active) ? selectedPromo : "none";
@@ -553,10 +599,10 @@ function tokenLabel(status) {
 
 function renderCart(cartName, listId, totalsId) {
   const cart = carts[cartName];
-  $(listId).innerHTML = cart.length
-    ? cart
-        .map((line, index) => {
-          const item = state.menu.find((menuItem) => menuItem.id === line.menuId);
+  if (cart.length) {
+    const html = cart
+      .map((line, index) => {
+          const item = lineMenu(line);
           return `
             <div class="cart-item">
               <div>
@@ -589,8 +635,11 @@ function renderCart(cartName, listId, totalsId) {
             </div>
           `;
         })
-        .join("")
-    : `<p class="sku">ยังไม่มีรายการ</p>`;
+      .join("");
+    $(listId).innerHTML = html || cart.map((line) => `<div class="cart-item"><strong>${line.nameTh || line.sku || line.menuId}</strong></div>`).join("");
+  } else {
+    $(listId).innerHTML = `<p class="sku">ยังไม่มีรายการ</p>`;
+  }
   const summary = cartSummary(cartName);
   const received = Number($("cashReceived").value || 0) + Number($("transferReceived").value || 0);
   const change = cartName === "staff" ? Math.max(0, received - summary.total) : 0;
@@ -637,6 +686,7 @@ function createOrder(source) {
   };
   state.orders.unshift(order);
   carts[cartName] = [];
+  saveDraftCarts();
   $("customerToken").value = "";
   $("customerName").value = "";
   $("customerPhone").value = "";
@@ -694,7 +744,7 @@ function orderCardKitchen(order) {
     <article class="order-card">
       <header><div><h3>${order.orderNo}</h3><span>${dateFmt.format(new Date(order.createdAt))}</span></div><span class="queue">คิว ${order.queueToken}</span></header>
       <div>${order.items.map((line, index) => {
-        const item = state.menu.find((menuItem) => menuItem.id === line.menuId);
+        const item = lineMenu(line);
         return `
           <label class="check-line">
             <input type="checkbox" data-item-done="${order.id}" data-index="${index}" ${line.done ? "checked" : ""}>
@@ -722,7 +772,7 @@ function renderPickup() {
 }
 
 function itemLine(line) {
-  const item = state.menu.find((menuItem) => menuItem.id === line.menuId);
+  const item = lineMenu(line);
   return `<div class="total-line"><span>${line.qty} x ${menuName(item)}</span><strong>${fmt.format(linePrice(line))}</strong></div>`;
 }
 
@@ -753,7 +803,7 @@ function renderReports() {
         <td>${order.orderNo}</td>
         <td>${order.queueToken}</td>
         <td>${order.items.map((line) => {
-          const item = state.menu.find((menuItem) => menuItem.id === line.menuId);
+          const item = lineMenu(line);
           return `${line.qty} x ${menuName(item)}`;
         }).join("<br>")}</td>
         <td>${paymentName(order.paymentMethod)}</td>
@@ -878,7 +928,7 @@ function printReceipt(orderId) {
     <p>${dateFmt.format(new Date(order.createdAt))}</p>
     <div class="line"></div>
     ${order.items.map((line) => {
-      const item = state.menu.find((menuItem) => menuItem.id === line.menuId);
+      const item = lineMenu(line);
       return `<div class="row"><span>${line.qty} x ${item.th}</span><strong>${fmt.format(linePrice(line))}</strong></div>`;
     }).join("")}
     <div class="line"></div>
@@ -915,7 +965,7 @@ function exportCsv() {
         order.orderNo,
         order.queueToken,
         order.items.map((line) => {
-          const item = state.menu.find((menuItem) => menuItem.id === line.menuId);
+          const item = lineMenu(line);
           return `${line.qty}x ${item.th}`;
         }).join("; "),
         order.paymentMethod,
@@ -944,10 +994,11 @@ function requireSuperuser() {
 function activateMenuCard(menuTarget) {
   const item = state.menu.find((menuItem) => menuItem.id === menuTarget.dataset.menuId || menuItem.sku === menuTarget.dataset.sku);
   if (!item || !item.available) return;
+  const cartName = document.querySelector("#customer.view.active") ? "customer" : "staff";
   lastMenuActivation = { id: item.id, at: Date.now() };
   menuTarget.classList.add("just-added");
   window.setTimeout(() => menuTarget.classList.remove("just-added"), 180);
-  addToCart(menuTarget.dataset.cart, item);
+  addToCart(cartName, item);
 }
 
 document.addEventListener("pointerup", (event) => {
@@ -983,6 +1034,7 @@ document.addEventListener("click", (event) => {
     const line = carts[target.dataset.cart][Number(target.dataset.index)];
     line.qty += target.dataset.cartAct === "inc" ? 1 : -1;
     if (line.qty <= 0) carts[target.dataset.cart].splice(Number(target.dataset.index), 1);
+    saveDraftCarts();
     renderCarts();
   }
   if (target.dataset.pickToken) {
@@ -1052,6 +1104,7 @@ document.addEventListener("click", (event) => {
     if (!requireSuperuser()) return;
     state.activeBranchId = target.dataset.switchBranch;
     carts = { staff: [], customer: [] };
+    saveDraftCarts();
     saveState();
     render();
   }
@@ -1126,6 +1179,7 @@ document.addEventListener("click", (event) => {
   if (target.id === "seedReset") {
     state = structuredClone(seedState);
     carts = { staff: [], customer: [] };
+    saveDraftCarts();
     saveState();
     render();
     toast("รีเซ็ตข้อมูลตัวอย่างแล้ว");
@@ -1176,10 +1230,13 @@ document.addEventListener("change", (event) => {
   }
   if (target.dataset.cartOption) {
     const line = carts[target.dataset.cartOption][Number(target.dataset.index)];
-    const item = state.menu.find((menuItem) => menuItem.id === line.menuId);
+    if (!line) return;
+    const item = lineMenu(line);
     const group = item.options.find((optionGroup) => optionGroup.id === target.dataset.group);
+    if (!group) return;
     if (!target.value) {
       line.options = line.options.filter((option) => option.groupId !== group.id);
+      saveDraftCarts();
       renderCarts();
       return;
     }
@@ -1188,6 +1245,7 @@ document.addEventListener("change", (event) => {
     const optionIndex = line.options.findIndex((option) => option.groupId === group.id);
     if (optionIndex >= 0) line.options[optionIndex] = next;
     else line.options.push(next);
+    saveDraftCarts();
     renderCarts();
   }
 });
@@ -1208,6 +1266,7 @@ $("branchSelect").addEventListener("change", (event) => {
   }
   state.activeBranchId = event.target.value;
   carts = { staff: [], customer: [] };
+  saveDraftCarts();
   saveState();
   render();
 });
