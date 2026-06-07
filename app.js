@@ -171,7 +171,6 @@ let state = loadState();
 let carts = loadDraftCarts();
 let selectedCategory = "signature";
 let selectedCustomerCategory = "signature";
-let lastKitchenAlertOrderId = null;
 let lastStoredStateRaw = localStorage.getItem(STORAGE_KEY);
 let lastMenuActivation = { id: "", at: 0 };
 let uploadedMenuImageDataUrl = "";
@@ -316,26 +315,6 @@ function syncStateFromStorage({ notify = false } = {}) {
     (order) => order.branchId === state.activeBranchId && order.status === "in_kitchen" && !previousKitchenIds.has(order.id)
   );
   if (newKitchenOrder) notifyKitchen(newKitchenOrder);
-}
-
-function showKitchenAlert(order) {
-  if (!order || order.branchId !== state.activeBranchId || lastKitchenAlertOrderId === order.id) return;
-  lastKitchenAlertOrderId = order.id;
-  $("kitchenAlertText").textContent = `${order.orderNo} / คิว ${order.queueToken}`;
-  $("kitchenAlert").classList.add("show");
-}
-
-function showBrowserKitchenNotification(order) {
-  if (!order || !("Notification" in window)) return;
-  const title = "มีออเดอร์ใหม่เข้าครัว";
-  const body = `${order.orderNo} / คิว ${order.queueToken}`;
-  if (Notification.permission === "granted") {
-    new Notification(title, { body, icon: "assets/mustang-logo.png" });
-  } else if (Notification.permission === "default") {
-    Notification.requestPermission().then((permission) => {
-      if (permission === "granted") new Notification(title, { body, icon: "assets/mustang-logo.png" });
-    });
-  }
 }
 
 function branch() {
@@ -511,7 +490,6 @@ function showView(viewId, updateHash = true) {
     navButton.classList.add("active");
     $("viewTitle").textContent = navButton.textContent;
   }
-  if (view === "kitchen") $("kitchenAlert").classList.remove("show");
   if (updateHash) history.replaceState(null, "", `#${view}`);
 }
 
@@ -1071,13 +1049,6 @@ function printReceipt(orderId) {
 
 function notifyKitchen(payload = {}) {
   $("ding").play().catch(() => {});
-  const order = payload.id
-    ? payload
-    : state.orders.find((item) => item.id === payload.orderId) || state.orders.find((item) => item.orderNo === payload.orderNo && item.queueToken === payload.queueToken);
-  if (order && !document.querySelector("#kitchen").classList.contains("active")) {
-    showKitchenAlert(order);
-    showBrowserKitchenNotification(order);
-  }
 }
 
 function exportCsv() {
@@ -1367,10 +1338,6 @@ document.addEventListener("click", (event) => {
     state.language = state.language === "th" ? "en" : "th";
     saveState();
     render();
-  }
-  if (target.id === "openKitchenFromAlert") {
-    $("kitchenAlert").classList.remove("show");
-    showView("kitchen");
   }
 });
 
