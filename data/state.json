@@ -4,7 +4,7 @@
   "activeUserId": "u-super",
   "orderSequenceByDay": {
     "branch-kiosk-2026-06-06": 14,
-    "branch-kiosk-2026-06-07": 3
+    "branch-kiosk-2026-06-07": 4
   },
   "kitchenTab": "active",
   "branches": [
@@ -468,6 +468,82 @@
     }
   ],
   "orders": [
+    {
+      "id": "eb5d2fb5-9c9a-4bbb-8017-66900620c62a",
+      "branchId": "branch-kiosk",
+      "orderNo": "M004",
+      "queueToken": "11",
+      "source": "customer",
+      "customerName": "",
+      "customerPhone": "",
+      "paymentMethod": "transfer",
+      "cashReceived": 0,
+      "transferReceived": 99,
+      "subtotal": 99,
+      "discount": 0,
+      "total": 99,
+      "promotion": {
+        "id": "none",
+        "nameTh": "ไม่ใช้โปรโมชั่น",
+        "type": "none",
+        "value": 0,
+        "active": true
+      },
+      "status": "in_kitchen",
+      "createdAt": "2026-06-07T12:08:04.828Z",
+      "paidAt": "2026-06-07T12:08:20.059Z",
+      "items": [
+        {
+          "key": "m-nutella-latte:sweet-หวานน้อย",
+          "menuId": "m-nutella-latte",
+          "sku": "SIG-002",
+          "nameTh": "นูเทลล่าคอฟฟี่ลาเต้",
+          "nameEn": "Nutella Coffee Latte",
+          "basePrice": 99,
+          "optionGroups": [
+            {
+              "id": "sweet",
+              "th": "ความหวาน",
+              "required": true,
+              "choices": [
+                {
+                  "th": "หวานน้อย"
+                },
+                {
+                  "th": "ปกติ"
+                },
+                {
+                  "th": "หวานมาก"
+                }
+              ]
+            },
+            {
+              "id": "shot",
+              "th": "กาแฟ",
+              "required": false,
+              "choices": [
+                {
+                  "th": "เพิ่มช็อต",
+                  "price": 20
+                }
+              ]
+            }
+          ],
+          "qty": 1,
+          "options": [
+            {
+              "groupId": "sweet",
+              "group": "ความหวาน",
+              "label": "หวานน้อย",
+              "price": 0,
+              "required": true
+            }
+          ],
+          "note": "",
+          "done": false
+        }
+      ]
+    },
     {
       "id": "90b000a6-3120-4af7-a4c4-6469608e6128",
       "branchId": "branch-kiosk",
