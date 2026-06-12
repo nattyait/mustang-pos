@@ -335,7 +335,10 @@ select,
   user-select: none;
 }
 
-.menu-card > * {
+.menu-card > *:not(.info),
+.menu-card .info > *:not(.variant-buttons),
+.variant-buttons > span,
+.variant-buttons > strong {
   pointer-events: none;
 }
 
@@ -377,6 +380,32 @@ select,
   color: var(--espresso);
   font-size: 22px;
   font-weight: 800;
+}
+
+.variant-buttons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(74px, 1fr));
+  gap: 6px;
+  pointer-events: auto;
+}
+
+.variant-buttons button {
+  display: grid;
+  gap: 2px;
+  min-height: 54px;
+  border: 1px solid rgba(114, 70, 35, 0.24);
+  border-radius: 8px;
+  padding: 7px 6px;
+  color: var(--coffee);
+  background: #fff;
+  font-size: 12px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.variant-buttons button strong {
+  color: var(--espresso);
+  font-size: 14px;
 }
 
 .cart-list {
@@ -709,6 +738,55 @@ th {
   padding: 10px;
   color: var(--muted);
   background: rgba(255, 250, 241, 0.68);
+}
+
+.segmented {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 4px;
+  background: rgba(255, 250, 241, 0.78);
+}
+
+.segmented button {
+  min-height: 44px;
+  border: 0;
+  border-radius: 6px;
+  color: var(--coffee);
+  background: transparent;
+}
+
+.segmented button.active {
+  color: var(--milk);
+  background: var(--espresso);
+}
+
+.variant-editor {
+  display: grid;
+  gap: 8px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  padding: 10px;
+  background: rgba(255, 250, 241, 0.68);
+}
+
+.variant-head,
+.variant-row {
+  display: grid;
+  grid-template-columns: minmax(76px, 1fr) minmax(76px, 1fr) 86px 46px;
+  gap: 8px;
+  align-items: center;
+}
+
+.variant-head {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.variant-row input {
+  width: 100%;
 }
 
 .role-matrix {

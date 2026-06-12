@@ -65,6 +65,11 @@ const seedState = {
       th: "นูเทลล่าคอฟฟี่ลาเต้",
       en: "Nutella Coffee Latte",
       price: 99,
+      variants: [
+        { id: "hot", th: "ร้อน", en: "Hot", price: 89, active: true },
+        { id: "iced", th: "เย็น", en: "Iced", price: 99, active: true },
+        { id: "blended", th: "ปั่น", en: "Blended", price: 109, active: true },
+      ],
       image: "assets/nutella-coffee-latte.jpg",
       available: true,
       options: [
@@ -185,11 +190,11 @@ const dateFmt = new Intl.DateTimeFormat("th-TH", { dateStyle: "medium", timeStyl
 
 function loadState() {
   const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) return structuredClone(seedState);
+  if (!raw) return normalizeState(structuredClone(seedState));
   try {
     return normalizeState(JSON.parse(raw));
   } catch {
-    return structuredClone(seedState);
+    return normalizeState(structuredClone(seedState));
   }
 }
 
@@ -204,15 +209,55 @@ function normalizeState(rawState) {
     ...item,
     tokens: item.tokens || [],
   }));
+  next.menu = (next.menu || []).map(normalizeMenuItem);
+  next.orders = (next.orders || []).map((order) => ({
+    ...order,
+    items: (order.items || []).map(normalizeCartLine),
+  }));
   return next;
+}
+
+function normalizeMenuItem(item) {
+  const options = Array.isArray(item.options) ? item.options : [];
+  const variants = Array.isArray(item.variants) && item.variants.length
+    ? item.variants
+    : [{ id: "default", th: "ราคาเดียว", en: "Single price", price: Number(item.price || 0), active: true }];
+  const normalizedVariants = variants
+    .map((variant, index) => ({
+      id: String(variant.id || slugify(variant.th || variant.en || `variant-${index + 1}`) || `variant-${index + 1}`),
+      th: variant.th || variant.en || `ราคา ${index + 1}`,
+      en: variant.en || variant.th || `Price ${index + 1}`,
+      price: Number(variant.price ?? item.price ?? 0),
+      active: variant.active !== false,
+    }))
+    .filter((variant) => variant.price > 0);
+  const fallback = normalizedVariants.length ? normalizedVariants : [{ id: "default", th: "ราคาเดียว", en: "Single price", price: Number(item.price || 0), active: true }];
+  return {
+    ...item,
+    price: Number(item.price || fallback[0]?.price || 0),
+    variants: fallback,
+    options,
+  };
+}
+
+function normalizeCartLine(line) {
+  if (!line) return line;
+  const variant = line.variant || null;
+  return {
+    ...line,
+    variant,
+    basePrice: Number(line.basePrice ?? variant?.price ?? 0),
+    options: Array.isArray(line.options) ? line.options : [],
+    optionGroups: Array.isArray(line.optionGroups) ? line.optionGroups : [],
+  };
 }
 
 function loadDraftCarts() {
   try {
     const parsed = JSON.parse(sessionStorage.getItem(CART_KEY) || "{}");
     return {
-      staff: Array.isArray(parsed.staff) ? parsed.staff : [],
-      customer: Array.isArray(parsed.customer) ? parsed.customer : [],
+      staff: Array.isArray(parsed.staff) ? parsed.staff.map(normalizeCartLine) : [],
+      customer: Array.isArray(parsed.customer) ? parsed.customer.map(normalizeCartLine) : [],
     };
   } catch {
     return { staff: [], customer: [] };
@@ -353,6 +398,45 @@ function categoryName(item) {
   return state.language === "en" ? item.en : item.th;
 }
 
+function variantName(variant) {
+  if (!variant) return "";
+  return state.language === "en" ? variant.en || variant.th : variant.th || variant.en;
+}
+
+function activeVariants(item) {
+  const normalized = normalizeMenuItem(item);
+  return normalized.variants.filter((variant) => variant.active !== false && variant.price > 0);
+}
+
+function defaultVariant(item) {
+  return activeVariants(item)[0] || normalizeMenuItem(item).variants[0];
+}
+
+function hasRealVariants(item) {
+  return activeVariants(item).some((variant) => variant.id !== "default" || !["ราคาเดียว", "Single price"].includes(variant.th));
+}
+
+function menuPriceLabel(item) {
+  const variants = activeVariants(item);
+  if (!variants.length) return fmt.format(item.price || 0);
+  if (variants.length === 1) return fmt.format(variants[0].price);
+  const prices = variants.map((variant) => Number(variant.price || 0));
+  return `${fmt.format(Math.min(...prices))} - ${fmt.format(Math.max(...prices))}`;
+}
+
+function lineDisplayName(line) {
+  const item = lineMenu(line);
+  const variant = line.variant;
+  return variant ? `${menuName(item)} - ${variantName(variant)}` : menuName(item);
+}
+
+function optionSummary(line) {
+  const parts = [];
+  if (line.variant) parts.push(`รูปแบบ: ${variantName(line.variant)}`);
+  parts.push(...(line.options || []).map((option) => `${option.group}: ${option.label}`));
+  return parts.join(", ");
+}
+
 function toast(message) {
   $("toast").textContent = message;
   $("toast").classList.add("show");
@@ -395,11 +479,13 @@ function defaultOptions(item) {
   });
 }
 
-function addToCart(cartName, item) {
+function addToCart(cartName, item, variant = null) {
   cartName = cartName === "customer" ? "customer" : "staff";
   if (!carts[cartName]) carts[cartName] = [];
+  const selectedVariant = variant || defaultVariant(item);
+  const storedVariant = hasRealVariants(item) ? selectedVariant : null;
   const choices = defaultOptions(item);
-  const key = `${item.id}:${choices.map((choice) => `${choice.groupId}-${choice.label}`).join("|")}`;
+  const key = `${item.id}:${selectedVariant?.id || "default"}:${choices.map((choice) => `${choice.groupId}-${choice.label}`).join("|")}`;
   const existing = carts[cartName].find((line) => line.key === key);
   if (existing) {
     existing.qty += 1;
@@ -410,7 +496,8 @@ function addToCart(cartName, item) {
       sku: item.sku,
       nameTh: item.th,
       nameEn: item.en,
-      basePrice: item.price,
+      variant: storedVariant ? structuredClone(storedVariant) : null,
+      basePrice: Number(selectedVariant?.price ?? item.price ?? 0),
       optionGroups: structuredClone(item.options || []),
       qty: 1,
       options: choices,
@@ -420,7 +507,7 @@ function addToCart(cartName, item) {
   saveDraftCarts();
   renderCarts();
   window.requestAnimationFrame(() => renderCart(cartName, cartName === "customer" ? "customerCartList" : "cartList", cartName === "customer" ? "customerTotals" : "cartTotals"));
-  toast(`เพิ่ม ${menuName(item)} แล้ว`);
+  toast(`เพิ่ม ${menuName(item)}${storedVariant ? ` - ${variantName(storedVariant)}` : ""} แล้ว`);
 }
 
 function lineMenu(line) {
@@ -430,14 +517,14 @@ function lineMenu(line) {
     sku: line.sku || item?.sku || "",
     th: line.nameTh || item?.th || "เมนู",
     en: line.nameEn || item?.en || line.nameTh || "Menu",
-    price: Number(line.basePrice ?? item?.price ?? 0),
+    price: Number(line.basePrice ?? line.variant?.price ?? item?.price ?? 0),
     options: line.optionGroups || item?.options || [],
   };
 }
 
 function linePrice(line) {
   const item = lineMenu(line);
-  const optionTotal = line.options.reduce((sum, option) => sum + (option.price || 0), 0);
+  const optionTotal = (line.options || []).reduce((sum, option) => sum + (option.price || 0), 0);
   return (item.price + optionTotal) * line.qty;
 }
 
@@ -550,6 +637,40 @@ function buildOptionGroups(flags) {
   return groups;
 }
 
+function defaultMenuVariants() {
+  return [
+    { id: "hot", th: "ร้อน", en: "Hot", price: 0, active: true },
+    { id: "iced", th: "เย็น", en: "Iced", price: 0, active: true },
+    { id: "blended", th: "ปั่น", en: "Blended", price: 0, active: true },
+  ];
+}
+
+function variantsForForm(item) {
+  if (!item) return defaultMenuVariants();
+  const variants = activeVariants(item).length ? normalizeMenuItem(item).variants : defaultMenuVariants();
+  if (variants.length === 1 && variants[0].id === "default") return defaultMenuVariants();
+  return variants;
+}
+
+function readPriceVariantsFromForm(basePrice) {
+  const mode = $("priceMode")?.value || "single";
+  if (mode === "single") {
+    return [{ id: "default", th: "ราคาเดียว", en: "Single price", price: basePrice, active: true }];
+  }
+  const variants = [...document.querySelectorAll("[data-price-variant-row]")]
+    .map((row, index) => {
+      const th = row.querySelector("[data-variant-th]")?.value.trim() || "";
+      const en = row.querySelector("[data-variant-en]")?.value.trim() || th;
+      const price = Number(row.querySelector("[data-variant-price]")?.value || 0);
+      const active = row.querySelector("[data-variant-active]")?.checked !== false;
+      const id = row.dataset.variantId || slugify(en || th || `variant-${index + 1}`) || `variant-${index + 1}`;
+      return { id, th, en, price, active };
+    })
+    .filter((variant) => variant.th && variant.price > 0);
+  if (!variants.length) return null;
+  return variants;
+}
+
 function readMenuForm(existingId = "") {
   const existing = existingId ? state.menu.find((item) => item.id === existingId) : null;
   const categoryId = $("newMenuCategory").value;
@@ -561,6 +682,11 @@ function readMenuForm(existingId = "") {
     toast("กรุณาใส่ชื่อเมนูและราคา");
     return null;
   }
+  const variants = readPriceVariantsFromForm(price);
+  if (!variants) {
+    toast("กรุณาใส่รูปแบบราคาอย่างน้อย 1 รายการ");
+    return null;
+  }
   if (state.menu.some((item) => item.id !== existingId && item.sku.toLowerCase() === sku.toLowerCase())) {
     toast("SKU นี้มีอยู่แล้ว");
     return null;
@@ -570,7 +696,8 @@ function readMenuForm(existingId = "") {
     categoryId,
     th,
     en,
-    price,
+    price: variants[0].price,
+    variants,
     image: uploadedMenuImageDataUrl || $("newMenuImage").value.trim() || existing?.image || "assets/mustang-logo.png",
     available: true,
     options: buildOptionGroups({ sweetness: $("newMenuSweetness").checked, ice: $("newMenuIce").checked }),
@@ -625,6 +752,15 @@ function renderMenus() {
 }
 
 function menuCard(item, customer = false) {
+  const variants = activeVariants(item);
+  const variantButtons = variants.length > 1
+    ? `<span class="variant-buttons">${variants.map((variant) => `
+        <button type="button" data-menu-variant="${item.id}" data-variant-id="${variant.id}" data-cart="${customer ? "customer" : "staff"}">
+          <span>${variantName(variant)}</span>
+          <strong>${fmt.format(variant.price)}</strong>
+        </button>
+      `).join("")}</span>`
+    : "";
   return `
     <div class="menu-card" role="button" tabindex="0" data-menu-id="${item.id}" data-sku="${item.sku}" data-cart="${customer ? "customer" : "staff"}">
       <img src="${item.image}" alt="${menuName(item)}">
@@ -632,7 +768,8 @@ function menuCard(item, customer = false) {
         <span class="sku">${item.sku}</span>
         <strong>${menuName(item)}</strong>
         <span>${item.options.length ? `${item.options.length} ตัวเลือก` : "ไม่มีตัวเลือก"}</span>
-        <span class="price">${fmt.format(item.price)}</span>
+        <span class="price">${menuPriceLabel(item)}</span>
+        ${variantButtons}
       </span>
     </div>
   `;
@@ -685,7 +822,7 @@ function renderCart(cartName, listId, totalsId) {
           return `
             <div class="cart-item">
               <div>
-                <strong>${menuName(item)}</strong>
+                <strong>${lineDisplayName(line)}</strong>
                 <div class="option-selects">${item.options.map((group) => {
                   const current = line.options.find((option) => option.groupId === group.id);
                   return `
@@ -701,7 +838,7 @@ function renderCart(cartName, listId, totalsId) {
                     </label>
                   `;
                 }).join("")}</div>
-                <span class="sku">${item.sku}</span>
+                <span class="sku">${item.sku}${line.variant ? ` / ${fmt.format(line.variant.price)}` : ""}</span>
               </div>
               <div>
                 <div class="qty">
@@ -830,7 +967,7 @@ function orderCardKitchen(order) {
         return `
           <label class="check-line">
             <input type="checkbox" data-item-done="${order.id}" data-index="${index}" ${line.done ? "checked" : ""}>
-            <span>${line.qty} x ${menuName(item)}<br><small>${line.options.map((option) => `${option.group}: ${option.label}`).join(", ")}</small></span>
+            <span>${line.qty} x ${lineDisplayName(line)}<br><small>${optionSummary(line)}</small></span>
             <strong>${item.sku}</strong>
           </label>
         `;
@@ -855,7 +992,7 @@ function renderPickup() {
 
 function itemLine(line) {
   const item = lineMenu(line);
-  return `<div class="total-line"><span>${line.qty} x ${menuName(item)}</span><strong>${fmt.format(linePrice(line))}</strong></div>`;
+  return `<div class="total-line"><span>${line.qty} x ${lineDisplayName(line)}</span><strong>${fmt.format(linePrice(line))}</strong></div>`;
 }
 
 function paymentName(method) {
@@ -886,7 +1023,7 @@ function renderReports() {
         <td>${order.queueToken}</td>
         <td>${order.items.map((line) => {
           const item = lineMenu(line);
-          return `${line.qty} x ${menuName(item)}`;
+          return `${line.qty} x ${lineDisplayName(line)}`;
         }).join("<br>")}</td>
         <td>${paymentName(order.paymentMethod)}</td>
         <td>${fmt.format(order.total)}</td>
@@ -1009,6 +1146,9 @@ function renderMenuManagement() {
   const previewImage = uploadedMenuImageDataUrl || editing?.image || "assets/mustang-logo.png";
   const hasSweetness = editing ? editing.options.some((group) => group.id === "sweet") : true;
   const hasIce = editing ? editing.options.some((group) => group.id === "ice") : true;
+  const editingVariants = variantsForForm(editing);
+  const priceMode = editing && hasRealVariants(editing) ? "variants" : "single";
+  const basePrice = editing ? defaultVariant(editing)?.price || editing.price : "";
 
   $("categoryAdmin").innerHTML = `
     <div class="admin-form flat">
@@ -1043,7 +1183,33 @@ function renderMenuManagement() {
       <label class="field"><span>SKU</span><input id="newMenuSku" value="${escapeHtml(editing?.sku || "")}" placeholder="เว้นว่างเพื่อสร้างอัตโนมัติ"></label>
       <label class="field"><span>ชื่อเมนูไทย *</span><input id="newMenuTh" value="${escapeHtml(editing?.th || "")}" placeholder="เช่น นมสดคาราเมล"></label>
       <label class="field"><span>English name</span><input id="newMenuEn" value="${escapeHtml(editing?.en || "")}" placeholder="Caramel Fresh Milk"></label>
-      <label class="field"><span>ราคา *</span><input id="newMenuPrice" type="number" min="0" inputmode="decimal" value="${editing?.price || ""}" placeholder="79"></label>
+      <label class="field"><span>ราคาเริ่มต้น / ราคาเดียว *</span><input id="newMenuPrice" type="number" min="0" inputmode="decimal" value="${basePrice}" placeholder="79"></label>
+      <input id="priceMode" type="hidden" value="${priceMode}">
+      <div class="field"><span>รูปแบบราคา</span>
+        <div class="segmented">
+          <button type="button" class="${priceMode === "single" ? "active" : ""}" data-price-mode="single">ราคาเดียว</button>
+          <button type="button" class="${priceMode === "variants" ? "active" : ""}" data-price-mode="variants">หลายราคา เช่น ร้อน / เย็น / ปั่น</button>
+        </div>
+      </div>
+      <div class="variant-editor ${priceMode === "variants" ? "" : "hidden"}" id="variantEditor">
+        <div class="variant-head">
+          <span>ชื่อไทย</span>
+          <span>English</span>
+          <span>ราคา</span>
+          <span>เปิด</span>
+        </div>
+        <div id="variantRows">
+          ${editingVariants.map((variant) => `
+            <div class="variant-row" data-price-variant-row data-variant-id="${escapeHtml(variant.id)}">
+              <input data-variant-th value="${escapeHtml(variant.th)}" placeholder="ร้อน">
+              <input data-variant-en value="${escapeHtml(variant.en)}" placeholder="Hot">
+              <input data-variant-price type="number" min="0" inputmode="decimal" value="${variant.price || ""}" placeholder="79">
+              <label><input data-variant-active type="checkbox" ${variant.active !== false ? "checked" : ""}></label>
+            </div>
+          `).join("")}
+        </div>
+        <button class="secondary" type="button" id="addVariantRow">เพิ่มรูปแบบราคา</button>
+      </div>
       <label class="field"><span>อัปโหลดรูปจากเครื่อง</span><input id="newMenuImageFile" type="file" accept="image/*"></label>
       <label class="field"><span>หรือใส่ path/URL รูปภาพ</span><input id="newMenuImage" value="${escapeHtml(imageValue)}" placeholder="assets/mustang-logo.png"></label>
       <div class="image-preview" id="newMenuImagePreview"><img src="${escapeHtml(previewImage)}" alt="preview"><span>${editing ? "รูปปัจจุบัน" : "Preview"}</span></div>
@@ -1058,7 +1224,7 @@ function renderMenuManagement() {
     <div class="admin-list">${state.menu.map((item) => `
       <div class="admin-row menu-row">
         <img src="${item.image}" alt="${item.th}">
-        <span><strong>${item.th}</strong><br><small>${item.sku} / ${fmt.format(item.price)} / ${state.categories.find((cat) => cat.id === item.categoryId)?.th || item.categoryId}</small></span>
+        <span><strong>${item.th}</strong><br><small>${item.sku} / ${menuPriceLabel(item)} / ${state.categories.find((cat) => cat.id === item.categoryId)?.th || item.categoryId}</small></span>
         <div class="role-matrix">
           <button class="secondary" data-edit-menu="${item.id}">แก้ไข</button>
           <button class="secondary" data-toggle-menu="${item.id}">${item.available ? "ขายอยู่" : "ซ่อน"}</button>
@@ -1081,8 +1247,7 @@ function printReceipt(orderId) {
     <p>${dateFmt.format(new Date(order.createdAt))}</p>
     <div class="line"></div>
     ${order.items.map((line) => {
-      const item = lineMenu(line);
-      return `<div class="row"><span>${line.qty} x ${item.th}</span><strong>${fmt.format(linePrice(line))}</strong></div>`;
+      return `<div class="row"><span>${line.qty} x ${lineDisplayName(line)}</span><strong>${fmt.format(linePrice(line))}</strong></div>`;
     }).join("")}
     <div class="line"></div>
     <div class="row"><span>Subtotal</span><strong>${fmt.format(order.subtotal)}</strong></div>
@@ -1112,7 +1277,7 @@ function exportCsv() {
         order.queueToken,
         order.items.map((line) => {
           const item = lineMenu(line);
-          return `${line.qty}x ${item.th}`;
+          return `${line.qty}x ${lineDisplayName(line)}`;
         }).join("; "),
         order.paymentMethod,
         order.subtotal,
@@ -1137,17 +1302,22 @@ function requireSuperuser() {
   return false;
 }
 
-function activateMenuCard(menuTarget) {
+function activateMenuCard(menuTarget, variantId = "") {
   const item = state.menu.find((menuItem) => menuItem.id === menuTarget.dataset.menuId || menuItem.sku === menuTarget.dataset.sku);
   if (!item || !item.available) return;
   const cartName = document.querySelector("#customer.view.active") ? "customer" : "staff";
-  lastMenuActivation = { id: item.id, at: Date.now() };
+  const variants = activeVariants(item);
+  if (hasRealVariants(item) && !variantId) return toast("กรุณาเลือกรูปแบบราคา");
+  const variant = variantId ? variants.find((itemVariant) => itemVariant.id === variantId) : defaultVariant(item);
+  if (!variant) return toast("เมนูนี้ยังไม่ได้ตั้งราคา");
+  lastMenuActivation = { id: `${item.id}:${variant.id}`, at: Date.now() };
   menuTarget.classList.add("just-added");
   window.setTimeout(() => menuTarget.classList.remove("just-added"), 180);
-  addToCart(cartName, item);
+  addToCart(cartName, item, variant);
 }
 
 document.addEventListener("pointerup", (event) => {
+  if (event.target.closest("[data-menu-variant]")) return;
   const menuTarget = event.target.closest("[data-menu-id]");
   if (!menuTarget) return;
   event.preventDefault();
@@ -1155,9 +1325,17 @@ document.addEventListener("pointerup", (event) => {
 });
 
 document.addEventListener("click", (event) => {
+  const variantTarget = event.target.closest("[data-menu-variant]");
+  if (variantTarget) {
+    const menuTarget = variantTarget.closest("[data-menu-id]");
+    if (!menuTarget) return;
+    event.preventDefault();
+    activateMenuCard(menuTarget, variantTarget.dataset.variantId);
+    return;
+  }
   const menuTarget = event.target.closest("[data-menu-id]");
   if (menuTarget) {
-    const recentlyHandled = lastMenuActivation.id === menuTarget.dataset.menuId && Date.now() - lastMenuActivation.at < 450;
+    const recentlyHandled = lastMenuActivation.id.startsWith(`${menuTarget.dataset.menuId}:`) && Date.now() - lastMenuActivation.at < 450;
     if (!recentlyHandled) activateMenuCard(menuTarget);
     return;
   }
@@ -1294,6 +1472,23 @@ document.addEventListener("click", (event) => {
     render();
     toast(`เพิ่มเมนู ${form.th} แล้ว`);
   }
+  if (target.id === "addVariantRow") {
+    const rows = $("variantRows");
+    const index = rows.querySelectorAll("[data-price-variant-row]").length + 1;
+    rows.insertAdjacentHTML("beforeend", `
+      <div class="variant-row" data-price-variant-row data-variant-id="custom-${Date.now()}">
+        <input data-variant-th placeholder="แบบที่ ${index}">
+        <input data-variant-en placeholder="Variant ${index}">
+        <input data-variant-price type="number" min="0" inputmode="decimal" placeholder="79">
+        <label><input data-variant-active type="checkbox" checked></label>
+      </div>
+    `);
+  }
+  if (target.dataset.priceMode) {
+    $("priceMode").value = target.dataset.priceMode;
+    document.querySelectorAll("[data-price-mode]").forEach((button) => button.classList.toggle("active", button === target));
+    $("variantEditor")?.classList.toggle("hidden", target.dataset.priceMode !== "variants");
+  }
   if (target.id === "addCategory") {
     if (!requireSuperuser()) return;
     const form = readCategoryForm();
@@ -1423,7 +1618,7 @@ document.addEventListener("click", (event) => {
     toast("เพิ่ม mock user แล้ว");
   }
   if (target.id === "seedReset") {
-    state = structuredClone(seedState);
+    state = normalizeState(structuredClone(seedState));
     carts = { staff: [], customer: [] };
     saveDraftCarts();
     saveState();
@@ -1461,6 +1656,9 @@ document.addEventListener("change", (event) => {
       $("newMenuImagePreview").innerHTML = `<img src="${uploadedMenuImageDataUrl}" alt="preview"><span>${file.name}</span>`;
     };
     reader.readAsDataURL(file);
+  }
+  if (target.id === "priceMode") {
+    $("variantEditor")?.classList.toggle("hidden", target.value !== "variants");
   }
   if (target.id === "userSelect") {
     state.activeUserId = target.value;
