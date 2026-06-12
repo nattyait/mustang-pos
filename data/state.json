@@ -4,7 +4,8 @@
   "activeUserId": "u-super",
   "orderSequenceByDay": {
     "branch-kiosk-2026-06-06": 14,
-    "branch-kiosk-2026-06-07": 6
+    "branch-kiosk-2026-06-07": 6,
+    "branch-kiosk-2026-06-12": 1
   },
   "kitchenTab": "active",
   "branches": [
@@ -264,6 +265,15 @@
             }
           ]
         }
+      ],
+      "variants": [
+        {
+          "id": "default",
+          "th": "ราคาเดียว",
+          "en": "Single price",
+          "price": 99,
+          "active": true
+        }
       ]
     },
     {
@@ -302,6 +312,15 @@
               "price": 20
             }
           ]
+        }
+      ],
+      "variants": [
+        {
+          "id": "default",
+          "th": "ราคาเดียว",
+          "en": "Single price",
+          "price": 99,
+          "active": true
         }
       ]
     },
@@ -380,6 +399,15 @@
             }
           ]
         }
+      ],
+      "variants": [
+        {
+          "id": "default",
+          "th": "ราคาเดียว",
+          "en": "Single price",
+          "price": 89,
+          "active": true
+        }
       ]
     },
     {
@@ -407,6 +435,15 @@
               "th": "หวานมาก"
             }
           ]
+        }
+      ],
+      "variants": [
+        {
+          "id": "default",
+          "th": "ราคาเดียว",
+          "en": "Single price",
+          "price": 99,
+          "active": true
         }
       ]
     }
@@ -493,6 +530,74 @@
   ],
   "orders": [
     {
+      "id": "79a49cd3-6e39-4ee0-9bfb-c7723f6ff047",
+      "branchId": "branch-kiosk",
+      "orderNo": "M001",
+      "queueToken": "1",
+      "source": "customer",
+      "customerName": "",
+      "customerPhone": "",
+      "paymentMethod": "transfer",
+      "cashReceived": 0,
+      "transferReceived": 99,
+      "subtotal": 99,
+      "discount": 0,
+      "total": 99,
+      "promotion": {
+        "id": "none",
+        "nameTh": "ไม่ใช้โปรโมชั่น",
+        "type": "none",
+        "value": 0,
+        "active": true
+      },
+      "status": "picked_up",
+      "createdAt": "2026-06-12T06:07:51.696Z",
+      "paidAt": "2026-06-12T06:07:59.213Z",
+      "items": [
+        {
+          "key": "m-sig-003:default:sweet-หวานน้อย",
+          "menuId": "m-sig-003",
+          "sku": "SIG-003",
+          "nameTh": "กาแฟวานิลลาคลาวด์",
+          "nameEn": "Signature Vanilla Cloud Coffee",
+          "variant": null,
+          "basePrice": 99,
+          "optionGroups": [
+            {
+              "id": "sweet",
+              "th": "ความหวาน",
+              "required": true,
+              "choices": [
+                {
+                  "th": "หวานน้อย"
+                },
+                {
+                  "th": "ปกติ"
+                },
+                {
+                  "th": "หวานมาก"
+                }
+              ]
+            }
+          ],
+          "qty": 1,
+          "options": [
+            {
+              "groupId": "sweet",
+              "group": "ความหวาน",
+              "label": "หวานน้อย",
+              "price": 0,
+              "required": true
+            }
+          ],
+          "note": "",
+          "done": true
+        }
+      ],
+      "readyAt": "2026-06-12T06:08:04.831Z",
+      "pickedUpAt": "2026-06-12T06:08:13.881Z"
+    },
+    {
       "id": "fd983315-51a9-4c99-b567-917d3cd0a49d",
       "branchId": "branch-kiosk",
       "orderNo": "M006",
@@ -513,7 +618,7 @@
         "value": 0,
         "active": true
       },
-      "status": "ready",
+      "status": "picked_up",
       "createdAt": "2026-06-07T12:23:48.541Z",
       "paidAt": "2026-06-07T12:23:48.541Z",
       "items": [
@@ -564,10 +669,12 @@
             }
           ],
           "note": "",
-          "done": true
+          "done": true,
+          "variant": null
         }
       ],
-      "readyAt": "2026-06-07T12:24:50.726Z"
+      "readyAt": "2026-06-07T12:24:50.726Z",
+      "pickedUpAt": "2026-06-12T06:01:58.976Z"
     },
     {
       "id": "a325b7df-f6e4-47ad-8109-155fb704ab7b",
@@ -590,7 +697,7 @@
         "value": 0,
         "active": true
       },
-      "status": "in_kitchen",
+      "status": "picked_up",
       "createdAt": "2026-06-07T12:12:12.026Z",
       "paidAt": "2026-06-07T12:12:12.026Z",
       "items": [
@@ -641,9 +748,12 @@
             }
           ],
           "note": "",
-          "done": false
+          "done": true,
+          "variant": null
         }
-      ]
+      ],
+      "readyAt": "2026-06-12T06:02:17.093Z",
+      "pickedUpAt": "2026-06-12T06:08:15.547Z"
     },
     {
       "id": "eb5d2fb5-9c9a-4bbb-8017-66900620c62a",
@@ -666,7 +776,7 @@
         "value": 0,
         "active": true
       },
-      "status": "in_kitchen",
+      "status": "picked_up",
       "createdAt": "2026-06-07T12:08:04.828Z",
       "paidAt": "2026-06-07T12:08:20.059Z",
       "items": [
@@ -717,9 +827,12 @@
             }
           ],
           "note": "",
-          "done": false
+          "done": true,
+          "variant": null
         }
-      ]
+      ],
+      "readyAt": "2026-06-12T06:02:18.843Z",
+      "pickedUpAt": "2026-06-12T06:08:17.263Z"
     },
     {
       "id": "90b000a6-3120-4af7-a4c4-6469608e6128",
@@ -782,7 +895,8 @@
             }
           ],
           "note": "",
-          "done": true
+          "done": true,
+          "variant": null
         }
       ],
       "readyAt": "2026-06-07T11:59:45.797Z",
@@ -887,7 +1001,8 @@
             }
           ],
           "note": "",
-          "done": true
+          "done": true,
+          "variant": null
         },
         {
           "key": "m-nutella-latte:sweet-หวานน้อย",
@@ -936,7 +1051,8 @@
             }
           ],
           "note": "",
-          "done": true
+          "done": true,
+          "variant": null
         }
       ],
       "readyAt": "2026-06-07T11:55:59.930Z",
@@ -1014,7 +1130,8 @@
             }
           ],
           "note": "",
-          "done": true
+          "done": true,
+          "variant": null
         },
         {
           "key": "m-nutella-oreo:sweet-หวานน้อย|ice-ปกติ",
@@ -1090,7 +1207,8 @@
             }
           ],
           "note": "",
-          "done": true
+          "done": true,
+          "variant": null
         }
       ],
       "readyAt": "2026-06-07T11:50:24.215Z",
@@ -1149,7 +1267,10 @@
             }
           ],
           "note": "",
-          "done": true
+          "done": true,
+          "variant": null,
+          "basePrice": 0,
+          "optionGroups": []
         }
       ],
       "readyAt": "2026-06-07T06:55:36.251Z",
@@ -1208,7 +1329,10 @@
             }
           ],
           "note": "",
-          "done": true
+          "done": true,
+          "variant": null,
+          "basePrice": 0,
+          "optionGroups": []
         }
       ],
       "readyAt": "2026-06-07T11:56:50.465Z",
@@ -1267,7 +1391,10 @@
             }
           ],
           "note": "",
-          "done": true
+          "done": true,
+          "variant": null,
+          "basePrice": 0,
+          "optionGroups": []
         }
       ],
       "readyAt": "2026-06-07T06:55:40.437Z",
@@ -1326,7 +1453,10 @@
             }
           ],
           "note": "",
-          "done": true
+          "done": true,
+          "variant": null,
+          "basePrice": 0,
+          "optionGroups": []
         }
       ],
       "readyAt": "2026-06-06T14:36:40.996Z",
@@ -1385,7 +1515,10 @@
             }
           ],
           "note": "",
-          "done": true
+          "done": true,
+          "variant": null,
+          "basePrice": 0,
+          "optionGroups": []
         }
       ],
       "readyAt": "2026-06-06T14:36:41.830Z",
@@ -1444,7 +1577,10 @@
             }
           ],
           "note": "",
-          "done": true
+          "done": true,
+          "variant": null,
+          "basePrice": 0,
+          "optionGroups": []
         }
       ],
       "readyAt": "2026-06-06T14:36:42.647Z",
@@ -1503,7 +1639,10 @@
             }
           ],
           "note": "",
-          "done": true
+          "done": true,
+          "variant": null,
+          "basePrice": 0,
+          "optionGroups": []
         }
       ],
       "readyAt": "2026-06-06T14:36:43.447Z",
@@ -1562,7 +1701,10 @@
             }
           ],
           "note": "",
-          "done": true
+          "done": true,
+          "variant": null,
+          "basePrice": 0,
+          "optionGroups": []
         }
       ],
       "readyAt": "2026-06-06T14:19:14.687Z",
@@ -1621,7 +1763,10 @@
             }
           ],
           "note": "",
-          "done": true
+          "done": true,
+          "variant": null,
+          "basePrice": 0,
+          "optionGroups": []
         }
       ],
       "readyAt": "2026-06-06T14:19:14.569Z",
@@ -1673,7 +1818,10 @@
             }
           ],
           "note": "",
-          "done": true
+          "done": true,
+          "variant": null,
+          "basePrice": 0,
+          "optionGroups": []
         }
       ],
       "readyAt": "2026-06-06T14:19:14.005Z",
@@ -1725,7 +1873,10 @@
             }
           ],
           "note": "",
-          "done": true
+          "done": true,
+          "variant": null,
+          "basePrice": 0,
+          "optionGroups": []
         }
       ],
       "readyAt": "2026-06-06T14:19:15.555Z",
@@ -1784,7 +1935,10 @@
             }
           ],
           "note": "",
-          "done": false
+          "done": false,
+          "variant": null,
+          "basePrice": 0,
+          "optionGroups": []
         }
       ]
     },
@@ -1834,7 +1988,10 @@
             }
           ],
           "note": "",
-          "done": true
+          "done": true,
+          "variant": null,
+          "basePrice": 0,
+          "optionGroups": []
         },
         {
           "key": "m-nutella-oreo:sweet-หวานน้อย|ice-ปกติ|topping-โอรีโอเพิ่ม",
@@ -1864,7 +2021,10 @@
             }
           ],
           "note": "",
-          "done": true
+          "done": true,
+          "variant": null,
+          "basePrice": 0,
+          "optionGroups": []
         }
       ],
       "readyAt": "2026-06-06T14:19:13.226Z",
@@ -1923,7 +2083,10 @@
             }
           ],
           "note": "",
-          "done": true
+          "done": true,
+          "variant": null,
+          "basePrice": 0,
+          "optionGroups": []
         }
       ],
       "readyAt": "2026-06-06T13:38:49.474Z",
