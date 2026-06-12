@@ -224,13 +224,16 @@
           "required": true,
           "choices": [
             {
-              "th": "หวานน้อย"
+              "th": "25%"
             },
             {
-              "th": "ปกติ"
+              "th": "50%"
             },
             {
-              "th": "หวานมาก"
+              "th": "75%"
+            },
+            {
+              "th": "100%"
             }
           ]
         },
@@ -274,7 +277,8 @@
           "price": 99,
           "active": true
         }
-      ]
+      ],
+      "_updatedAt": 1781263625282
     },
     {
       "id": "m-nutella-latte",
@@ -292,13 +296,16 @@
           "required": true,
           "choices": [
             {
-              "th": "หวานน้อย"
+              "th": "25%"
             },
             {
-              "th": "ปกติ"
+              "th": "50%"
             },
             {
-              "th": "หวานมาก"
+              "th": "75%"
+            },
+            {
+              "th": "100%"
             }
           ]
         },
@@ -322,7 +329,8 @@
           "price": 99,
           "active": true
         }
-      ]
+      ],
+      "_updatedAt": 1781263625282
     },
     {
       "id": "m-cha-chak",
@@ -340,18 +348,21 @@
           "required": true,
           "choices": [
             {
-              "th": "หวานน้อย"
+              "th": "25%"
             },
             {
-              "th": "ปกติ"
+              "th": "50%"
             },
             {
-              "th": "หวานมาก"
+              "th": "75%"
+            },
+            {
+              "th": "100%"
             }
           ]
         }
       ],
-      "_updatedAt": 1781243585154,
+      "_updatedAt": 1781263315947,
       "variants": [
         {
           "id": "hot",
@@ -385,21 +396,7 @@
       "price": 89,
       "image": "assets/nutella-oreo-fresh-milk.png",
       "available": true,
-      "options": [
-        {
-          "id": "cut",
-          "th": "ตัดชิ้น",
-          "required": false,
-          "choices": [
-            {
-              "th": "ตัด 4 ชิ้น"
-            },
-            {
-              "th": "ตัด 8 ชิ้น"
-            }
-          ]
-        }
-      ],
+      "options": [],
       "variants": [
         {
           "id": "default",
@@ -408,7 +405,8 @@
           "price": 89,
           "active": true
         }
-      ]
+      ],
+      "_updatedAt": 1781263625282
     },
     {
       "id": "m-sig-003",
@@ -426,13 +424,16 @@
           "required": true,
           "choices": [
             {
-              "th": "หวานน้อย"
+              "th": "25%"
             },
             {
-              "th": "ปกติ"
+              "th": "50%"
             },
             {
-              "th": "หวานมาก"
+              "th": "75%"
+            },
+            {
+              "th": "100%"
             }
           ]
         }
@@ -445,7 +446,8 @@
           "price": 99,
           "active": true
         }
-      ]
+      ],
+      "_updatedAt": 1781263625282
     }
   ],
   "promotions": [

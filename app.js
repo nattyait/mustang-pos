@@ -54,7 +54,7 @@ const seedState = {
       image: "assets/nutella-oreo-fresh-milk.png",
       available: true,
       options: [
-        { id: "sweet", th: "ความหวาน", required: true, choices: [{ th: "หวานน้อย" }, { th: "ปกติ" }, { th: "หวานมาก" }] },
+        { id: "sweet", th: "ความหวาน", required: true, choices: [{ th: "25%" }, { th: "50%" }, { th: "75%" }, { th: "100%" }] },
         { id: "ice", th: "น้ำแข็ง", required: true, choices: [{ th: "ปกติ" }, { th: "น้อย" }, { th: "ไม่ใส่น้ำแข็ง" }] },
         { id: "topping", th: "ท็อปปิ้ง", required: false, choices: [{ th: "โอรีโอเพิ่ม", price: 10 }, { th: "นูเทลล่าเพิ่ม", price: 15 }] },
       ],
@@ -74,7 +74,7 @@ const seedState = {
       image: "assets/nutella-coffee-latte.jpg",
       available: true,
       options: [
-        { id: "sweet", th: "ความหวาน", required: true, choices: [{ th: "หวานน้อย" }, { th: "ปกติ" }, { th: "หวานมาก" }] },
+        { id: "sweet", th: "ความหวาน", required: true, choices: [{ th: "25%" }, { th: "50%" }, { th: "75%" }, { th: "100%" }] },
         { id: "shot", th: "กาแฟ", required: false, choices: [{ th: "เพิ่มช็อต", price: 20 }] },
       ],
     },
@@ -87,7 +87,7 @@ const seedState = {
       price: 65,
       image: "assets/mustang-logo.png",
       available: true,
-      options: [{ id: "sweet", th: "ความหวาน", required: true, choices: [{ th: "25%" }, { th: "50%" }, { th: "100%" }] }],
+      options: [{ id: "sweet", th: "ความหวาน", required: true, choices: [{ th: "25%" }, { th: "50%" }, { th: "75%" }, { th: "100%" }] }],
     },
     {
       id: "m-roti-banana",
@@ -98,7 +98,7 @@ const seedState = {
       price: 89,
       image: "assets/nutella-oreo-fresh-milk.png",
       available: true,
-      options: [{ id: "cut", th: "ตัดชิ้น", required: false, choices: [{ th: "ตัด 4 ชิ้น" }, { th: "ตัด 8 ชิ้น" }] }],
+      options: [],
     },
     {
       id: "m-rice",
@@ -109,7 +109,7 @@ const seedState = {
       price: 109,
       image: "assets/mustang-logo.png",
       available: true,
-      options: [{ id: "spicy", th: "ระดับความเผ็ด", required: true, choices: [{ th: "ไม่เผ็ด" }, { th: "ปกติ" }, { th: "เผ็ด" }] }],
+      options: [],
     },
   ],
   promotions: [
@@ -768,15 +768,31 @@ function nextSku(categoryId) {
   return `${prefix}-${String(Math.max(0, ...numbers) + 1).padStart(3, "0")}`;
 }
 
-function buildOptionGroups(flags) {
+function buildOptionGroups(flags, categoryId = "") {
+  if (["roti", "food"].includes(categoryId)) return [];
   const groups = [];
   if (flags.sweetness) {
-    groups.push({ id: "sweet", th: "ความหวาน", required: true, choices: [{ th: "หวานน้อย" }, { th: "ปกติ" }, { th: "หวานมาก" }] });
+    groups.push({ id: "sweet", th: "ความหวาน", required: true, choices: [{ th: "25%" }, { th: "50%" }, { th: "75%" }, { th: "100%" }] });
   }
   if (flags.ice) {
     groups.push({ id: "ice", th: "น้ำแข็ง", required: true, choices: [{ th: "ปกติ" }, { th: "น้อย" }, { th: "ไม่ใส่น้ำแข็ง" }] });
   }
   return groups;
+}
+
+function syncMenuOptionControlsForCategory(categoryId) {
+  const sweetness = $("newMenuSweetness");
+  const ice = $("newMenuIce");
+  if (!sweetness || !ice) return;
+  const noOptions = ["roti", "food"].includes(categoryId);
+  sweetness.disabled = noOptions;
+  ice.disabled = noOptions;
+  if (noOptions) {
+    sweetness.checked = false;
+    ice.checked = false;
+    return;
+  }
+  if (categoryId === "signature") sweetness.checked = true;
 }
 
 function defaultMenuVariants() {
@@ -821,6 +837,8 @@ function readMenuForm(existingId = "") {
   const price = readNumber($("newMenuPrice").value || 0);
   const mode = $("priceMode")?.value || "single";
   const sku = $("newMenuSku").value.trim() || nextSku(categoryId);
+  const sweetness = categoryId === "signature" || $("newMenuSweetness").checked;
+  const ice = !["roti", "food"].includes(categoryId) && $("newMenuIce").checked;
   if (!th) {
     toast("กรุณาใส่ชื่อเมนู");
     return null;
@@ -847,7 +865,7 @@ function readMenuForm(existingId = "") {
     variants,
     image: uploadedMenuImageDataUrl || $("newMenuImage").value.trim() || existing?.image || "assets/mustang-logo.png",
     available: true,
-    options: buildOptionGroups({ sweetness: $("newMenuSweetness").checked, ice: $("newMenuIce").checked }),
+    options: buildOptionGroups({ sweetness, ice }, categoryId),
   };
 }
 
@@ -1299,8 +1317,10 @@ function renderMenuManagement() {
   const formTitle = editing ? `แก้ไขเมนู ${editing.th}` : "เพิ่มเมนูใหม่";
   const imageValue = editing && !editing.image.startsWith("data:") ? editing.image : "";
   const previewImage = uploadedMenuImageDataUrl || editing?.image || "assets/mustang-logo.png";
-  const hasSweetness = editing ? editing.options.some((group) => group.id === "sweet") : true;
-  const hasIce = editing ? editing.options.some((group) => group.id === "ice") : true;
+  const formCategoryId = editing?.categoryId || sortedCategories[0]?.id || "signature";
+  const hasSweetness = editing ? editing.options.some((group) => group.id === "sweet") : formCategoryId === "signature";
+  const hasIce = editing ? editing.options.some((group) => group.id === "ice") : false;
+  const disableOptions = ["roti", "food"].includes(formCategoryId);
   const editingVariants = variantsForForm(editing);
   const priceMode = menuFormPriceMode || (editing && hasRealVariants(editing) ? "variants" : "single");
   const basePrice = editing ? defaultVariant(editing)?.price || editing.price : "";
@@ -1373,8 +1393,8 @@ function renderMenuManagement() {
       <label class="field"><span>อัปโหลดรูปจากเครื่อง</span><input id="newMenuImageFile" type="file" accept="image/*"></label>
       <label class="field"><span>หรือใส่ path/URL รูปภาพ</span><input id="newMenuImage" value="${escapeHtml(imageValue)}" placeholder="assets/mustang-logo.png"></label>
       <div class="image-preview" id="newMenuImagePreview"><img src="${escapeHtml(previewImage)}" alt="preview"><span>${editing ? "รูปปัจจุบัน" : "Preview"}</span></div>
-      <label class="check-inline"><input id="newMenuSweetness" type="checkbox" ${hasSweetness ? "checked" : ""}> ตัวเลือกความหวาน</label>
-      <label class="check-inline"><input id="newMenuIce" type="checkbox" ${hasIce ? "checked" : ""}> ตัวเลือกน้ำแข็ง</label>
+      <label class="check-inline"><input id="newMenuSweetness" type="checkbox" ${hasSweetness && !disableOptions ? "checked" : ""} ${disableOptions ? "disabled" : ""}> ตัวเลือกความหวาน</label>
+      <label class="check-inline"><input id="newMenuIce" type="checkbox" ${hasIce && !disableOptions ? "checked" : ""} ${disableOptions ? "disabled" : ""}> ตัวเลือกน้ำแข็ง</label>
       <button class="primary" id="${editing ? "saveMenuEdit" : "addMenu"}">${editing ? "บันทึกการแก้ไข" : "เพิ่มเมนูเข้า kiosk"}</button>
       ${editing ? `<button class="secondary" id="cancelMenuEdit">ยกเลิกการแก้ไข</button>` : ""}
     </div>
@@ -1898,6 +1918,9 @@ document.addEventListener("keydown", (event) => {
 
 document.addEventListener("change", (event) => {
   const target = event.target;
+  if (target.id === "newMenuCategory") {
+    syncMenuOptionControlsForCategory(target.value);
+  }
   if (target.id === "newMenuImageFile") {
     const file = target.files?.[0];
     if (!file) {
