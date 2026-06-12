@@ -1,0 +1,17 @@
+{
+  "name": "mustang-cafe-pos",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Mustang Cafe franchise POS and kiosk prototype",
+  "scripts": {
+    "start": "node server.js",
+    "check": "node --check server.js && node --check app.js && node --check scripts/seed-postgres.js",
+    "db:seed": "node scripts/seed-postgres.js"
+  },
+  "dependencies": {
+    "pg": "^8.12.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -5,8 +5,11 @@ const path = require("path");
 const root = __dirname;
 const dataDir = path.join(root, "data");
 const stateFile = path.join(dataDir, "state.json");
+const fixtureFile = path.join(root, "db", "fixture.json");
 const port = Number(process.env.PORT || 4173);
 const clients = new Set();
+const usePostgres = Boolean(process.env.DATABASE_URL);
+let pgPool;
 
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 
@@ -34,17 +37,69 @@ function sendJson(res, data, status = 200) {
   res.end(JSON.stringify(data));
 }
 
-function readState() {
+function getPool() {
+  if (!usePostgres) return null;
+  if (!pgPool) {
+    const { Pool } = require("pg");
+    pgPool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: process.env.PGSSLMODE === "require" ? { rejectUnauthorized: false } : undefined,
+    });
+  }
+  return pgPool;
+}
+
+function readFileState() {
   if (!fs.existsSync(stateFile)) return null;
   return JSON.parse(fs.readFileSync(stateFile, "utf8"));
 }
 
-function writeState(state) {
+function writeFileState(state) {
   fs.writeFileSync(stateFile, JSON.stringify(state, null, 2));
 }
 
-function mergeMenusByFreshness(incomingState) {
-  const currentState = readState();
+async function readState() {
+  if (!usePostgres) return readFileState();
+  const result = await getPool().query("select state from app_state where id = $1", ["default"]);
+  return result.rows[0]?.state || null;
+}
+
+async function writeState(state) {
+  if (!usePostgres) {
+    writeFileState(state);
+    return;
+  }
+  await getPool().query(
+    `
+      insert into app_state (id, state, updated_at)
+      values ($1, $2::jsonb, now())
+      on conflict (id)
+      do update set state = excluded.state, updated_at = now()
+    `,
+    ["default", JSON.stringify(state)]
+  );
+}
+
+async function ensureDatabase() {
+  if (!usePostgres) return;
+  await getPool().query(`
+    create table if not exists app_state (
+      id text primary key,
+      state jsonb not null,
+      updated_at timestamptz not null default now()
+    )
+  `);
+  const result = await getPool().query("select 1 from app_state where id = $1", ["default"]);
+  if (result.rowCount) return;
+  const fixtureSource = fs.existsSync(fixtureFile) ? fixtureFile : stateFile;
+  if (!fs.existsSync(fixtureSource)) return;
+  const fixture = JSON.parse(fs.readFileSync(fixtureSource, "utf8"));
+  await writeState(fixture);
+  console.log(`Seeded PostgreSQL app_state from ${path.relative(root, fixtureSource)}`);
+}
+
+async function mergeMenusByFreshness(incomingState) {
+  const currentState = await readState();
   if (!currentState?.menu?.length || !incomingState?.menu?.length) return incomingState;
   const currentById = new Map(currentState.menu.map((item) => [item.id, item]));
   incomingState.menu = incomingState.menu.map((incomingItem) => {
@@ -137,19 +192,19 @@ const server = http.createServer(async (req, res) => {
     }
 
     if ((req.method === "GET" || req.method === "HEAD") && req.url === "/api/state") {
-      return sendJson(res, { state: readState() });
+      return sendJson(res, { state: await readState() });
     }
 
     if (req.method === "POST" && req.url === "/api/state") {
       const body = JSON.parse(await readBody(req));
-      writeState(mergeMenusByFreshness(body.state));
+      await writeState(await mergeMenusByFreshness(body.state));
       broadcast({ type: "state_updated", payload: {} });
       return sendJson(res, { ok: true });
     }
 
     if (req.method === "POST" && req.url === "/api/menu") {
       const body = JSON.parse(await readBody(req));
-      const state = readState() || body.state;
+      const state = (await readState()) || body.state;
       if (!state || !body.menu?.id) return sendJson(res, { error: "Missing state or menu" }, 400);
       state.menu = Array.isArray(state.menu) ? state.menu : [];
       body.menu._updatedAt = Date.now();
@@ -159,14 +214,14 @@ const server = http.createServer(async (req, res) => {
       state.masterTemplate = state.masterTemplate || { version: 1, menuIds: [] };
       state.masterTemplate.menuIds = Array.isArray(state.masterTemplate.menuIds) ? state.masterTemplate.menuIds : [];
       if (!state.masterTemplate.menuIds.includes(body.menu.id)) state.masterTemplate.menuIds.push(body.menu.id);
-      writeState(state);
+      await writeState(state);
       broadcast({ type: "state_updated", payload: { menuId: body.menu.id } });
       return sendJson(res, { ok: true, state, menu: body.menu });
     }
 
     if (req.method === "POST" && req.url === "/api/event") {
       const event = JSON.parse(await readBody(req));
-      if (event.state) writeState(event.state);
+      if (event.state) await writeState(event.state);
       broadcast(event);
       return sendJson(res, { ok: true });
     }
@@ -177,6 +232,14 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(port, () => {
-  console.log(`Mustang POS realtime server running at http://127.0.0.1:${port}`);
-});
+ensureDatabase()
+  .then(() => {
+    server.listen(port, () => {
+      console.log(`Mustang POS realtime server running at http://127.0.0.1:${port}`);
+      console.log(`Data backend: ${usePostgres ? "PostgreSQL" : "local JSON"}`);
+    });
+  })
+  .catch((error) => {
+    console.error("Failed to initialize data backend:", error);
+    process.exit(1);
+  });
