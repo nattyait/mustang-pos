@@ -1,6 +1,7 @@
 const STORAGE_KEY = "mustang-franchise-pos-v1";
 const EVENT_KEY = "mustang-franchise-pos-event";
 const CART_KEY = "mustang-franchise-pos-draft-carts";
+const AUTH_KEY = "mustang-franchise-auth-user";
 const SERVER_SYNC = location.protocol.startsWith("http");
 const realtimeChannel = "BroadcastChannel" in window ? new BroadcastChannel("mustang-franchise-pos") : null;
 const PAGE_ID = crypto.randomUUID();
@@ -117,12 +118,12 @@ const seedState = {
     { id: "promo-20b", nameTh: "ลด 20 บาท", type: "amount", value: 20, active: true },
   ],
   users: [
-    { id: "u-super", name: "Mustang Owner", role: "super_admin", branchIds: ["branch-kiosk", "branch-main"], active: true },
-    { id: "u-franchise", name: "Kiosk Franchise Owner", role: "branch_owner", branchIds: ["branch-kiosk"], active: true },
-    { id: "u-manager", name: "Kiosk Manager", role: "branch_manager", branchIds: ["branch-kiosk"], active: true },
-    { id: "u-cashier", name: "Cashier", role: "cashier", branchIds: ["branch-kiosk"], active: true },
-    { id: "u-kitchen", name: "Kitchen Staff", role: "kitchen", branchIds: ["branch-kiosk"], active: true },
-    { id: "u-customer", name: "Customer Kiosk", role: "customer_kiosk", branchIds: ["branch-kiosk"], active: true },
+    { id: "u-super", username: "owner", password: "mustang666", name: "Mustang Owner", role: "super_admin", branchIds: ["branch-kiosk", "branch-main"], active: true },
+    { id: "u-franchise", username: "franchise", password: "mustang666", name: "Kiosk Franchise Owner", role: "branch_owner", branchIds: ["branch-kiosk"], active: true },
+    { id: "u-manager", username: "manager", password: "mustang666", name: "Kiosk Manager", role: "branch_manager", branchIds: ["branch-kiosk"], active: true },
+    { id: "u-cashier", username: "cashier", password: "mustang666", name: "Cashier", role: "cashier", branchIds: ["branch-kiosk"], active: true },
+    { id: "u-kitchen", username: "kitchen", password: "mustang666", name: "Kitchen Staff", role: "kitchen", branchIds: ["branch-kiosk"], active: true },
+    { id: "u-customer", username: "customer", password: "mustang666", name: "Customer Kiosk", role: "customer_kiosk", branchIds: ["branch-kiosk"], active: true },
   ],
   orders: [],
 };
@@ -204,7 +205,19 @@ function loadState() {
 function normalizeState(rawState) {
   const next = { ...structuredClone(seedState), ...rawState };
   next.masterTemplate = next.masterTemplate || structuredClone(seedState.masterTemplate);
-  next.users = next.users || structuredClone(seedState.users);
+  const defaultUsersById = new Map(seedState.users.map((user) => [user.id, user]));
+  next.users = (next.users || structuredClone(seedState.users)).map((user) => {
+    const fallback = defaultUsersById.get(user.id) || {};
+    const username = user.username || fallback.username || slugify(user.name || user.role || user.id);
+    return {
+      password: "mustang666",
+      ...fallback,
+      ...user,
+      username,
+      password: user.password || fallback.password || "mustang666",
+      active: user.active !== false,
+    };
+  });
   next.activeUserId = next.activeUserId || "u-super";
   next.branches = next.branches.map((item) => ({
     templateMode: "linked",
@@ -447,7 +460,56 @@ function isAdminRoute() {
   return location.pathname.replace(/\/+$/, "").endsWith("/admin");
 }
 
+function routeMode() {
+  const path = location.pathname.replace(/\/+$/, "");
+  if (path === "/pos" || path.endsWith("/pos")) return "pos";
+  if (path === "/customer" || path.endsWith("/customer")) return "customer";
+  if (path === "/admin" || path.endsWith("/admin")) return "admin";
+  return "app";
+}
+
+function isPublicRoute() {
+  return ["pos", "customer"].includes(routeMode());
+}
+
+function loginUserId() {
+  return localStorage.getItem(AUTH_KEY) || "";
+}
+
+function loggedInUser() {
+  return state.users.find((item) => item.id === loginUserId() && item.active);
+}
+
+function applyRouteUser() {
+  const mode = routeMode();
+  if (mode === "pos") {
+    state.activeUserId = "u-cashier";
+    return true;
+  }
+  if (mode === "customer") {
+    state.activeUserId = "u-customer";
+    return true;
+  }
+  const user = loggedInUser();
+  if (!user) return false;
+  state.activeUserId = user.id;
+  return true;
+}
+
+function updateAuthShell() {
+  const authenticated = applyRouteUser();
+  document.body.classList.toggle("login-required", !authenticated);
+  document.body.classList.toggle("public-route", isPublicRoute());
+  $("loginScreen")?.classList.toggle("hidden", authenticated);
+  document.querySelector(".app-shell")?.classList.toggle("hidden", !authenticated);
+  if (isPublicRoute()) $("logoutButton")?.classList.add("hidden");
+  else $("logoutButton")?.classList.remove("hidden");
+  return authenticated;
+}
+
 function canView(viewId) {
+  if (routeMode() === "pos") return viewId === "pos";
+  if (routeMode() === "customer") return viewId === "customer";
   return currentRole().views.includes(viewId);
 }
 
@@ -608,6 +670,7 @@ function cartSummary(cartName) {
 }
 
 function render() {
+  if (!updateAuthShell()) return;
   enforceBranchAccess();
   $("todayLabel").textContent = dateFmt.format(new Date());
   $("activeBranchName").textContent = branch().nameTh;
@@ -624,17 +687,19 @@ function render() {
   renderReports();
   renderAdmin();
   renderMenuManagement();
+  if (routeMode() === "pos" && !$("pos").classList.contains("active")) showView("pos", false);
+  if (routeMode() === "customer" && !$("customer").classList.contains("active")) showView("customer", false);
 }
 
 function renderUserSelect() {
-  $("userSelect").innerHTML = state.users
-    .filter((item) => item.active)
-    .map((item) => `<option value="${item.id}">${item.name} - ${roles[item.role]?.label || item.role}</option>`)
-    .join("");
+  $("userSelect").innerHTML = `<option value="${currentUser().id}">${currentUser().name} - ${roles[currentUser().role]?.label || currentUser().role}</option>`;
   $("userSelect").value = state.activeUserId;
+  $("userSelect").disabled = true;
 }
 
 function showView(viewId, updateHash = true) {
+  if (routeMode() === "pos") viewId = "pos";
+  if (routeMode() === "customer") viewId = "customer";
   const requested = $(viewId) ? viewId : "pos";
   const fallback = currentRole().views[0] || "pos";
   const view = isAdminRoute() && requested === "admin" ? "admin" : canView(requested) ? requested : fallback;
@@ -1134,7 +1199,7 @@ function renderAdmin() {
         <div class="admin-row">
           <span>
             <strong>${user.name}</strong><br>
-            <small>${roles[user.role]?.label || user.role} / ${user.branchIds.map((id) => state.branches.find((branchItem) => branchItem.id === id)?.nameTh || id).join(", ")}</small>
+            <small>@${user.username} / ${roles[user.role]?.label || user.role} / ${user.branchIds.map((id) => state.branches.find((branchItem) => branchItem.id === id)?.nameTh || id).join(", ")}</small>
           </span>
           <div class="role-matrix">
             <select data-user-role="${user.id}">
@@ -1143,15 +1208,23 @@ function renderAdmin() {
             <select data-user-branch="${user.id}">
               ${state.branches.map((branchItem) => `<option value="${branchItem.id}" ${user.branchIds.includes(branchItem.id) ? "selected" : ""}>${branchItem.nameTh}</option>`).join("")}
             </select>
+            <button class="secondary" data-open-password="${user.id}">เปลี่ยน password</button>
+            <label class="field hidden" data-password-panel="${user.id}">
+              <span>Password ใหม่</span>
+              <input data-user-field="password" data-user-id="${user.id}" type="password" value="" placeholder="กรอก password ใหม่">
+            </label>
+            <button class="secondary" data-delete-user="${user.id}">ลบ user</button>
           </div>
         </div>
       `).join("")}
     </div>
     <div class="admin-form">
       <label class="field"><span>ชื่อผู้ใช้ใหม่</span><input id="newUserName" placeholder="Branch Staff"></label>
+      <label class="field"><span>Username</span><input id="newUserUsername" placeholder="staff1"></label>
+      <label class="field"><span>Password</span><input id="newUserPassword" type="password" value="mustang666"></label>
       <label class="field"><span>Role</span><select id="newUserRole">${Object.entries(roles).map(([roleId, role]) => `<option value="${roleId}">${role.label}</option>`).join("")}</select></label>
       <label class="field"><span>Branch</span><select id="newUserBranch">${state.branches.map((branchItem) => `<option value="${branchItem.id}">${branchItem.nameTh}</option>`).join("")}</select></label>
-      <button class="primary" id="addUser">เพิ่ม mock user</button>
+      <button class="primary" id="addUser">เพิ่ม user</button>
     </div>
   `;
 
@@ -1467,6 +1540,23 @@ document.addEventListener("click", async (event) => {
   }
   const target = event.target.closest("button, input");
   if (!target) return;
+  if (target.id === "loginButton") {
+    const username = $("loginUsername").value.trim().toLowerCase();
+    const password = $("loginPassword").value;
+    const user = state.users.find((item) => item.active && item.username.toLowerCase() === username && item.password === password);
+    if (!user) return toast("Username หรือ password ไม่ถูกต้อง");
+    localStorage.setItem(AUTH_KEY, user.id);
+    state.activeUserId = user.id;
+    $("loginPassword").value = "";
+    render();
+    showView(isAdminRoute() ? "admin" : currentRole().views[0], false);
+    return;
+  }
+  if (target.id === "logoutButton") {
+    localStorage.removeItem(AUTH_KEY);
+    updateAuthShell();
+    return;
+  }
   if (target.dataset.view) {
     showView(target.dataset.view);
   }
@@ -1747,17 +1837,36 @@ document.addEventListener("click", async (event) => {
   if (target.id === "addUser") {
     if (!requireSuperuser()) return;
     const name = $("newUserName").value.trim();
+    const username = $("newUserUsername").value.trim();
+    const password = $("newUserPassword").value.trim() || "mustang666";
     if (!name) return toast("กรุณาใส่ชื่อผู้ใช้");
+    if (!username) return toast("กรุณาใส่ username");
+    if (state.users.some((item) => item.username.toLowerCase() === username.toLowerCase())) return toast("Username นี้มีอยู่แล้ว");
     state.users.push({
       id: `u-${Date.now()}`,
       name,
+      username,
+      password,
       role: $("newUserRole").value,
       branchIds: [$("newUserBranch").value],
       active: true,
     });
     saveState();
     render();
-    toast("เพิ่ม mock user แล้ว");
+    toast("เพิ่ม user แล้ว");
+  }
+  if (target.dataset.openPassword) {
+    const panel = document.querySelector(`[data-password-panel="${target.dataset.openPassword}"]`);
+    panel?.classList.toggle("hidden");
+    panel?.querySelector("input")?.focus();
+  }
+  if (target.dataset.deleteUser) {
+    if (!requireSuperuser()) return;
+    if (target.dataset.deleteUser === state.activeUserId) return toast("ไม่สามารถลบ user ที่กำลังใช้งาน");
+    state.users = state.users.filter((item) => item.id !== target.dataset.deleteUser);
+    saveState();
+    render();
+    toast("ลบ user แล้ว");
   }
   if (target.id === "seedReset") {
     state = normalizeState(structuredClone(seedState));
@@ -1775,6 +1884,11 @@ document.addEventListener("click", async (event) => {
 });
 
 document.addEventListener("keydown", (event) => {
+  if (event.key === "Enter" && event.target.closest("#loginScreen")) {
+    event.preventDefault();
+    $("loginButton")?.click();
+    return;
+  }
   if (!["Enter", " "].includes(event.key)) return;
   const menuTarget = event.target.closest("[data-menu-id]");
   if (!menuTarget) return;
@@ -1824,6 +1938,19 @@ document.addEventListener("change", (event) => {
     if (user.id === state.activeUserId) enforceBranchAccess();
     saveState();
     render();
+  }
+  if (target.dataset.userField) {
+    if (!requireSuperuser()) return;
+    const user = state.users.find((item) => item.id === target.dataset.userId);
+    if (!user) return;
+    const value = target.value.trim();
+    if (target.dataset.userField === "password" && !value) {
+      return;
+    }
+    user[target.dataset.userField] = value;
+    saveState();
+    render();
+    toast("บันทึกข้อมูล user แล้ว");
   }
   if (target.dataset.cartOption) {
     const line = carts[target.dataset.cartOption][Number(target.dataset.index)];
@@ -1917,5 +2044,7 @@ $("reportStart").value = today;
 $("reportEnd").value = today;
 $("syncStatus").textContent = navigator.onLine ? "Online" : "Offline ready";
 render();
-showView(isAdminRoute() ? "admin" : location.hash.replace("#", "") || currentRole().views[0] || "pos", false);
+const initialMode = routeMode();
+const initialView = initialMode === "pos" ? "pos" : initialMode === "customer" ? "customer" : isAdminRoute() ? "admin" : location.hash.replace("#", "") || currentRole().views[0] || "pos";
+if (updateAuthShell()) showView(initialView, false);
 fetchServerState({ notify: false });

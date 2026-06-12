@@ -1,11 +1,11 @@
 {
   "language": "th",
   "activeBranchId": "branch-kiosk",
-  "activeUserId": "u-super",
+  "activeUserId": "u-franchise",
   "orderSequenceByDay": {
     "branch-kiosk-2026-06-06": 14,
     "branch-kiosk-2026-06-07": 6,
-    "branch-kiosk-2026-06-12": 1
+    "branch-kiosk-2026-06-12": 3
   },
   "kitchenTab": "active",
   "branches": [
@@ -473,7 +473,9 @@
   ],
   "users": [
     {
+      "password": "mustang666",
       "id": "u-super",
+      "username": "owner",
       "name": "Mustang Owner",
       "role": "super_admin",
       "branchIds": [
@@ -483,7 +485,9 @@
       "active": true
     },
     {
+      "password": "mustang666",
       "id": "u-franchise",
+      "username": "franchise",
       "name": "Kiosk Franchise Owner",
       "role": "branch_owner",
       "branchIds": [
@@ -492,7 +496,9 @@
       "active": true
     },
     {
+      "password": "mustang666",
       "id": "u-manager",
+      "username": "manager",
       "name": "Kiosk Manager",
       "role": "branch_manager",
       "branchIds": [
@@ -501,7 +507,9 @@
       "active": true
     },
     {
+      "password": "mustang666",
       "id": "u-cashier",
+      "username": "cashier",
       "name": "Cashier",
       "role": "cashier",
       "branchIds": [
@@ -510,7 +518,9 @@
       "active": true
     },
     {
+      "password": "mustang666",
       "id": "u-kitchen",
+      "username": "kitchen",
       "name": "Kitchen Staff",
       "role": "kitchen",
       "branchIds": [
@@ -519,7 +529,9 @@
       "active": true
     },
     {
+      "password": "mustang666",
       "id": "u-customer",
+      "username": "customer",
       "name": "Customer Kiosk",
       "role": "customer_kiosk",
       "branchIds": [
@@ -529,6 +541,214 @@
     }
   ],
   "orders": [
+    {
+      "id": "1f31bbf3-3443-4d13-988c-b349017e0828",
+      "branchId": "branch-kiosk",
+      "orderNo": "M003",
+      "queueToken": "1",
+      "source": "staff",
+      "customerName": "",
+      "customerPhone": "",
+      "paymentMethod": "cash",
+      "cashReceived": 2770,
+      "transferReceived": 0,
+      "subtotal": 2770,
+      "discount": 0,
+      "total": 2770,
+      "promotion": {
+        "id": "none",
+        "nameTh": "ไม่ใช้โปรโมชั่น",
+        "type": "none",
+        "value": 0,
+        "active": true
+      },
+      "status": "picked_up",
+      "createdAt": "2026-06-12T11:01:57.621Z",
+      "paidAt": "2026-06-12T11:01:57.622Z",
+      "items": [
+        {
+          "key": "m-nutella-oreo:default:sweet-หวานน้อย|ice-ปกติ",
+          "menuId": "m-nutella-oreo",
+          "sku": "SIG-001",
+          "nameTh": "นูเทลล่าโอรีโอนมสด",
+          "nameEn": "Nutella Oreo Fresh Milk",
+          "variant": null,
+          "basePrice": 99,
+          "optionGroups": [
+            {
+              "id": "sweet",
+              "th": "ความหวาน",
+              "required": true,
+              "choices": [
+                {
+                  "th": "หวานน้อย"
+                },
+                {
+                  "th": "ปกติ"
+                },
+                {
+                  "th": "หวานมาก"
+                }
+              ]
+            },
+            {
+              "id": "ice",
+              "th": "น้ำแข็ง",
+              "required": true,
+              "choices": [
+                {
+                  "th": "ปกติ"
+                },
+                {
+                  "th": "น้อย"
+                },
+                {
+                  "th": "ไม่ใส่น้ำแข็ง"
+                }
+              ]
+            },
+            {
+              "id": "topping",
+              "th": "ท็อปปิ้ง",
+              "required": false,
+              "choices": [
+                {
+                  "th": "โอรีโอเพิ่ม",
+                  "price": 10
+                },
+                {
+                  "th": "นูเทลล่าเพิ่ม",
+                  "price": 15
+                }
+              ]
+            }
+          ],
+          "qty": 10,
+          "options": [
+            {
+              "groupId": "sweet",
+              "group": "ความหวาน",
+              "label": "หวานน้อย",
+              "price": 0,
+              "required": true
+            },
+            {
+              "groupId": "ice",
+              "group": "น้ำแข็ง",
+              "label": "ปกติ",
+              "price": 0,
+              "required": true
+            }
+          ],
+          "note": "",
+          "done": true
+        },
+        {
+          "key": "m-roti-banana:default:",
+          "menuId": "m-roti-banana",
+          "sku": "ROT-001",
+          "nameTh": "โรตีกล้วยนูเทลล่า",
+          "nameEn": "Banana Nutella Roti",
+          "variant": null,
+          "basePrice": 89,
+          "optionGroups": [
+            {
+              "id": "cut",
+              "th": "ตัดชิ้น",
+              "required": false,
+              "choices": [
+                {
+                  "th": "ตัด 4 ชิ้น"
+                },
+                {
+                  "th": "ตัด 8 ชิ้น"
+                }
+              ]
+            }
+          ],
+          "qty": 20,
+          "options": [],
+          "note": "",
+          "done": true
+        }
+      ],
+      "readyAt": "2026-06-12T11:03:52.840Z",
+      "pickedUpAt": "2026-06-12T11:05:04.223Z"
+    },
+    {
+      "id": "a229ad5e-2438-469c-a18c-d7f64cf4d422",
+      "branchId": "branch-kiosk",
+      "orderNo": "M002",
+      "queueToken": "16",
+      "source": "staff",
+      "customerName": "",
+      "customerPhone": "",
+      "paymentMethod": "cash",
+      "cashReceived": 0,
+      "transferReceived": 74,
+      "subtotal": 74,
+      "discount": 0,
+      "total": 74,
+      "promotion": {
+        "id": "none",
+        "nameTh": "ไม่ใช้โปรโมชั่น",
+        "type": "none",
+        "value": 0,
+        "active": true
+      },
+      "status": "picked_up",
+      "createdAt": "2026-06-12T10:44:25.367Z",
+      "paidAt": "2026-06-12T10:44:25.367Z",
+      "items": [
+        {
+          "key": "m-cha-chak:iced:sweet-หวานน้อย",
+          "menuId": "m-cha-chak",
+          "sku": "CHA-001",
+          "nameTh": "ชาชักเย็น",
+          "nameEn": "Iced Cha Chak",
+          "variant": {
+            "id": "iced",
+            "th": "เย็น",
+            "en": "Iced",
+            "price": 74,
+            "active": true
+          },
+          "basePrice": 74,
+          "optionGroups": [
+            {
+              "id": "sweet",
+              "th": "ความหวาน",
+              "required": true,
+              "choices": [
+                {
+                  "th": "หวานน้อย"
+                },
+                {
+                  "th": "ปกติ"
+                },
+                {
+                  "th": "หวานมาก"
+                }
+              ]
+            }
+          ],
+          "qty": 1,
+          "options": [
+            {
+              "groupId": "sweet",
+              "group": "ความหวาน",
+              "label": "หวานน้อย",
+              "price": 0,
+              "required": true
+            }
+          ],
+          "note": "",
+          "done": true
+        }
+      ],
+      "readyAt": "2026-06-12T10:51:13.100Z",
+      "pickedUpAt": "2026-06-12T10:51:54.898Z"
+    },
     {
       "id": "79a49cd3-6e39-4ee0-9bfb-c7723f6ff047",
       "branchId": "branch-kiosk",
@@ -1292,7 +1512,7 @@
       "total": 109,
       "promotion": {
         "id": "none",
-        "nameTh": "ไม่ใช้โปรโมชั่น",
+        "nameTh": "ไม่ใช้โปรโ���ชั่น",
         "type": "none",
         "value": 0,
         "active": true
@@ -1982,7 +2202,7 @@
             {
               "groupId": "shot",
               "group": "กาแฟ",
-              "label": "เพิ่มช็อต",
+              "label": "เ��ิ่มช็อต",
               "price": 20,
               "required": false
             }

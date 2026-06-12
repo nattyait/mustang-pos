@@ -6,10 +6,27 @@
     <meta name="theme-color" content="#1b1714" />
     <title>Mustang Cafe Franchise POS</title>
     <base href="../" />
-    <link rel="manifest" href="manifest.webmanifest?v=31" />
-    <link rel="stylesheet" href="styles.css?v=31" />
+    <link rel="manifest" href="manifest.webmanifest?v=37" />
+    <link rel="stylesheet" href="styles.css?v=37" />
   </head>
   <body>
+    <section id="loginScreen" class="login-screen hidden">
+      <div class="login-card">
+        <img src="assets/mustang-logo.png" alt="Mustang cafe" />
+        <p class="eyebrow">Mustang Cafe Franchise</p>
+        <h1>เข้าสู่ระบบ</h1>
+        <label class="field">
+          <span>Username</span>
+          <input id="loginUsername" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Username" />
+        </label>
+        <label class="field">
+          <span>Password</span>
+          <input id="loginPassword" type="password" autocomplete="new-password" placeholder="Password" />
+        </label>
+        <button class="primary" id="loginButton">Login</button>
+        <p class="login-help">หากลืม password ให้ Mustang admin แก้ไขให้เท่านั้น</p>
+      </div>
+    </section>
     <div class="app-shell">
       <aside class="sidebar">
         <div class="brand">
@@ -24,7 +41,7 @@
           <select id="branchSelect"></select>
         </label>
         <label class="field compact">
-          <span>Mock user / role</span>
+          <span>Current user / role</span>
           <select id="userSelect"></select>
         </label>
         <nav class="nav" id="mainNav">
@@ -39,6 +56,7 @@
         </nav>
         <div class="sidebar-actions">
           <button class="ghost" id="langToggle">TH / EN</button>
+          <button class="ghost" id="logoutButton">ออกจากระบบ</button>
           <button class="ghost" id="seedReset">รีเซ็ตข้อมูลตัวอย่าง</button>
         </div>
       </aside>
@@ -259,6 +277,6 @@
     <audio id="ding" preload="auto">
       <source src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=" type="audio/wav" />
     </audio>
-    <script src="app.js?v=31"></script>
+  <script src="app.js?v=38"></script>
   </body>
 </html>

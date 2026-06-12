@@ -88,6 +88,8 @@ function serveStatic(req, res) {
   const url = new URL(req.url, `http://${req.headers.host}`);
   let filePath = decodeURIComponent(url.pathname);
   if (filePath === "/") filePath = "/index.html";
+  if (filePath === "/pos/" || filePath === "/pos") filePath = "/index.html";
+  if (filePath === "/customer/" || filePath === "/customer") filePath = "/index.html";
   if (filePath === "/admin/" || filePath === "/admin") filePath = "/admin/index.html";
   const absolute = path.normalize(path.join(root, filePath));
   if (!absolute.startsWith(root)) {
