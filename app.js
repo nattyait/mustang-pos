@@ -175,6 +175,7 @@ let lastStoredStateRaw = localStorage.getItem(STORAGE_KEY);
 let lastMenuActivation = { id: "", at: 0 };
 let uploadedMenuImageDataUrl = "";
 let editingMenuId = "";
+let editingCategoryId = "";
 let lastLocalWriteAt = 0;
 let stateSavePromise = Promise.resolve();
 
@@ -576,6 +577,26 @@ function readMenuForm(existingId = "") {
   };
 }
 
+function nextCategorySort() {
+  return Math.max(0, ...state.categories.map((cat) => Number(cat.sort || 0))) + 1;
+}
+
+function readCategoryForm(existingId = "") {
+  const th = $("categoryTh").value.trim();
+  const en = $("categoryEn").value.trim() || th;
+  const sort = Number($("categorySort").value || nextCategorySort());
+  const id = existingId || slugify($("categoryId").value.trim() || en || th);
+  if (!th || !id) {
+    toast("กรุณาใส่ชื่อหมวดหมู่");
+    return null;
+  }
+  if (state.categories.some((cat) => cat.id !== existingId && cat.id.toLowerCase() === id.toLowerCase())) {
+    toast("Category ID นี้มีอยู่แล้ว");
+    return null;
+  }
+  return { id, th, en, sort };
+}
+
 function renderBranchSelect() {
   const branches = currentRole().canSwitchBranches ? state.branches : state.branches.filter((item) => currentUser().branchIds.includes(item.id));
   $("branchSelect").innerHTML = branches.map((item) => `<option value="${item.id}">${item.nameTh}</option>`).join("");
@@ -583,13 +604,14 @@ function renderBranchSelect() {
 }
 
 function renderTabs() {
-  const tabs = state.categories
-    .sort((a, b) => a.sort - b.sort)
+  const sortedCategories = [...state.categories].sort((a, b) => Number(a.sort || 0) - Number(b.sort || 0));
+  if (!sortedCategories.some((cat) => cat.id === selectedCategory)) selectedCategory = sortedCategories[0]?.id || "";
+  if (!sortedCategories.some((cat) => cat.id === selectedCustomerCategory)) selectedCustomerCategory = sortedCategories[0]?.id || "";
+  const tabs = sortedCategories
     .map((cat) => `<button class="${cat.id === selectedCategory ? "active" : ""}" data-cat="${cat.id}">${categoryName(cat)}</button>`)
     .join("");
   $("categoryTabs").innerHTML = tabs;
-  $("customerTabs").innerHTML = state.categories
-    .sort((a, b) => a.sort - b.sort)
+  $("customerTabs").innerHTML = sortedCategories
     .map((cat) => `<button class="${cat.id === selectedCustomerCategory ? "active" : ""}" data-customer-cat="${cat.id}">${categoryName(cat)}</button>`)
     .join("");
 }
@@ -971,7 +993,7 @@ function renderAdmin() {
 }
 
 function renderMenuManagement() {
-  if (!$("menuAdmin") || !$("menuFormAdmin")) return;
+  if (!$("menuAdmin") || !$("menuFormAdmin") || !$("categoryAdmin")) return;
   const allowed = currentUser().role === "super_admin";
   $("menuGuard").classList.toggle("active", !allowed);
   $("menuGuard").innerHTML = !allowed
@@ -979,6 +1001,8 @@ function renderMenuManagement() {
     : "";
   document.querySelectorAll("#menus .panel").forEach((panel) => panel.classList.toggle("hidden", !allowed));
   if (!allowed) return;
+  const sortedCategories = [...state.categories].sort((a, b) => Number(a.sort || 0) - Number(b.sort || 0));
+  const editingCategory = state.categories.find((cat) => cat.id === editingCategoryId);
   const editing = state.menu.find((item) => item.id === editingMenuId);
   const formTitle = editing ? `แก้ไขเมนู ${editing.th}` : "เพิ่มเมนูใหม่";
   const imageValue = editing && !editing.image.startsWith("data:") ? editing.image : "";
@@ -986,10 +1010,36 @@ function renderMenuManagement() {
   const hasSweetness = editing ? editing.options.some((group) => group.id === "sweet") : true;
   const hasIce = editing ? editing.options.some((group) => group.id === "ice") : true;
 
+  $("categoryAdmin").innerHTML = `
+    <div class="admin-form flat">
+      <p class="eyebrow">${editingCategory ? `แก้ไขหมวดหมู่ ${editingCategory.th}` : "เพิ่มหมวดหมู่ใหม่"}</p>
+      ${editingCategory ? "" : `<label class="field"><span>Category ID</span><input id="categoryId" placeholder="เช่น fresh-milk"></label>`}
+      <label class="field"><span>ชื่อหมวดหมู่ไทย *</span><input id="categoryTh" value="${escapeHtml(editingCategory?.th || "")}" placeholder="เช่น นมสด"></label>
+      <label class="field"><span>English name</span><input id="categoryEn" value="${escapeHtml(editingCategory?.en || "")}" placeholder="Fresh Milk"></label>
+      <label class="field"><span>ลำดับ</span><input id="categorySort" type="number" value="${editingCategory?.sort || nextCategorySort()}"></label>
+      <button class="primary" id="${editingCategory ? "saveCategoryEdit" : "addCategory"}">${editingCategory ? "บันทึกหมวดหมู่" : "เพิ่มหมวดหมู่"}</button>
+      ${editingCategory ? `<button class="secondary" id="cancelCategoryEdit">ยกเลิกการแก้ไข</button>` : ""}
+    </div>
+    <div class="admin-list category-list">
+      ${sortedCategories.map((cat) => {
+        const count = state.menu.filter((item) => item.categoryId === cat.id).length;
+        return `
+          <div class="admin-row">
+            <span><strong>${cat.th}</strong><br><small>${cat.id} / ${cat.en} / ลำดับ ${cat.sort} / ${count} เมนู</small></span>
+            <div class="role-matrix">
+              <button class="secondary" data-edit-category="${cat.id}">แก้ไข</button>
+              <button class="secondary" data-delete-category="${cat.id}">ลบ</button>
+            </div>
+          </div>
+        `;
+      }).join("")}
+    </div>
+  `;
+
   $("menuFormAdmin").innerHTML = `
     <div class="admin-form flat">
       <p class="eyebrow">${formTitle}</p>
-      <label class="field"><span>หมวดหมู่</span><select id="newMenuCategory">${state.categories.map((cat) => `<option value="${cat.id}" ${editing?.categoryId === cat.id ? "selected" : ""}>${cat.th}</option>`).join("")}</select></label>
+      <label class="field"><span>หมวดหมู่</span><select id="newMenuCategory">${sortedCategories.map((cat) => `<option value="${cat.id}" ${editing?.categoryId === cat.id ? "selected" : ""}>${cat.th}</option>`).join("")}</select></label>
       <label class="field"><span>SKU</span><input id="newMenuSku" value="${escapeHtml(editing?.sku || "")}" placeholder="เว้นว่างเพื่อสร้างอัตโนมัติ"></label>
       <label class="field"><span>ชื่อเมนูไทย *</span><input id="newMenuTh" value="${escapeHtml(editing?.th || "")}" placeholder="เช่น นมสดคาราเมล"></label>
       <label class="field"><span>English name</span><input id="newMenuEn" value="${escapeHtml(editing?.en || "")}" placeholder="Caramel Fresh Milk"></label>
@@ -1243,6 +1293,52 @@ document.addEventListener("click", (event) => {
     saveState();
     render();
     toast(`เพิ่มเมนู ${form.th} แล้ว`);
+  }
+  if (target.id === "addCategory") {
+    if (!requireSuperuser()) return;
+    const form = readCategoryForm();
+    if (!form) return;
+    state.categories.push(form);
+    selectedCategory = form.id;
+    selectedCustomerCategory = form.id;
+    saveState();
+    render();
+    toast(`เพิ่มหมวดหมู่ ${form.th} แล้ว`);
+  }
+  if (target.dataset.editCategory) {
+    if (!requireSuperuser()) return;
+    editingCategoryId = target.dataset.editCategory;
+    renderMenuManagement();
+  }
+  if (target.id === "cancelCategoryEdit") {
+    editingCategoryId = "";
+    renderMenuManagement();
+  }
+  if (target.id === "saveCategoryEdit") {
+    if (!requireSuperuser()) return;
+    const existing = state.categories.find((cat) => cat.id === editingCategoryId);
+    if (!existing) return toast("ไม่พบหมวดหมู่ที่จะแก้ไข");
+    const form = readCategoryForm(existing.id);
+    if (!form) return;
+    Object.assign(existing, { th: form.th, en: form.en, sort: form.sort });
+    editingCategoryId = "";
+    saveState();
+    render();
+    toast(`บันทึกหมวดหมู่ ${form.th} แล้ว`);
+  }
+  if (target.dataset.deleteCategory) {
+    if (!requireSuperuser()) return;
+    const id = target.dataset.deleteCategory;
+    if (state.categories.length <= 1) return toast("ต้องมีหมวดหมู่อย่างน้อย 1 หมวด");
+    const count = state.menu.filter((item) => item.categoryId === id).length;
+    if (count) return toast("หมวดหมู่นี้ยังมีเมนูอยู่ กรุณาย้ายหรือลบ/ซ่อนเมนูก่อน");
+    state.categories = state.categories.filter((cat) => cat.id !== id);
+    if (selectedCategory === id) selectedCategory = state.categories[0]?.id || "";
+    if (selectedCustomerCategory === id) selectedCustomerCategory = state.categories[0]?.id || "";
+    if (editingCategoryId === id) editingCategoryId = "";
+    saveState();
+    render();
+    toast("ลบหมวดหมู่แล้ว");
   }
   if (target.dataset.editMenu) {
     if (!requireSuperuser()) return;

@@ -608,7 +608,7 @@ select,
 
 .menu-management {
   display: grid;
-  grid-template-columns: minmax(300px, 420px) minmax(0, 1fr);
+  grid-template-columns: minmax(260px, 340px) minmax(300px, 420px) minmax(0, 1fr);
   gap: 14px;
   align-items: start;
 }
@@ -655,6 +655,10 @@ th {
 .admin-list {
   display: grid;
   gap: 8px;
+}
+
+.category-list {
+  margin-top: 12px;
 }
 
 .admin-form {
