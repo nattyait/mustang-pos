@@ -1,7 +1,7 @@
 {
   "language": "th",
   "activeBranchId": "branch-kiosk",
-  "activeUserId": "u-franchise",
+  "activeUserId": "u-super",
   "orderSequenceByDay": {
     "branch-kiosk-2026-06-06": 14,
     "branch-kiosk-2026-06-07": 6,
@@ -196,8 +196,8 @@
     },
     {
       "id": "roti",
-      "th": "โรตีหวาน",
-      "en": "Sweet roti",
+      "th": "โรตี",
+      "en": "Roti",
       "sort": 3
     },
     {
@@ -336,9 +336,9 @@
       "id": "m-cha-chak",
       "sku": "CHA-001",
       "categoryId": "cha-chak",
-      "th": "ชาชักเย็น",
+      "th": "ชาชัก",
       "en": "Iced Cha Chak",
-      "price": 64,
+      "price": 40,
       "image": "assets/mustang-logo.png",
       "available": true,
       "options": [
@@ -348,53 +348,50 @@
           "required": true,
           "choices": [
             {
-              "th": "25%"
+              "th": "หวานน้อย"
             },
             {
-              "th": "50%"
+              "th": "ปกติ"
             },
             {
-              "th": "75%"
-            },
-            {
-              "th": "100%"
+              "th": "หวานมาก"
             }
           ]
         }
       ],
-      "_updatedAt": 1781263315947,
+      "_updatedAt": 1781263990849,
       "variants": [
         {
           "id": "hot",
           "th": "ร้อน",
           "en": "Hot",
-          "price": 64,
+          "price": 40,
           "active": true
         },
         {
           "id": "iced",
           "th": "เย็น",
           "en": "Iced",
-          "price": 74,
+          "price": 55,
           "active": true
         },
         {
           "id": "blended",
           "th": "ปั่น",
           "en": "Blended",
-          "price": 84,
+          "price": 65,
           "active": true
         }
       ]
     },
     {
       "id": "m-roti-banana",
-      "sku": "ROT-001",
-      "categoryId": "roti",
-      "th": "โรตีกล้วยนูเทลล่า",
-      "en": "Banana Nutella Roti",
+      "sku": "FOOD-001",
+      "categoryId": "food",
+      "th": "มักกะโรนีซอสมะเขือเทศไก่",
+      "en": "Chicken Tomato Macaroni",
       "price": 89,
-      "image": "assets/nutella-oreo-fresh-milk.png",
+      "image": "assets/mustang-logo.png",
       "available": true,
       "options": [],
       "variants": [
@@ -406,7 +403,7 @@
           "active": true
         }
       ],
-      "_updatedAt": 1781263625282
+      "_updatedAt": 1781264241152
     },
     {
       "id": "m-sig-003",
