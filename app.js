@@ -1456,10 +1456,10 @@ function renderMenuManagement() {
 
 function printReceipt(orderId) {
   const order = state.orders.find((item) => item.id === orderId);
-  const node = document.createElement("div");
-  node.className = "receipt";
-  node.innerHTML = `
-    <img src="assets/mustang-logo.png" alt="">
+  if (!order) return;
+  const receiptHtml = `
+    <div class="receipt">
+    <img src="${new URL("assets/mustang-logo.png", window.location.href).href}" alt="">
     <h2>Mustang Cafe</h2>
     <p>${branch().nameTh}</p>
     <p>${order.orderNo} / Queue ${order.queueToken}</p>
@@ -1475,10 +1475,100 @@ function printReceipt(orderId) {
     <div class="row"><span>Payment</span><strong>${paymentName(order.paymentMethod)}</strong></div>
     <div class="line"></div>
     <p>ขอบคุณค่ะ / Thank you</p>
+    </div>
   `;
-  document.body.appendChild(node);
-  window.print();
-  window.setTimeout(() => node.remove(), 500);
+  const frame = document.createElement("iframe");
+  frame.title = "receipt-print";
+  frame.style.position = "fixed";
+  frame.style.right = "0";
+  frame.style.bottom = "0";
+  frame.style.width = "1px";
+  frame.style.height = "1px";
+  frame.style.border = "0";
+  frame.style.opacity = "0";
+  document.body.appendChild(frame);
+
+  const doc = frame.contentDocument || frame.contentWindow.document;
+  doc.open();
+  doc.write(`
+    <!doctype html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <title>${order.orderNo}</title>
+        <style>
+          @page { size: 80mm auto; margin: 0; }
+          * { box-sizing: border-box; }
+          html, body {
+            width: 80mm;
+            min-width: 80mm;
+            margin: 0;
+            padding: 0;
+            background: #fff;
+            color: #000;
+          }
+          .receipt {
+            width: 80mm;
+            margin: 0;
+            padding: 3mm;
+            color: #000;
+            background: #fff;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 11px;
+            line-height: 1.35;
+            page-break-after: avoid;
+            break-after: avoid;
+          }
+          img {
+            display: block;
+            width: 24mm;
+            height: 24mm;
+            margin: 0 auto 2mm;
+            object-fit: contain;
+          }
+          h2, p {
+            text-align: center;
+            margin: 0 0 1.5mm;
+          }
+          .line {
+            border-top: 1px dashed #000;
+            margin: 2mm 0;
+          }
+          .row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 3mm;
+            margin-bottom: 1mm;
+          }
+          .row span {
+            flex: 1;
+            min-width: 0;
+            overflow-wrap: anywhere;
+          }
+          .row strong {
+            flex: 0 0 auto;
+            white-space: nowrap;
+          }
+        </style>
+      </head>
+      <body>${receiptHtml}</body>
+    </html>
+  `);
+  doc.close();
+
+  let cleaned = false;
+  const cleanup = () => {
+    if (cleaned) return;
+    cleaned = true;
+    frame.remove();
+  };
+  frame.contentWindow.addEventListener("afterprint", cleanup, { once: true });
+  window.setTimeout(() => {
+    frame.contentWindow.focus();
+    frame.contentWindow.print();
+    window.setTimeout(cleanup, 30000);
+  }, 150);
 }
 
 function notifyKitchen(payload = {}) {
