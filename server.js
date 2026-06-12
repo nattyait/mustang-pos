@@ -34,6 +34,30 @@ function sendJson(res, data, status = 200) {
   res.end(JSON.stringify(data));
 }
 
+function readState() {
+  if (!fs.existsSync(stateFile)) return null;
+  return JSON.parse(fs.readFileSync(stateFile, "utf8"));
+}
+
+function writeState(state) {
+  fs.writeFileSync(stateFile, JSON.stringify(state, null, 2));
+}
+
+function mergeMenusByFreshness(incomingState) {
+  const currentState = readState();
+  if (!currentState?.menu?.length || !incomingState?.menu?.length) return incomingState;
+  const currentById = new Map(currentState.menu.map((item) => [item.id, item]));
+  incomingState.menu = incomingState.menu.map((incomingItem) => {
+    const currentItem = currentById.get(incomingItem.id);
+    if (!currentItem) return incomingItem;
+    const currentTime = Number(currentItem._updatedAt || 0);
+    const incomingTime = Number(incomingItem._updatedAt || 0);
+    if (currentTime > incomingTime) return currentItem;
+    return incomingItem;
+  });
+  return incomingState;
+}
+
 function broadcast(event) {
   const payload = `data: ${JSON.stringify({ ...event, at: Date.now() })}\n\n`;
   for (const client of clients) {
@@ -111,20 +135,36 @@ const server = http.createServer(async (req, res) => {
     }
 
     if ((req.method === "GET" || req.method === "HEAD") && req.url === "/api/state") {
-      if (!fs.existsSync(stateFile)) return sendJson(res, { state: null });
-      return sendJson(res, { state: JSON.parse(fs.readFileSync(stateFile, "utf8")) });
+      return sendJson(res, { state: readState() });
     }
 
     if (req.method === "POST" && req.url === "/api/state") {
       const body = JSON.parse(await readBody(req));
-      fs.writeFileSync(stateFile, JSON.stringify(body.state, null, 2));
+      writeState(mergeMenusByFreshness(body.state));
       broadcast({ type: "state_updated", payload: {} });
       return sendJson(res, { ok: true });
     }
 
+    if (req.method === "POST" && req.url === "/api/menu") {
+      const body = JSON.parse(await readBody(req));
+      const state = readState() || body.state;
+      if (!state || !body.menu?.id) return sendJson(res, { error: "Missing state or menu" }, 400);
+      state.menu = Array.isArray(state.menu) ? state.menu : [];
+      body.menu._updatedAt = Date.now();
+      const index = state.menu.findIndex((item) => item.id === body.menu.id);
+      if (index >= 0) state.menu[index] = body.menu;
+      else state.menu.push(body.menu);
+      state.masterTemplate = state.masterTemplate || { version: 1, menuIds: [] };
+      state.masterTemplate.menuIds = Array.isArray(state.masterTemplate.menuIds) ? state.masterTemplate.menuIds : [];
+      if (!state.masterTemplate.menuIds.includes(body.menu.id)) state.masterTemplate.menuIds.push(body.menu.id);
+      writeState(state);
+      broadcast({ type: "state_updated", payload: { menuId: body.menu.id } });
+      return sendJson(res, { ok: true, state, menu: body.menu });
+    }
+
     if (req.method === "POST" && req.url === "/api/event") {
       const event = JSON.parse(await readBody(req));
-      if (event.state) fs.writeFileSync(stateFile, JSON.stringify(event.state, null, 2));
+      if (event.state) writeState(event.state);
       broadcast(event);
       return sendJson(res, { ok: true });
     }

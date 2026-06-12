@@ -181,7 +181,10 @@ let lastMenuActivation = { id: "", at: 0 };
 let uploadedMenuImageDataUrl = "";
 let editingMenuId = "";
 let editingCategoryId = "";
+let menuFormPriceMode = "";
+let categoryToolsOpen = false;
 let lastLocalWriteAt = 0;
+let stateRevision = 0;
 let stateSavePromise = Promise.resolve();
 
 const $ = (id) => document.getElementById(id);
@@ -269,7 +272,9 @@ function saveDraftCarts() {
 }
 
 async function saveState() {
+  stateRevision += 1;
   lastLocalWriteAt = Date.now();
+  state = normalizeState(state);
   lastStoredStateRaw = JSON.stringify(state);
   localStorage.setItem(STORAGE_KEY, lastStoredStateRaw);
   if (SERVER_SYNC) {
@@ -282,6 +287,39 @@ async function saveState() {
   }
 }
 
+async function saveMenuItemToLatestState(menuId, menuItem) {
+  stateRevision += 1;
+  lastLocalWriteAt = Date.now();
+  const normalizedMenu = normalizeMenuItem({ ...menuItem, _updatedAt: Date.now() });
+  let latest = state;
+  const applyMenuToState = (baseState) => {
+    const next = normalizeState(baseState);
+    const index = next.menu.findIndex((item) => item.id === menuId);
+    if (index >= 0) next.menu[index] = normalizedMenu;
+    else next.menu.push(normalizedMenu);
+    if (!next.masterTemplate.menuIds.includes(menuId)) next.masterTemplate.menuIds.push(menuId);
+    next.activeBranchId = state.activeBranchId;
+    next.activeUserId = state.activeUserId;
+    return normalizeState(next);
+  };
+  if (SERVER_SYNC) {
+    const optimisticState = applyMenuToState(state);
+    const response = await fetch("/api/menu", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ state: optimisticState, menu: normalizedMenu }),
+    });
+    if (!response.ok) throw new Error("Save failed");
+    const data = await response.json();
+    latest = data.state || optimisticState;
+  } else {
+    latest = applyMenuToState(state);
+  }
+  state = normalizeState(latest);
+  lastStoredStateRaw = JSON.stringify(state);
+  localStorage.setItem(STORAGE_KEY, lastStoredStateRaw);
+}
+
 function reloadState() {
   state = loadState();
   enforceBranchAccess();
@@ -290,6 +328,8 @@ function reloadState() {
 async function fetchServerState({ notify = false } = {}) {
   if (!SERVER_SYNC) return;
   if (Date.now() - lastLocalWriteAt < 1800) return;
+  const fetchStartedAt = Date.now();
+  const fetchRevision = stateRevision;
   try {
     const previousKitchenIds = new Set(
       state.orders.filter((order) => order.branchId === state.activeBranchId && order.status === "in_kitchen").map((order) => order.id)
@@ -301,11 +341,15 @@ async function fetchServerState({ notify = false } = {}) {
       await saveState();
       return;
     }
-    state = normalizeState(data.state);
-    lastStoredStateRaw = JSON.stringify(state);
+    if (fetchStartedAt < lastLocalWriteAt || fetchRevision !== stateRevision) return;
+    const nextState = normalizeState(data.state);
+    const nextStateRaw = JSON.stringify(nextState);
+    if (nextStateRaw === lastStoredStateRaw) return;
+    state = nextState;
+    lastStoredStateRaw = nextStateRaw;
     localStorage.setItem(STORAGE_KEY, lastStoredStateRaw);
     enforceBranchAccess();
-    render();
+    renderSyncedState();
     if (!notify) return;
     const newKitchenOrder = state.orders.find(
       (order) => order.branchId === state.activeBranchId && order.status === "in_kitchen" && !previousKitchenIds.has(order.id)
@@ -333,16 +377,16 @@ function handleRealtimeEvent(event) {
   if (!event || event.sourceId === PAGE_ID) return;
   if (event.type === "state_updated") {
     reloadState();
-    render();
+    renderSyncedState();
   }
   if (event.type === "new_kitchen_order") {
     reloadState();
-    render();
+    renderSyncedState();
     notifyKitchen(event.payload);
   }
   if (event.type === "pending_payment_order") {
     reloadState();
-    render();
+    renderSyncedState();
     toast(`มีออเดอร์รอยืนยันชำระเงิน ${event.payload.orderNo} / คิว ${event.payload.queueToken}`);
   }
 }
@@ -355,12 +399,36 @@ function syncStateFromStorage({ notify = false } = {}) {
   );
   lastStoredStateRaw = raw;
   reloadState();
-  render();
+  renderSyncedState();
   if (!notify) return;
   const newKitchenOrder = state.orders.find(
     (order) => order.branchId === state.activeBranchId && order.status === "in_kitchen" && !previousKitchenIds.has(order.id)
   );
   if (newKitchenOrder) notifyKitchen(newKitchenOrder);
+}
+
+function isMenuManagementEditing() {
+  const active = document.activeElement;
+  if (!active) return false;
+  return Boolean(
+    document.querySelector("#menus.view.active") &&
+      active.closest("#menuFormAdmin, #categoryAdmin") &&
+      ["INPUT", "SELECT", "TEXTAREA", "BUTTON"].includes(active.tagName)
+  );
+}
+
+function renderSyncedState() {
+  if (isMenuManagementEditing()) {
+    renderMenus();
+    renderCarts();
+    renderPayments();
+    renderKitchen();
+    renderPickup();
+    renderReports();
+    renderAdmin();
+    return;
+  }
+  render();
 }
 
 function branch() {
@@ -616,6 +684,15 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
+function readNumber(value) {
+  const thaiDigits = "๐๑๒๓๔๕๖๗๘๙";
+  const normalized = String(value ?? "")
+    .trim()
+    .replace(/[๐-๙]/g, (digit) => String(thaiDigits.indexOf(digit)))
+    .replaceAll(",", "");
+  return Number(normalized || 0);
+}
+
 function nextSku(categoryId) {
   const prefixMap = { signature: "SIG", "cha-chak": "CHA", roti: "ROT", food: "FOOD" };
   const prefix = prefixMap[categoryId] || categoryId.slice(0, 4).toUpperCase();
@@ -661,7 +738,7 @@ function readPriceVariantsFromForm(basePrice) {
     .map((row, index) => {
       const th = row.querySelector("[data-variant-th]")?.value.trim() || "";
       const en = row.querySelector("[data-variant-en]")?.value.trim() || th;
-      const price = Number(row.querySelector("[data-variant-price]")?.value || 0);
+      const price = readNumber(row.querySelector("[data-variant-price]")?.value || 0);
       const active = row.querySelector("[data-variant-active]")?.checked !== false;
       const id = row.dataset.variantId || slugify(en || th || `variant-${index + 1}`) || `variant-${index + 1}`;
       return { id, th, en, price, active };
@@ -676,15 +753,20 @@ function readMenuForm(existingId = "") {
   const categoryId = $("newMenuCategory").value;
   const th = $("newMenuTh").value.trim();
   const en = $("newMenuEn").value.trim() || th;
-  const price = Number($("newMenuPrice").value || 0);
+  const price = readNumber($("newMenuPrice").value || 0);
+  const mode = $("priceMode")?.value || "single";
   const sku = $("newMenuSku").value.trim() || nextSku(categoryId);
-  if (!th || price <= 0) {
-    toast("กรุณาใส่ชื่อเมนูและราคา");
+  if (!th) {
+    toast("กรุณาใส่ชื่อเมนู");
+    return null;
+  }
+  if (mode === "single" && price <= 0) {
+    toast("กรุณาใส่ราคา");
     return null;
   }
   const variants = readPriceVariantsFromForm(price);
   if (!variants) {
-    toast("กรุณาใส่รูปแบบราคาอย่างน้อย 1 รายการ");
+    toast("กรุณาใส่รูปแบบราคาและราคาอย่างน้อย 1 รายการ");
     return null;
   }
   if (state.menu.some((item) => item.id !== existingId && item.sku.toLowerCase() === sku.toLowerCase())) {
@@ -1147,33 +1229,38 @@ function renderMenuManagement() {
   const hasSweetness = editing ? editing.options.some((group) => group.id === "sweet") : true;
   const hasIce = editing ? editing.options.some((group) => group.id === "ice") : true;
   const editingVariants = variantsForForm(editing);
-  const priceMode = editing && hasRealVariants(editing) ? "variants" : "single";
+  const priceMode = menuFormPriceMode || (editing && hasRealVariants(editing) ? "variants" : "single");
   const basePrice = editing ? defaultVariant(editing)?.price || editing.price : "";
 
   $("categoryAdmin").innerHTML = `
-    <div class="admin-form flat">
-      <p class="eyebrow">${editingCategory ? `แก้ไขหมวดหมู่ ${editingCategory.th}` : "เพิ่มหมวดหมู่ใหม่"}</p>
-      ${editingCategory ? "" : `<label class="field"><span>Category ID</span><input id="categoryId" placeholder="เช่น fresh-milk"></label>`}
-      <label class="field"><span>ชื่อหมวดหมู่ไทย *</span><input id="categoryTh" value="${escapeHtml(editingCategory?.th || "")}" placeholder="เช่น นมสด"></label>
-      <label class="field"><span>English name</span><input id="categoryEn" value="${escapeHtml(editingCategory?.en || "")}" placeholder="Fresh Milk"></label>
-      <label class="field"><span>ลำดับ</span><input id="categorySort" type="number" value="${editingCategory?.sort || nextCategorySort()}"></label>
-      <button class="primary" id="${editingCategory ? "saveCategoryEdit" : "addCategory"}">${editingCategory ? "บันทึกหมวดหมู่" : "เพิ่มหมวดหมู่"}</button>
-      ${editingCategory ? `<button class="secondary" id="cancelCategoryEdit">ยกเลิกการแก้ไข</button>` : ""}
-    </div>
-    <div class="admin-list category-list">
-      ${sortedCategories.map((cat) => {
-        const count = state.menu.filter((item) => item.categoryId === cat.id).length;
-        return `
-          <div class="admin-row">
-            <span><strong>${cat.th}</strong><br><small>${cat.id} / ${cat.en} / ลำดับ ${cat.sort} / ${count} เมนู</small></span>
-            <div class="role-matrix">
-              <button class="secondary" data-edit-category="${cat.id}">แก้ไข</button>
-              <button class="secondary" data-delete-category="${cat.id}">ลบ</button>
-            </div>
-          </div>
-        `;
-      }).join("")}
-    </div>
+    <details id="categoryToolsDetails" class="category-admin-details" ${categoryToolsOpen || editingCategory ? "open" : ""}>
+      <summary>เปิดเครื่องมือจัดการหมวดหมู่</summary>
+      <div class="category-admin-body">
+        <div class="admin-form flat">
+          <p class="eyebrow">${editingCategory ? `แก้ไขหมวดหมู่ ${editingCategory.th}` : "เพิ่มหมวดหมู่ใหม่"}</p>
+          ${editingCategory ? "" : `<label class="field"><span>Category ID</span><input id="categoryId" placeholder="เช่น fresh-milk"></label>`}
+          <label class="field"><span>ชื่อหมวดหมู่ไทย *</span><input id="categoryTh" value="${escapeHtml(editingCategory?.th || "")}" placeholder="เช่น นมสด"></label>
+          <label class="field"><span>English name</span><input id="categoryEn" value="${escapeHtml(editingCategory?.en || "")}" placeholder="Fresh Milk"></label>
+          <label class="field"><span>ลำดับ</span><input id="categorySort" type="number" value="${editingCategory?.sort || nextCategorySort()}"></label>
+          <button class="primary" id="${editingCategory ? "saveCategoryEdit" : "addCategory"}">${editingCategory ? "บันทึกหมวดหมู่" : "เพิ่มหมวดหมู่"}</button>
+          ${editingCategory ? `<button class="secondary" id="cancelCategoryEdit">ยกเลิกการแก้ไข</button>` : ""}
+        </div>
+        <div class="admin-list category-list">
+          ${sortedCategories.map((cat) => {
+            const count = state.menu.filter((item) => item.categoryId === cat.id).length;
+            return `
+              <div class="admin-row">
+                <span><strong>${cat.th}</strong><br><small>${cat.id} / ${cat.en} / ลำดับ ${cat.sort} / ${count} เมนู</small></span>
+                <div class="role-matrix">
+                  <button class="secondary" data-edit-category="${cat.id}">แก้ไข</button>
+                  <button class="secondary" data-delete-category="${cat.id}">ลบ</button>
+                </div>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      </div>
+    </details>
   `;
 
   $("menuFormAdmin").innerHTML = `
@@ -1221,17 +1308,56 @@ function renderMenuManagement() {
   `;
 
   $("menuAdmin").innerHTML = `
-    <div class="admin-list">${state.menu.map((item) => `
-      <div class="admin-row menu-row">
-        <img src="${item.image}" alt="${item.th}">
-        <span><strong>${item.th}</strong><br><small>${item.sku} / ${menuPriceLabel(item)} / ${state.categories.find((cat) => cat.id === item.categoryId)?.th || item.categoryId}</small></span>
-        <div class="role-matrix">
-          <button class="secondary" data-edit-menu="${item.id}">แก้ไข</button>
-          <button class="secondary" data-toggle-menu="${item.id}">${item.available ? "ขายอยู่" : "ซ่อน"}</button>
-          <button class="secondary" data-delete-menu="${item.id}">ลบ</button>
-        </div>
-      </div>
-    `).join("")}</div>
+    <div class="menu-catalog">
+      ${sortedCategories.map((cat) => {
+        const items = state.menu.filter((item) => item.categoryId === cat.id);
+        if (!items.length) return "";
+        return `
+          <section class="menu-catalog-group">
+            <header>
+              <div>
+                <p class="eyebrow">${cat.en}</p>
+                <h3>${cat.th}</h3>
+              </div>
+              <span class="pill">${items.length} เมนู</span>
+            </header>
+            <div class="menu-catalog-list">
+              ${items.map((item) => {
+                const variants = activeVariants(item);
+                const variantChips = variants.length > 1
+                  ? variants.map((variant) => `<span>${variant.th} ${fmt.format(variant.price)}</span>`).join("")
+                  : "";
+                return `
+                  <article class="menu-admin-card ${item.available ? "" : "is-hidden"}">
+                    <img src="${item.image}" alt="${item.th}">
+                    <div class="menu-admin-main">
+                      <div class="menu-admin-title">
+                        <div>
+                          <strong>${item.th}</strong>
+                          <small>${item.en}</small>
+                        </div>
+                        <span class="menu-status ${item.available ? "active" : ""}">${item.available ? "ขายอยู่" : "ซ่อนอยู่"}</span>
+                      </div>
+                      <div class="menu-admin-meta">
+                        <span>${item.sku}</span>
+                        <span>${menuPriceLabel(item)}</span>
+                        <span>${item.options.length ? `${item.options.length} ตัวเลือก` : "ไม่มีตัวเลือก"}</span>
+                      </div>
+                      ${variantChips ? `<div class="variant-chips">${variantChips}</div>` : ""}
+                    </div>
+                    <div class="menu-admin-actions">
+                      <button class="primary" data-edit-menu="${item.id}">แก้ไข</button>
+                      <button class="secondary" data-toggle-menu="${item.id}">${item.available ? "ซ่อน" : "เปิดขาย"}</button>
+                      <button class="secondary" data-delete-menu="${item.id}">ลบ</button>
+                    </div>
+                  </article>
+                `;
+              }).join("")}
+            </div>
+          </section>
+        `;
+      }).join("")}
+    </div>
   `;
 }
 
@@ -1324,7 +1450,7 @@ document.addEventListener("pointerup", (event) => {
   activateMenuCard(menuTarget);
 });
 
-document.addEventListener("click", (event) => {
+document.addEventListener("click", async (event) => {
   const variantTarget = event.target.closest("[data-menu-variant]");
   if (variantTarget) {
     const menuTarget = variantTarget.closest("[data-menu-id]");
@@ -1468,6 +1594,7 @@ document.addEventListener("click", (event) => {
     selectedCategory = form.categoryId;
     selectedCustomerCategory = form.categoryId;
     uploadedMenuImageDataUrl = "";
+    menuFormPriceMode = "";
     saveState();
     render();
     toast(`เพิ่มเมนู ${form.th} แล้ว`);
@@ -1485,6 +1612,7 @@ document.addEventListener("click", (event) => {
     `);
   }
   if (target.dataset.priceMode) {
+    menuFormPriceMode = target.dataset.priceMode;
     $("priceMode").value = target.dataset.priceMode;
     document.querySelectorAll("[data-price-mode]").forEach((button) => button.classList.toggle("active", button === target));
     $("variantEditor")?.classList.toggle("hidden", target.dataset.priceMode !== "variants");
@@ -1503,6 +1631,7 @@ document.addEventListener("click", (event) => {
   if (target.dataset.editCategory) {
     if (!requireSuperuser()) return;
     editingCategoryId = target.dataset.editCategory;
+    categoryToolsOpen = true;
     renderMenuManagement();
   }
   if (target.id === "cancelCategoryEdit") {
@@ -1539,12 +1668,15 @@ document.addEventListener("click", (event) => {
     if (!requireSuperuser()) return;
     editingMenuId = target.dataset.editMenu;
     uploadedMenuImageDataUrl = "";
+    const item = state.menu.find((menuItem) => menuItem.id === editingMenuId);
+    menuFormPriceMode = item && hasRealVariants(item) ? "variants" : "single";
     renderMenuManagement();
     document.querySelector("#menus").scrollIntoView({ behavior: "smooth", block: "start" });
   }
   if (target.id === "cancelMenuEdit") {
     editingMenuId = "";
     uploadedMenuImageDataUrl = "";
+    menuFormPriceMode = "";
     renderMenuManagement();
   }
   if (target.id === "saveMenuEdit") {
@@ -1553,14 +1685,24 @@ document.addEventListener("click", (event) => {
     if (!existing) return toast("ไม่พบเมนูที่จะแก้ไข");
     const form = readMenuForm(existing.id);
     if (!form) return;
-    Object.assign(existing, form, { available: existing.available });
+    const updatedMenu = normalizeMenuItem({ ...existing, ...form, available: existing.available });
+    Object.assign(existing, updatedMenu);
     selectedCategory = form.categoryId;
     selectedCustomerCategory = form.categoryId;
-    editingMenuId = "";
     uploadedMenuImageDataUrl = "";
-    saveState();
-    render();
-    toast(`บันทึกเมนู ${form.th} แล้ว`);
+    menuFormPriceMode = form.variants.length > 1 || form.variants[0]?.id !== "default" ? "variants" : "single";
+    target.disabled = true;
+    target.textContent = "กำลังบันทึก...";
+    try {
+      await saveMenuItemToLatestState(existing.id, updatedMenu);
+      editingMenuId = existing.id;
+      render();
+      toast(`บันทึกเมนู ${form.th} แล้ว`);
+    } catch {
+      target.disabled = false;
+      target.textContent = "บันทึกการแก้ไข";
+      toast("บันทึกไม่สำเร็จ กรุณาลองอีกครั้ง");
+    }
   }
   if (target.id === "saveBranchSettings") {
     if (!requireSuperuser()) return;
@@ -1704,6 +1846,16 @@ document.addEventListener("change", (event) => {
     renderCarts();
   }
 });
+
+document.addEventListener(
+  "toggle",
+  (event) => {
+    if (event.target.id === "categoryToolsDetails") {
+      categoryToolsOpen = event.target.open;
+    }
+  },
+  true
+);
 
 ["cashReceived", "transferReceived", "promotionSelect", "menuSearch"].forEach((id) => {
   document.addEventListener("input", (event) => {

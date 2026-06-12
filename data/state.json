@@ -311,7 +311,7 @@
       "categoryId": "cha-chak",
       "th": "ชาชักเย็น",
       "en": "Iced Cha Chak",
-      "price": 65,
+      "price": 64,
       "image": "assets/mustang-logo.png",
       "available": true,
       "options": [
@@ -321,15 +321,39 @@
           "required": true,
           "choices": [
             {
-              "th": "25%"
+              "th": "หวานน้อย"
             },
             {
-              "th": "50%"
+              "th": "ปกติ"
             },
             {
-              "th": "100%"
+              "th": "หวานมาก"
             }
           ]
+        }
+      ],
+      "_updatedAt": 1781243585154,
+      "variants": [
+        {
+          "id": "hot",
+          "th": "ร้อน",
+          "en": "Hot",
+          "price": 64,
+          "active": true
+        },
+        {
+          "id": "iced",
+          "th": "เย็น",
+          "en": "Iced",
+          "price": 74,
+          "active": true
+        },
+        {
+          "id": "blended",
+          "th": "ปั่น",
+          "en": "Blended",
+          "price": 84,
+          "active": true
         }
       ]
     },
