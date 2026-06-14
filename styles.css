@@ -753,6 +753,99 @@ th {
   padding-top: 0;
 }
 
+.menu-form-shell {
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.menu-form-shell.creating {
+  border: 2px solid rgba(31, 95, 54, 0.32);
+  background: #f5fbf4;
+}
+
+.menu-form-shell.editing {
+  border: 2px solid rgba(91, 47, 24, 0.72);
+  background: #fff1db;
+}
+
+.menu-form-mode {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  align-items: stretch;
+  border: 0;
+  border-radius: 8px;
+  padding: 14px;
+  background: #fff;
+}
+
+.menu-form-mode strong,
+.menu-form-mode span {
+  display: block;
+}
+
+.menu-form-mode strong {
+  color: var(--espresso);
+  font-size: 21px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.menu-form-mode span {
+  max-width: none;
+  color: var(--coffee);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.menu-form-mode > button {
+  width: 100%;
+  min-height: 52px;
+  white-space: normal;
+}
+
+.menu-form-mode.editing {
+  color: var(--milk);
+  background: var(--espresso);
+}
+
+.menu-form-mode.editing strong,
+.menu-form-mode.editing span {
+  color: var(--milk);
+}
+
+.mode-chip {
+  display: inline-grid;
+  place-items: center;
+  width: fit-content;
+  min-width: 86px;
+  margin: 0 0 8px;
+  border-radius: 999px;
+  padding: 6px 12px;
+  color: var(--milk);
+  background: #1f5f36;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.menu-form-mode.editing .mode-chip {
+  color: var(--espresso);
+  background: #ffe3b6;
+}
+
+.form-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+input[readonly] {
+  color: var(--muted);
+  background: #f4eee4;
+}
+
 .admin-row {
   display: grid;
   grid-template-columns: 1fr auto;
@@ -824,6 +917,12 @@ th {
   opacity: 0.62;
 }
 
+.menu-admin-card.editing {
+  border-color: rgba(91, 47, 24, 0.72);
+  background: #fff1db;
+  box-shadow: 0 0 0 2px rgba(91, 47, 24, 0.1);
+}
+
 .menu-admin-card img {
   width: 92px;
   height: 92px;
@@ -886,6 +985,11 @@ th {
 .menu-status.active {
   color: #1f5f36;
   background: #e7f4e8;
+}
+
+.menu-status.editing {
+  color: var(--milk);
+  background: var(--espresso);
 }
 
 .menu-admin-actions {
@@ -1079,6 +1183,14 @@ th {
     grid-column: 1 / -1;
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .menu-form-mode {
+    grid-template-columns: 1fr;
+  }
+
+  .menu-form-mode > button {
+    width: 100%;
   }
 
   .money-grid {

@@ -1324,6 +1324,10 @@ function renderMenuManagement() {
   const editingVariants = variantsForForm(editing);
   const priceMode = menuFormPriceMode || (editing && hasRealVariants(editing) ? "variants" : "single");
   const basePrice = editing ? defaultVariant(editing)?.price || editing.price : "";
+  const formModeTitle = editing ? "โหมดแก้ไขเมนูเดิม" : "โหมดเพิ่มเมนูใหม่";
+  const formModeDetail = editing
+    ? `กำลังแก้ไข ${editing.sku} · ${editing.th} การกดบันทึกจะทับเมนูนี้ ไม่ได้สร้างเมนูใหม่`
+    : "กำลังสร้างเมนูใหม่ ฟอร์มนี้จะเพิ่มรายการใหม่เข้าเมนูร้าน";
 
   $("categoryAdmin").innerHTML = `
     <details id="categoryToolsDetails" class="category-admin-details" ${categoryToolsOpen || editingCategory ? "open" : ""}>
@@ -1357,10 +1361,17 @@ function renderMenuManagement() {
   `;
 
   $("menuFormAdmin").innerHTML = `
-    <div class="admin-form flat">
-      <p class="eyebrow">${formTitle}</p>
+    <div class="admin-form flat menu-form-shell ${editing ? "editing" : "creating"}">
+      <div class="menu-form-mode ${editing ? "editing" : "creating"}">
+        <div>
+          <p class="mode-chip">${editing ? "แก้ไข" : "เพิ่มใหม่"}</p>
+          <strong>${formModeTitle}</strong>
+          <span>${escapeHtml(formModeDetail)}</span>
+        </div>
+        ${editing ? `<button class="primary" type="button" id="startNewMenu">เพิ่มเมนูใหม่แทน</button>` : ""}
+      </div>
       <label class="field"><span>หมวดหมู่</span><select id="newMenuCategory">${sortedCategories.map((cat) => `<option value="${cat.id}" ${editing?.categoryId === cat.id ? "selected" : ""}>${cat.th}</option>`).join("")}</select></label>
-      <label class="field"><span>SKU</span><input id="newMenuSku" value="${escapeHtml(editing?.sku || "")}" placeholder="เว้นว่างเพื่อสร้างอัตโนมัติ"></label>
+      <label class="field"><span>SKU${editing ? " (ล็อกไว้ตอนแก้ไข)" : ""}</span><input id="newMenuSku" value="${escapeHtml(editing?.sku || "")}" placeholder="เว้นว่างเพื่อสร้างอัตโนมัติ" ${editing ? "readonly" : ""}></label>
       <label class="field"><span>ชื่อเมนูไทย *</span><input id="newMenuTh" value="${escapeHtml(editing?.th || "")}" placeholder="เช่น นมสดคาราเมล"></label>
       <label class="field"><span>English name</span><input id="newMenuEn" value="${escapeHtml(editing?.en || "")}" placeholder="Caramel Fresh Milk"></label>
       <label class="field"><span>ราคาเริ่มต้น / ราคาเดียว *</span><input id="newMenuPrice" type="number" min="0" inputmode="decimal" value="${basePrice}" placeholder="79"></label>
@@ -1395,8 +1406,10 @@ function renderMenuManagement() {
       <div class="image-preview" id="newMenuImagePreview"><img src="${escapeHtml(previewImage)}" alt="preview"><span>${editing ? "รูปปัจจุบัน" : "Preview"}</span></div>
       <label class="check-inline"><input id="newMenuSweetness" type="checkbox" ${hasSweetness && !disableOptions ? "checked" : ""} ${disableOptions ? "disabled" : ""}> ตัวเลือกความหวาน</label>
       <label class="check-inline"><input id="newMenuIce" type="checkbox" ${hasIce && !disableOptions ? "checked" : ""} ${disableOptions ? "disabled" : ""}> ตัวเลือกน้ำแข็ง</label>
-      <button class="primary" id="${editing ? "saveMenuEdit" : "addMenu"}">${editing ? "บันทึกการแก้ไข" : "เพิ่มเมนูเข้า kiosk"}</button>
-      ${editing ? `<button class="secondary" id="cancelMenuEdit">ยกเลิกการแก้ไข</button>` : ""}
+      <div class="form-actions">
+        <button class="primary" id="${editing ? "saveMenuEdit" : "addMenu"}">${editing ? "บันทึกการแก้ไขเมนูนี้" : "เพิ่มเมนูใหม่เข้า kiosk"}</button>
+        ${editing ? `<button class="secondary" id="cancelMenuEdit">ยกเลิกการแก้ไขและล้างฟอร์ม</button>` : ""}
+      </div>
     </div>
   `;
 
@@ -1420,8 +1433,9 @@ function renderMenuManagement() {
                 const variantChips = variants.length > 1
                   ? variants.map((variant) => `<span>${variant.th} ${fmt.format(variant.price)}</span>`).join("")
                   : "";
-                return `
-                  <article class="menu-admin-card ${item.available ? "" : "is-hidden"}">
+	                const isEditingThisMenu = editing?.id === item.id;
+	                return `
+	                  <article class="menu-admin-card ${item.available ? "" : "is-hidden"} ${isEditingThisMenu ? "editing" : ""}">
                     <img src="${item.image}" alt="${item.th}">
                     <div class="menu-admin-main">
                       <div class="menu-admin-title">
@@ -1429,7 +1443,7 @@ function renderMenuManagement() {
                           <strong>${item.th}</strong>
                           <small>${item.en}</small>
                         </div>
-                        <span class="menu-status ${item.available ? "active" : ""}">${item.available ? "ขายอยู่" : "ซ่อนอยู่"}</span>
+	                        <span class="menu-status ${isEditingThisMenu ? "editing" : item.available ? "active" : ""}">${isEditingThisMenu ? "กำลังแก้ไข" : item.available ? "ขายอยู่" : "ซ่อนอยู่"}</span>
                       </div>
                       <div class="menu-admin-meta">
                         <span>${item.sku}</span>
@@ -1873,7 +1887,7 @@ document.addEventListener("click", async (event) => {
     renderMenuManagement();
     document.querySelector("#menus").scrollIntoView({ behavior: "smooth", block: "start" });
   }
-  if (target.id === "cancelMenuEdit") {
+  if (target.id === "cancelMenuEdit" || target.id === "startNewMenu") {
     editingMenuId = "";
     uploadedMenuImageDataUrl = "";
     menuFormPriceMode = "";
