@@ -1360,6 +1360,7 @@ function orderCardKitchen(order) {
       }).join("")}</div>
       ${order.status === "in_kitchen" ? `
         <button class="primary" data-order-ready="${order.id}">อาหารเสร็จแล้ว</button>
+        <button class="secondary" data-print="${order.id}">พิมพ์บิลอีกครั้ง</button>
       ` : `
         <span class="pill">พร้อมเรียกคิว ${order.queueToken}</span>
         <button class="primary" data-picked-up="${order.id}">รับอาหารแล้ว / คืน token แล้ว</button>
