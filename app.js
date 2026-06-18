@@ -1323,9 +1323,9 @@ function renderKitchen() {
   const active = state.orders.filter((order) => order.branchId === state.activeBranchId && order.status === "in_kitchen");
   const done = state.orders.filter((order) => order.branchId === state.activeBranchId && order.status === "ready");
   const sections = [
-    { title: "รอยืนยันชำระเงิน", className: "waiting", count: pending.length, cards: pending.map(orderCardPayment) },
     { title: "กำลังทำอาหาร", className: "cooking", count: active.length, cards: active.map(orderCardKitchen) },
     { title: "รอลูกค้ารับอาหาร", className: "ready", count: done.length, cards: done.map(orderCardKitchen) },
+    { title: "รอยืนยันชำระเงิน", className: "waiting", count: pending.length, cards: pending.map(orderCardPayment) },
   ];
   const hasOrders = sections.some((section) => section.count);
   $("kitchenBoard").innerHTML = hasOrders
