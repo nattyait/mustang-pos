@@ -3,7 +3,7 @@
   "activeBranchId": "branch-kiosk",
   "activeUserId": "u-super",
   "orderSequenceByDay": {
-    "branch-kiosk-2026-06-18": 4
+    "branch-kiosk-2026-06-18": 6
   },
   "kitchenTab": "done",
   "branches": [
@@ -532,6 +532,223 @@
     }
   ],
   "orders": [
+    {
+      "id": "740b6524-b87a-4022-8e84-66749c0107e2",
+      "branchId": "branch-kiosk",
+      "orderNo": "M006",
+      "queueToken": "2",
+      "source": "staff",
+      "customerName": "เก๋",
+      "customerPhone": "ถถถถ",
+      "paymentMethod": "cash",
+      "cashReceived": 500,
+      "transferReceived": 0,
+      "subtotal": 198,
+      "discount": 0,
+      "total": 198,
+      "promotion": {
+        "id": "none",
+        "nameTh": "ไม่ใช้โปรโมชั่น",
+        "type": "none",
+        "value": 0,
+        "active": true
+      },
+      "status": "in_kitchen",
+      "createdAt": "2026-06-18T12:15:44.450Z",
+      "_updatedAt": 1781784944450,
+      "paidAt": "2026-06-18T12:15:44.450Z",
+      "items": [
+        {
+          "key": "m-nutella-oreo:default:sweet-100%|ice-ปกติ",
+          "menuId": "m-nutella-oreo",
+          "sku": "SIG-001",
+          "nameTh": "นูเทลล่าโอรีโอนมสด",
+          "nameEn": "Nutella Oreo Fresh Milk",
+          "variant": null,
+          "basePrice": 99,
+          "optionGroups": [
+            {
+              "id": "sweet",
+              "th": "ความหวาน",
+              "required": true,
+              "choices": [
+                {
+                  "th": "25%"
+                },
+                {
+                  "th": "50%"
+                },
+                {
+                  "th": "75%"
+                },
+                {
+                  "th": "100%"
+                }
+              ]
+            },
+            {
+              "id": "ice",
+              "th": "น้ำแข็ง",
+              "required": true,
+              "choices": [
+                {
+                  "th": "ปกติ"
+                },
+                {
+                  "th": "น้อย"
+                },
+                {
+                  "th": "ไม่ใส่น้ำแข็ง"
+                }
+              ]
+            },
+            {
+              "id": "topping",
+              "th": "ท็อปปิ้ง",
+              "required": false,
+              "choices": [
+                {
+                  "th": "โอรีโอเพิ่ม",
+                  "price": 10
+                },
+                {
+                  "th": "นูเทลล่าเพิ่ม",
+                  "price": 15
+                }
+              ]
+            }
+          ],
+          "qty": 2,
+          "options": [
+            {
+              "groupId": "sweet",
+              "group": "ความหวาน",
+              "label": "100%",
+              "price": 0,
+              "required": true
+            },
+            {
+              "groupId": "ice",
+              "group": "น้ำแข็ง",
+              "label": "ปกติ",
+              "price": 0,
+              "required": true
+            }
+          ],
+          "note": "",
+          "done": false
+        }
+      ]
+    },
+    {
+      "id": "5271326f-3896-4f19-b155-2406b1c9e2c0",
+      "branchId": "branch-kiosk",
+      "orderNo": "M005",
+      "queueToken": "1",
+      "source": "customer",
+      "customerName": "เก๋",
+      "customerPhone": "09999",
+      "paymentMethod": "transfer",
+      "cashReceived": 0,
+      "transferReceived": 99,
+      "subtotal": 99,
+      "discount": 0,
+      "total": 99,
+      "promotion": {
+        "id": "none",
+        "nameTh": "ไม่ใช้โปรโมชั่น",
+        "type": "none",
+        "value": 0,
+        "active": true
+      },
+      "status": "ready",
+      "createdAt": "2026-06-18T12:13:43.652Z",
+      "_updatedAt": 1781784836065,
+      "paidAt": "2026-06-18T12:13:51.800Z",
+      "items": [
+        {
+          "key": "m-nutella-oreo:default:sweet-100%|ice-ปกติ",
+          "menuId": "m-nutella-oreo",
+          "sku": "SIG-001",
+          "nameTh": "นูเทลล่าโอรีโอนมสด",
+          "nameEn": "Nutella Oreo Fresh Milk",
+          "variant": null,
+          "basePrice": 99,
+          "optionGroups": [
+            {
+              "id": "sweet",
+              "th": "ความหวาน",
+              "required": true,
+              "choices": [
+                {
+                  "th": "25%"
+                },
+                {
+                  "th": "50%"
+                },
+                {
+                  "th": "75%"
+                },
+                {
+                  "th": "100%"
+                }
+              ]
+            },
+            {
+              "id": "ice",
+              "th": "น้ำแข็ง",
+              "required": true,
+              "choices": [
+                {
+                  "th": "ปกติ"
+                },
+                {
+                  "th": "น้อย"
+                },
+                {
+                  "th": "ไม่ใส่น้ำแข็ง"
+                }
+              ]
+            },
+            {
+              "id": "topping",
+              "th": "ท็อปปิ้ง",
+              "required": false,
+              "choices": [
+                {
+                  "th": "โอรีโอเพิ่ม",
+                  "price": 10
+                },
+                {
+                  "th": "นูเทลล่าเพิ่ม",
+                  "price": 15
+                }
+              ]
+            }
+          ],
+          "qty": 1,
+          "options": [
+            {
+              "groupId": "sweet",
+              "group": "ความหวาน",
+              "label": "100%",
+              "price": 0,
+              "required": true
+            },
+            {
+              "groupId": "ice",
+              "group": "น้ำแข็ง",
+              "label": "ปกติ",
+              "price": 0,
+              "required": true
+            }
+          ],
+          "note": "",
+          "done": true
+        }
+      ],
+      "readyAt": "2026-06-18T12:13:56.065Z"
+    },
     {
       "id": "2053b8d4-8d1c-4a61-ae5f-8962c9e4ea58",
       "branchId": "branch-kiosk",

@@ -589,6 +589,16 @@ function optionSummary(line) {
   return parts.join(", ");
 }
 
+function customerLabel(order) {
+  return String(order.customerName || "").trim();
+}
+
+function customerLine(order) {
+  const name = customerLabel(order);
+  if (!name) return "";
+  return `<p class="customer-name">ลูกค้า: ${escapeHtml(name)}</p>`;
+}
+
 function toast(message) {
   $("toast").textContent = message;
   $("toast").classList.add("show");
@@ -1193,8 +1203,8 @@ async function createOrder(source) {
     orderNo: nextOrderNo(),
     queueToken: token,
     source,
-    customerName: source === "customer" ? $("customerName").value.trim() : "",
-    customerPhone: source === "customer" ? $("customerPhone").value.trim() : "",
+    customerName: source === "customer" ? $("customerName").value.trim() : $("staffCustomerName").value.trim(),
+    customerPhone: source === "customer" ? $("customerPhone").value.trim() : $("staffCustomerPhone").value.trim(),
     paymentMethod,
     cashReceived: source === "staff" ? cash : 0,
     transferReceived: source === "staff" ? transfer : 0,
@@ -1214,6 +1224,8 @@ async function createOrder(source) {
   $("customerToken").value = "";
   $("customerName").value = "";
   $("customerPhone").value = "";
+  $("staffCustomerName").value = "";
+  $("staffCustomerPhone").value = "";
   $("cashReceived").value = "";
   $("transferReceived").value = "";
   await saveState();
@@ -1251,9 +1263,10 @@ function orderCardPayment(order) {
   return `
     <article class="order-card">
       <header><div><h3>${order.orderNo}</h3><span>${dateFmt.format(new Date(order.createdAt))}</span></div><span class="queue">คิว ${order.queueToken}</span></header>
+      ${customerLine(order)}
       <div>${order.items.map(itemLine).join("")}</div>
       <div class="total-line final"><span>ยอดชำระ</span><strong>${fmt.format(order.total)}</strong></div>
-      <p>วิธีชำระ: ${paymentName(order.paymentMethod)} ${order.customerName ? ` / ${order.customerName}` : ""}</p>
+      <p>วิธีชำระ: ${paymentName(order.paymentMethod)}</p>
       <button class="primary" data-confirm-payment="${order.id}">ยืนยันชำระเงินและส่งเข้าครัว</button>
       <button class="secondary" data-cancel-order="${order.id}">ยกเลิกออเดอร์</button>
     </article>
@@ -1274,6 +1287,7 @@ function orderCardKitchen(order) {
         <div><h3>${order.orderNo}</h3><span>${dateFmt.format(new Date(order.createdAt))}</span></div>
         <span class="queue">คิว ${order.queueToken}</span>
       </header>
+      ${customerLine(order)}
       <span class="pill ${order.status === "ready" ? "success" : ""}">${order.status === "ready" ? "รอลูกค้ารับอาหาร" : "กำลังทำ"}</span>
       <div>${order.items.map((line, index) => {
         const item = lineMenu(line);
@@ -1327,6 +1341,7 @@ function renderReports() {
         <td>${dateFmt.format(new Date(order.createdAt))}</td>
         <td>${order.orderNo}</td>
         <td>${order.queueToken}</td>
+        <td>${escapeHtml(customerLabel(order) || "-")}</td>
         <td>${order.items.map((line) => {
           const item = lineMenu(line);
           return `${line.qty} x ${lineDisplayName(line)}`;
@@ -1631,6 +1646,7 @@ function printReceipt(orderId) {
     <h2>Mustang Cafe</h2>
     <p>${branch().nameTh}</p>
     <p>${order.orderNo} / Queue ${order.queueToken}</p>
+    ${customerLabel(order) ? `<p>Customer: ${escapeHtml(customerLabel(order))}</p>` : ""}
     <p>${dateFmt.format(new Date(order.createdAt))}</p>
     <div class="line"></div>
     ${order.items.map((line) => {
@@ -1775,7 +1791,7 @@ function notifyKitchen(payload = {}) {
 }
 
 function exportCsv() {
-  const rows = [["time", "order_no", "queue", "items", "payment", "subtotal", "discount", "total", "status"]];
+  const rows = [["time", "order_no", "queue", "customer_name", "items", "payment", "subtotal", "discount", "total", "status"]];
   state.orders
     .filter((order) => order.branchId === state.activeBranchId)
     .forEach((order) => {
@@ -1783,6 +1799,7 @@ function exportCsv() {
         order.createdAt,
         order.orderNo,
         order.queueToken,
+        customerLabel(order),
         order.items.map((line) => {
           const item = lineMenu(line);
           return `${line.qty}x ${lineDisplayName(line)}`;
