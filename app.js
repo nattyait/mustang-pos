@@ -226,11 +226,17 @@ function normalizeState(rawState) {
     tokens: item.tokens || [],
   }));
   next.menu = (next.menu || []).map(normalizeMenuItem);
-  next.orders = (next.orders || []).map((order) => ({
-    ...order,
-    items: (order.items || []).map(normalizeCartLine),
-  }));
-  return next;
+	  next.orders = (next.orders || []).map((order) => ({
+	    ...order,
+	    _updatedAt: Number(order._updatedAt || Date.parse(order.pickedUpAt || order.readyAt || order.paidAt || order.createdAt || 0) || Date.now()),
+	    items: (order.items || []).map(normalizeCartLine),
+	  }));
+	  return next;
+	}
+
+function touchOrder(order) {
+  order._updatedAt = Date.now();
+  return order;
 }
 
 function normalizeMenuItem(item) {
@@ -338,9 +344,9 @@ function reloadState() {
   enforceBranchAccess();
 }
 
-async function fetchServerState({ notify = false } = {}) {
+async function fetchServerState({ notify = false, force = false } = {}) {
   if (!SERVER_SYNC) return;
-  if (Date.now() - lastLocalWriteAt < 1800) return;
+  if (!force && Date.now() - lastLocalWriteAt < 1800) return;
   const fetchStartedAt = Date.now();
   const fetchRevision = stateRevision;
   try {
@@ -356,6 +362,8 @@ async function fetchServerState({ notify = false } = {}) {
     }
     if (fetchStartedAt < lastLocalWriteAt || fetchRevision !== stateRevision) return;
     const nextState = normalizeState(data.state);
+    nextState.activeUserId = state.activeUserId;
+    nextState.activeBranchId = state.activeBranchId;
     const nextStateRaw = JSON.stringify(nextState);
     if (nextStateRaw === lastStoredStateRaw) return;
     state = nextState;
@@ -378,29 +386,29 @@ async function broadcastEvent(type, payload = {}) {
   localStorage.setItem(EVENT_KEY, JSON.stringify(event));
   realtimeChannel?.postMessage(event);
   if (SERVER_SYNC) {
-    fetch("/api/event", {
+    await fetch("/api/event", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...event, state }),
+      body: JSON.stringify(event),
     }).catch(() => {});
   }
 }
 
-function handleRealtimeEvent(event) {
+async function handleRealtimeEvent(event) {
   if (!event || event.sourceId === PAGE_ID) return;
   if (event.type === "state_updated") {
-    reloadState();
-    renderSyncedState();
+    await fetchServerState({ notify: true, force: true });
   }
   if (event.type === "new_kitchen_order") {
-    reloadState();
-    renderSyncedState();
+    await fetchServerState({ notify: true, force: true });
     notifyKitchen(event.payload);
   }
   if (event.type === "pending_payment_order") {
-    reloadState();
-    renderSyncedState();
+    await fetchServerState({ notify: false, force: true });
     toast(`มีออเดอร์รอยืนยันชำระเงิน ${event.payload.orderNo} / คิว ${event.payload.queueToken}`);
+  }
+  if (event.type === "order_updated") {
+    await fetchServerState({ notify: false, force: true });
   }
 }
 
@@ -1056,15 +1064,16 @@ async function createOrder(source) {
     paymentMethod,
     cashReceived: source === "staff" ? cash : 0,
     transferReceived: source === "staff" ? transfer : 0,
-    subtotal: summary.subtotal,
-    discount: summary.discount,
-    total: summary.total,
-    promotion: summary.promo,
-    status: paidNow ? "in_kitchen" : "pending_payment",
-    createdAt: new Date().toISOString(),
-    paidAt: paidNow ? new Date().toISOString() : null,
-    items: cart.map((line) => ({ ...line, done: false })),
-  };
+	    subtotal: summary.subtotal,
+	    discount: summary.discount,
+	    total: summary.total,
+	    promotion: summary.promo,
+	    status: paidNow ? "in_kitchen" : "pending_payment",
+	    createdAt: new Date().toISOString(),
+	    _updatedAt: Date.now(),
+	    paidAt: paidNow ? new Date().toISOString() : null,
+	    items: cart.map((line) => ({ ...line, done: false })),
+	  };
   state.orders.unshift(order);
   carts[cartName] = [];
   saveDraftCarts();
@@ -1076,10 +1085,10 @@ async function createOrder(source) {
   await saveState();
   if (paidNow) {
     notifyKitchen(order);
-    broadcastEvent("new_kitchen_order", { orderId: order.id, branchId: order.branchId, orderNo: order.orderNo, queueToken: order.queueToken });
-  } else {
-    broadcastEvent("pending_payment_order", { orderId: order.id, branchId: order.branchId, orderNo: order.orderNo, queueToken: order.queueToken, paymentMethod: order.paymentMethod });
-  }
+	    await broadcastEvent("new_kitchen_order", { orderId: order.id, branchId: order.branchId, orderNo: order.orderNo, queueToken: order.queueToken });
+	  } else {
+	    await broadcastEvent("pending_payment_order", { orderId: order.id, branchId: order.branchId, orderNo: order.orderNo, queueToken: order.queueToken, paymentMethod: order.paymentMethod });
+	  }
   render();
   if (paidNow) printReceipt(order.id);
   toast(paidNow ? "ส่งออเดอร์เข้าครัวแล้ว" : "ส่งออเดอร์แล้ว รอพนักงานยืนยันชำระเงิน");
@@ -1087,13 +1096,14 @@ async function createOrder(source) {
 
 async function confirmPayment(orderId) {
   const order = state.orders.find((item) => item.id === orderId);
-  order.status = "in_kitchen";
-  order.paidAt = new Date().toISOString();
-  order.cashReceived = order.paymentMethod === "cash" ? order.total : 0;
-  order.transferReceived = order.paymentMethod === "transfer" ? order.total : 0;
-  await saveState();
-  notifyKitchen(order);
-  broadcastEvent("new_kitchen_order", { orderId: order.id, branchId: order.branchId, orderNo: order.orderNo, queueToken: order.queueToken });
+	  order.status = "in_kitchen";
+	  order.paidAt = new Date().toISOString();
+	  order.cashReceived = order.paymentMethod === "cash" ? order.total : 0;
+	  order.transferReceived = order.paymentMethod === "transfer" ? order.total : 0;
+	  touchOrder(order);
+	  await saveState();
+	  notifyKitchen(order);
+	  await broadcastEvent("new_kitchen_order", { orderId: order.id, branchId: order.branchId, orderNo: order.orderNo, queueToken: order.queueToken });
   render();
 }
 
@@ -1730,33 +1740,41 @@ document.addEventListener("click", async (event) => {
   if (target.id === "completeStaffOrder") createOrder("staff");
   if (target.id === "submitCustomerOrder") createOrder("customer");
   if (target.dataset.confirmPayment) confirmPayment(target.dataset.confirmPayment);
-  if (target.dataset.cancelOrder) {
-    const order = state.orders.find((item) => item.id === target.dataset.cancelOrder);
-    order.status = "cancelled";
-    saveState();
-    render();
-  }
-  if (target.dataset.itemDone) {
-    const order = state.orders.find((item) => item.id === target.dataset.itemDone);
-    order.items[Number(target.dataset.index)].done = target.checked;
-    saveState();
-    renderKitchen();
-  }
-  if (target.dataset.orderReady) {
-    const order = state.orders.find((item) => item.id === target.dataset.orderReady);
-    if (!order.items.every((item) => item.done)) return toast("กรุณาติ๊กว่าทำครบทุกเมนูก่อน");
-    order.status = "ready";
-    order.readyAt = new Date().toISOString();
-    saveState();
-    render();
-  }
-  if (target.dataset.pickedUp) {
-    const order = state.orders.find((item) => item.id === target.dataset.pickedUp);
-    order.status = "picked_up";
-    order.pickedUpAt = new Date().toISOString();
-    saveState();
-    render();
-  }
+	  if (target.dataset.cancelOrder) {
+	    const order = state.orders.find((item) => item.id === target.dataset.cancelOrder);
+	    order.status = "cancelled";
+	    touchOrder(order);
+	    await saveState();
+	    await broadcastEvent("order_updated", { orderId: order.id, branchId: order.branchId, status: order.status, queueToken: order.queueToken });
+	    render();
+	  }
+	  if (target.dataset.itemDone) {
+	    const order = state.orders.find((item) => item.id === target.dataset.itemDone);
+	    order.items[Number(target.dataset.index)].done = target.checked;
+	    touchOrder(order);
+	    await saveState();
+	    await broadcastEvent("order_updated", { orderId: order.id, branchId: order.branchId, status: order.status, queueToken: order.queueToken });
+	    renderKitchen();
+	  }
+	  if (target.dataset.orderReady) {
+	    const order = state.orders.find((item) => item.id === target.dataset.orderReady);
+	    if (!order.items.every((item) => item.done)) return toast("กรุณาติ๊กว่าทำครบทุกเมนูก่อน");
+	    order.status = "ready";
+	    order.readyAt = new Date().toISOString();
+	    touchOrder(order);
+	    await saveState();
+	    await broadcastEvent("order_updated", { orderId: order.id, branchId: order.branchId, status: order.status, queueToken: order.queueToken });
+	    render();
+	  }
+	  if (target.dataset.pickedUp) {
+	    const order = state.orders.find((item) => item.id === target.dataset.pickedUp);
+	    order.status = "picked_up";
+	    order.pickedUpAt = new Date().toISOString();
+	    touchOrder(order);
+	    await saveState();
+	    await broadcastEvent("order_updated", { orderId: order.id, branchId: order.branchId, status: order.status, queueToken: order.queueToken });
+	    render();
+	  }
   if (target.dataset.print) printReceipt(target.dataset.print);
   if (target.dataset.kitchenTab) {
     state.kitchenTab = target.dataset.kitchenTab;
@@ -2164,14 +2182,28 @@ window.addEventListener("storage", (event) => {
   if (event.key === STORAGE_KEY) {
     syncStateFromStorage({ notify: true });
   }
-  if (event.key === EVENT_KEY && event.newValue) {
-    handleRealtimeEvent(JSON.parse(event.newValue));
-  }
-});
+	  if (event.key === EVENT_KEY && event.newValue) {
+	    handleRealtimeEvent(JSON.parse(event.newValue)).catch(() => {});
+	  }
+	});
 
 realtimeChannel?.addEventListener("message", (event) => {
-  handleRealtimeEvent(event.data);
+  handleRealtimeEvent(event.data).catch(() => {});
 });
+
+if (SERVER_SYNC && "EventSource" in window) {
+  const events = new EventSource("/api/events");
+  events.onmessage = (message) => {
+    try {
+      handleRealtimeEvent(JSON.parse(message.data)).catch(() => {});
+    } catch {
+      // Ignore malformed realtime messages.
+    }
+  };
+  events.onerror = () => {
+    $("syncStatus").textContent = "Reconnecting";
+  };
+}
 
 window.setInterval(() => {
   if (SERVER_SYNC) fetchServerState({ notify: true });

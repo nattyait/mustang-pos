@@ -98,11 +98,25 @@ async function ensureDatabase() {
   console.log(`Seeded PostgreSQL app_state from ${path.relative(root, fixtureSource)}`);
 }
 
-async function mergeMenusByFreshness(incomingState) {
+const statusRank = {
+  pending_payment: 1,
+  in_kitchen: 2,
+  ready: 3,
+  picked_up: 4,
+  cancelled: 4,
+};
+
+function orderFreshness(order) {
+  return Number(order?._updatedAt || Date.parse(order?.pickedUpAt || order?.readyAt || order?.paidAt || order?.createdAt || 0) || 0);
+}
+
+async function mergeStateByFreshness(incomingState) {
   const currentState = await readState();
-  if (!currentState?.menu?.length || !incomingState?.menu?.length) return incomingState;
+  if (!currentState || !incomingState) return incomingState || currentState;
+  const mergedState = { ...incomingState };
+  if (!currentState?.menu?.length || !incomingState?.menu?.length) return mergeOrdersByFreshness(currentState, mergedState);
   const currentById = new Map(currentState.menu.map((item) => [item.id, item]));
-  incomingState.menu = incomingState.menu.map((incomingItem) => {
+  mergedState.menu = incomingState.menu.map((incomingItem) => {
     const currentItem = currentById.get(incomingItem.id);
     if (!currentItem) return incomingItem;
     const currentTime = Number(currentItem._updatedAt || 0);
@@ -110,6 +124,30 @@ async function mergeMenusByFreshness(incomingState) {
     if (currentTime > incomingTime) return currentItem;
     return incomingItem;
   });
+  for (const currentItem of currentState.menu) {
+    if (!mergedState.menu.some((item) => item.id === currentItem.id)) mergedState.menu.push(currentItem);
+  }
+  return mergeOrdersByFreshness(currentState, mergedState);
+}
+
+function mergeOrdersByFreshness(currentState, incomingState) {
+  const mergedById = new Map();
+  for (const order of currentState.orders || []) mergedById.set(order.id, order);
+  for (const incomingOrder of incomingState.orders || []) {
+    const currentOrder = mergedById.get(incomingOrder.id);
+    if (!currentOrder) {
+      mergedById.set(incomingOrder.id, incomingOrder);
+      continue;
+    }
+    const incomingTime = orderFreshness(incomingOrder);
+    const currentTime = orderFreshness(currentOrder);
+    const incomingRank = statusRank[incomingOrder.status] || 0;
+    const currentRank = statusRank[currentOrder.status] || 0;
+    if (incomingTime > currentTime || (incomingTime === currentTime && incomingRank >= currentRank)) {
+      mergedById.set(incomingOrder.id, incomingOrder);
+    }
+  }
+  incomingState.orders = Array.from(mergedById.values()).sort((a, b) => Date.parse(b.createdAt || 0) - Date.parse(a.createdAt || 0));
   return incomingState;
 }
 
@@ -197,7 +235,7 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === "POST" && req.url === "/api/state") {
       const body = JSON.parse(await readBody(req));
-      await writeState(await mergeMenusByFreshness(body.state));
+      await writeState(await mergeStateByFreshness(body.state));
       broadcast({ type: "state_updated", payload: {} });
       return sendJson(res, { ok: true });
     }
@@ -221,7 +259,7 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === "POST" && req.url === "/api/event") {
       const event = JSON.parse(await readBody(req));
-      if (event.state) await writeState(event.state);
+      if (event.state) await writeState(await mergeStateByFreshness(event.state));
       broadcast(event);
       return sendJson(res, { ok: true });
     }
