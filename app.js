@@ -1494,9 +1494,11 @@ function renderMenuManagement() {
 function printReceipt(orderId) {
   const order = state.orders.find((item) => item.id === orderId);
   if (!order) return;
+  const receiptLogoUrl = new URL("assets/receipt-horse-line.png", window.location.href);
+  receiptLogoUrl.searchParams.set("v", "receipt-2");
   const receiptHtml = `
     <div class="receipt">
-    <img class="receipt-logo" src="${new URL("assets/receipt-horse-line.png", window.location.href).href}" alt="Mustang horse">
+    <img class="receipt-logo" src="${receiptLogoUrl.href}" alt="Mustang horse">
     <h2>Mustang Cafe</h2>
     <p>${branch().nameTh}</p>
     <p>${order.orderNo} / Queue ${order.queueToken}</p>
@@ -1617,11 +1619,26 @@ function printReceipt(orderId) {
     frame.remove();
   };
   frame.contentWindow.addEventListener("afterprint", cleanup, { once: true });
-  window.setTimeout(() => {
+  const waitForReceiptImages = () => {
+    const images = [...doc.images];
+    return Promise.all(
+      images.map((image) => {
+        if (image.complete && image.naturalWidth > 0) return Promise.resolve();
+        if (image.decode) return image.decode().catch(() => {});
+        return new Promise((resolve) => {
+          image.addEventListener("load", resolve, { once: true });
+          image.addEventListener("error", resolve, { once: true });
+        });
+      })
+    );
+  };
+
+  window.setTimeout(async () => {
+    await waitForReceiptImages();
     frame.contentWindow.focus();
     frame.contentWindow.print();
     window.setTimeout(cleanup, 30000);
-  }, 150);
+  }, 250);
 }
 
 function notifyKitchen(payload = {}) {
