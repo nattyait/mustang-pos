@@ -913,6 +913,21 @@ select,
   background: rgba(255, 250, 241, 0.78);
 }
 
+.report-summary {
+  margin-bottom: 14px;
+}
+
+.report-summary h2 {
+  margin: 0 0 8px;
+}
+
+.metric small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;

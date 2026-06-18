@@ -1379,6 +1379,18 @@ function paymentName(method) {
   return { cash: "เงินสด", transfer: "โอน/QR", mixed: "ผสม" }[method] || method;
 }
 
+function orderPaymentBreakdown(order) {
+  if (order.paymentMethod === "cash") return { cash: order.total, transfer: 0, mixed: 0 };
+  if (order.paymentMethod === "transfer") return { cash: 0, transfer: order.total, mixed: 0 };
+  return { cash: 0, transfer: 0, mixed: order.total };
+}
+
+function orderLineNet(line, order) {
+  const gross = linePrice(line);
+  if (!order.subtotal) return gross;
+  return (gross / order.subtotal) * order.total;
+}
+
 function renderReports() {
   const start = $("reportStart").value;
   const end = $("reportEnd").value;
@@ -1395,6 +1407,69 @@ function renderReports() {
     <div class="metric"><span>จำนวนออเดอร์</span><strong>${paid.length}</strong></div>
     <div class="metric"><span>ยกเลิก</span><strong>${cancelled}</strong></div>
   `;
+  const paymentTotals = paid.reduce((totals, order) => {
+    const payment = orderPaymentBreakdown(order);
+    totals.cash += payment.cash;
+    totals.transfer += payment.transfer;
+    totals.mixed += payment.mixed;
+    totals.counts[order.paymentMethod] += 1;
+    return totals;
+  }, { cash: 0, transfer: 0, mixed: 0, counts: { cash: 0, transfer: 0, mixed: 0 } });
+  $("reportPaymentSummary").innerHTML = `
+    <div class="metric"><span>เงินสด</span><strong>${fmt.format(paymentTotals.cash)}</strong><small>${paymentTotals.counts.cash} ออเดอร์</small></div>
+    <div class="metric"><span>โอน/QR</span><strong>${fmt.format(paymentTotals.transfer)}</strong><small>${paymentTotals.counts.transfer} ออเดอร์</small></div>
+    <div class="metric"><span>ผสม</span><strong>${fmt.format(paymentTotals.mixed)}</strong><small>${paymentTotals.counts.mixed} ออเดอร์</small></div>
+  `;
+  const menuSummary = new Map();
+  paid.forEach((order) => {
+    order.items.forEach((line) => {
+      const item = lineMenu(line);
+      const name = lineDisplayName(line);
+      const key = `${line.menuId}:${line.variant?.id || ""}:${name}`;
+      if (!menuSummary.has(key)) {
+        menuSummary.set(key, {
+          sku: item.sku || line.sku || "-",
+          name,
+          qty: 0,
+          total: 0,
+          cashQty: 0,
+          cashTotal: 0,
+          transferQty: 0,
+          transferTotal: 0,
+          mixedQty: 0,
+          mixedTotal: 0,
+        });
+      }
+      const summary = menuSummary.get(key);
+      const amount = orderLineNet(line, order);
+      summary.qty += line.qty;
+      summary.total += amount;
+      if (order.paymentMethod === "cash") {
+        summary.cashQty += line.qty;
+        summary.cashTotal += amount;
+      } else if (order.paymentMethod === "transfer") {
+        summary.transferQty += line.qty;
+        summary.transferTotal += amount;
+      } else {
+        summary.mixedQty += line.qty;
+        summary.mixedTotal += amount;
+      }
+    });
+  });
+  $("reportMenuSummaryRows").innerHTML = Array.from(menuSummary.values())
+    .sort((a, b) => a.sku.localeCompare(b.sku) || a.name.localeCompare(b.name))
+    .map((item) => `
+      <tr>
+        <td>${escapeHtml(item.sku)}</td>
+        <td>${escapeHtml(item.name)}</td>
+        <td>${item.qty}</td>
+        <td>${fmt.format(item.total)}</td>
+        <td>${item.cashQty} / ${fmt.format(item.cashTotal)}</td>
+        <td>${item.transferQty} / ${fmt.format(item.transferTotal)}</td>
+        <td>${item.mixedQty} / ${fmt.format(item.mixedTotal)}</td>
+      </tr>
+    `)
+    .join("") || `<tr><td colspan="7">ไม่มีข้อมูลยอดขายในช่วงนี้</td></tr>`;
   $("reportRows").innerHTML = rows
     .map((order) => `
       <tr>
