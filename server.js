@@ -85,25 +85,29 @@ async function writeState(state) {
       on conflict (id)
       do update set state = excluded.state, updated_at = now()
     `,
-    ["default", JSON.stringify(state)]
+    ["default", JSON.stringify(state)],
   );
 }
 
 function safeFilePart(value) {
-  return String(value || "menu")
-    .replace(/[^a-zA-Z0-9._-]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 80) || "menu";
+  return (
+    String(value || "menu")
+      .replace(/[^a-zA-Z0-9._-]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 80) || "menu"
+  );
 }
 
 function imageExtension(mimeType) {
-  return {
-    "image/jpeg": "jpg",
-    "image/jpg": "jpg",
-    "image/png": "png",
-    "image/webp": "webp",
-    "image/gif": "gif",
-  }[mimeType] || "jpg";
+  return (
+    {
+      "image/jpeg": "jpg",
+      "image/jpg": "jpg",
+      "image/png": "png",
+      "image/webp": "webp",
+      "image/gif": "gif",
+    }[mimeType] || "jpg"
+  );
 }
 
 function normalizeStoredImages(state) {
@@ -150,14 +154,17 @@ const statusRank = {
 };
 
 function orderFreshness(order) {
-  return Number(order?._updatedAt || Date.parse(order?.pickedUpAt || order?.readyAt || order?.paidAt || order?.createdAt || 0) || 0);
+  return Number(
+    order?._updatedAt || Date.parse(order?.pickedUpAt || order?.readyAt || order?.paidAt || order?.createdAt || 0) || 0,
+  );
 }
 
 async function mergeStateByFreshness(incomingState) {
   const currentState = await readState();
   if (!currentState || !incomingState) return incomingState || currentState;
   const mergedState = { ...incomingState };
-  if (!currentState?.menu?.length || !incomingState?.menu?.length) return mergeOrdersByFreshness(currentState, mergedState);
+  if (!currentState?.menu?.length || !incomingState?.menu?.length)
+    return mergeOrdersByFreshness(currentState, mergedState);
   const currentById = new Map(currentState.menu.map((item) => [item.id, item]));
   mergedState.menu = incomingState.menu.map((incomingItem) => {
     const currentItem = currentById.get(incomingItem.id);
@@ -190,7 +197,9 @@ function mergeOrdersByFreshness(currentState, incomingState) {
       mergedById.set(incomingOrder.id, incomingOrder);
     }
   }
-  incomingState.orders = Array.from(mergedById.values()).sort((a, b) => Date.parse(b.createdAt || 0) - Date.parse(a.createdAt || 0));
+  incomingState.orders = Array.from(mergedById.values()).sort(
+    (a, b) => Date.parse(b.createdAt || 0) - Date.parse(a.createdAt || 0),
+  );
   return incomingState;
 }
 
@@ -207,17 +216,19 @@ function broadcast(event) {
 
 function contentType(filePath) {
   const ext = path.extname(filePath).toLowerCase();
-  return {
-    ".html": "text/html; charset=utf-8",
-    ".js": "text/javascript; charset=utf-8",
-    ".css": "text/css; charset=utf-8",
-    ".json": "application/json; charset=utf-8",
-    ".webmanifest": "application/manifest+json; charset=utf-8",
-    ".png": "image/png",
-    ".jpg": "image/jpeg",
-    ".jpeg": "image/jpeg",
-    ".svg": "image/svg+xml",
-  }[ext] || "application/octet-stream";
+  return (
+    {
+      ".html": "text/html; charset=utf-8",
+      ".js": "text/javascript; charset=utf-8",
+      ".css": "text/css; charset=utf-8",
+      ".json": "application/json; charset=utf-8",
+      ".webmanifest": "application/manifest+json; charset=utf-8",
+      ".png": "image/png",
+      ".jpg": "image/jpeg",
+      ".jpeg": "image/jpeg",
+      ".svg": "image/svg+xml",
+    }[ext] || "application/octet-stream"
+  );
 }
 
 function serveStatic(req, res) {

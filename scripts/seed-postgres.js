@@ -29,12 +29,15 @@ async function main() {
       updated_at timestamptz not null default now()
     )
   `);
-  await pool.query(`
+  await pool.query(
+    `
     insert into app_state (id, state, updated_at)
     values ($1, $2::jsonb, now())
     on conflict (id)
     do update set state = excluded.state, updated_at = now()
-  `, ["default", JSON.stringify(state)]);
+  `,
+    ["default", JSON.stringify(state)],
+  );
   console.log(`Seeded app_state from ${path.relative(root, fixturePath)}`);
 }
 

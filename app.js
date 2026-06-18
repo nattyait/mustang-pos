@@ -54,9 +54,27 @@ const seedState = {
       image: "assets/nutella-oreo-fresh-milk.png",
       available: true,
       options: [
-        { id: "sweet", th: "ความหวาน", required: true, choices: [{ th: "25%" }, { th: "50%" }, { th: "75%" }, { th: "100%" }] },
-        { id: "ice", th: "น้ำแข็ง", required: true, choices: [{ th: "ปกติ" }, { th: "น้อย" }, { th: "ไม่ใส่น้ำแข็ง" }] },
-        { id: "topping", th: "ท็อปปิ้ง", required: false, choices: [{ th: "โอรีโอเพิ่ม", price: 10 }, { th: "นูเทลล่าเพิ่ม", price: 15 }] },
+        {
+          id: "sweet",
+          th: "ความหวาน",
+          required: true,
+          choices: [{ th: "25%" }, { th: "50%" }, { th: "75%" }, { th: "100%" }],
+        },
+        {
+          id: "ice",
+          th: "น้ำแข็ง",
+          required: true,
+          choices: [{ th: "ปกติ" }, { th: "น้อย" }, { th: "ไม่ใส่น้ำแข็ง" }],
+        },
+        {
+          id: "topping",
+          th: "ท็อปปิ้ง",
+          required: false,
+          choices: [
+            { th: "โอรีโอเพิ่ม", price: 10 },
+            { th: "นูเทลล่าเพิ่ม", price: 15 },
+          ],
+        },
       ],
     },
     {
@@ -74,7 +92,12 @@ const seedState = {
       image: "assets/nutella-coffee-latte.jpg",
       available: true,
       options: [
-        { id: "sweet", th: "ความหวาน", required: true, choices: [{ th: "25%" }, { th: "50%" }, { th: "75%" }, { th: "100%" }] },
+        {
+          id: "sweet",
+          th: "ความหวาน",
+          required: true,
+          choices: [{ th: "25%" }, { th: "50%" }, { th: "75%" }, { th: "100%" }],
+        },
         { id: "shot", th: "กาแฟ", required: false, choices: [{ th: "เพิ่มช็อต", price: 20 }] },
       ],
     },
@@ -87,7 +110,14 @@ const seedState = {
       price: 65,
       image: "assets/mustang-logo.png",
       available: true,
-      options: [{ id: "sweet", th: "ความหวาน", required: true, choices: [{ th: "25%" }, { th: "50%" }, { th: "75%" }, { th: "100%" }] }],
+      options: [
+        {
+          id: "sweet",
+          th: "ความหวาน",
+          required: true,
+          choices: [{ th: "25%" }, { th: "50%" }, { th: "75%" }, { th: "100%" }],
+        },
+      ],
     },
     {
       id: "m-roti-banana",
@@ -118,12 +148,60 @@ const seedState = {
     { id: "promo-20b", nameTh: "ลด 20 บาท", type: "amount", value: 20, active: true },
   ],
   users: [
-    { id: "u-super", username: "owner", password: "mustang666", name: "Mustang Owner", role: "super_admin", branchIds: ["branch-kiosk", "branch-main"], active: true },
-    { id: "u-franchise", username: "franchise", password: "mustang666", name: "Kiosk Franchise Owner", role: "branch_owner", branchIds: ["branch-kiosk"], active: true },
-    { id: "u-manager", username: "manager", password: "mustang666", name: "Kiosk Manager", role: "branch_manager", branchIds: ["branch-kiosk"], active: true },
-    { id: "u-cashier", username: "cashier", password: "mustang666", name: "Cashier", role: "cashier", branchIds: ["branch-kiosk"], active: true },
-    { id: "u-kitchen", username: "kitchen", password: "mustang666", name: "Kitchen Staff", role: "kitchen", branchIds: ["branch-kiosk"], active: true },
-    { id: "u-customer", username: "customer", password: "mustang666", name: "Customer Kiosk", role: "customer_kiosk", branchIds: ["branch-kiosk"], active: true },
+    {
+      id: "u-super",
+      username: "owner",
+      password: "mustang666",
+      name: "Mustang Owner",
+      role: "super_admin",
+      branchIds: ["branch-kiosk", "branch-main"],
+      active: true,
+    },
+    {
+      id: "u-franchise",
+      username: "franchise",
+      password: "mustang666",
+      name: "Kiosk Franchise Owner",
+      role: "branch_owner",
+      branchIds: ["branch-kiosk"],
+      active: true,
+    },
+    {
+      id: "u-manager",
+      username: "manager",
+      password: "mustang666",
+      name: "Kiosk Manager",
+      role: "branch_manager",
+      branchIds: ["branch-kiosk"],
+      active: true,
+    },
+    {
+      id: "u-cashier",
+      username: "cashier",
+      password: "mustang666",
+      name: "Cashier",
+      role: "cashier",
+      branchIds: ["branch-kiosk"],
+      active: true,
+    },
+    {
+      id: "u-kitchen",
+      username: "kitchen",
+      password: "mustang666",
+      name: "Kitchen Staff",
+      role: "kitchen",
+      branchIds: ["branch-kiosk"],
+      active: true,
+    },
+    {
+      id: "u-customer",
+      username: "customer",
+      password: "mustang666",
+      name: "Customer Kiosk",
+      role: "customer_kiosk",
+      branchIds: ["branch-kiosk"],
+      active: true,
+    },
   ],
   orders: [],
 };
@@ -223,7 +301,6 @@ function normalizeState(rawState) {
     const fallback = defaultUsersById.get(user.id) || {};
     const username = user.username || fallback.username || slugify(user.name || user.role || user.id);
     return {
-      password: "mustang666",
       ...fallback,
       ...user,
       username,
@@ -239,13 +316,17 @@ function normalizeState(rawState) {
     tokens: item.tokens || [],
   }));
   next.menu = (next.menu || []).map(normalizeMenuItem);
-	  next.orders = (next.orders || []).map((order) => ({
-	    ...order,
-	    _updatedAt: Number(order._updatedAt || Date.parse(order.pickedUpAt || order.readyAt || order.paidAt || order.createdAt || 0) || Date.now()),
-	    items: (order.items || []).map(normalizeCartLine),
-	  }));
-	  return next;
-	}
+  next.orders = (next.orders || []).map((order) => ({
+    ...order,
+    _updatedAt: Number(
+      order._updatedAt ||
+        Date.parse(order.pickedUpAt || order.readyAt || order.paidAt || order.createdAt || 0) ||
+        Date.now(),
+    ),
+    items: (order.items || []).map(normalizeCartLine),
+  }));
+  return next;
+}
 
 function touchOrder(order) {
   order._updatedAt = Date.now();
@@ -254,9 +335,10 @@ function touchOrder(order) {
 
 function normalizeMenuItem(item) {
   const options = Array.isArray(item.options) ? item.options : [];
-  const variants = Array.isArray(item.variants) && item.variants.length
-    ? item.variants
-    : [{ id: "default", th: "ราคาเดียว", en: "Single price", price: Number(item.price || 0), active: true }];
+  const variants =
+    Array.isArray(item.variants) && item.variants.length
+      ? item.variants
+      : [{ id: "default", th: "ราคาเดียว", en: "Single price", price: Number(item.price || 0), active: true }];
   const normalizedVariants = variants
     .map((variant, index) => ({
       id: String(variant.id || slugify(variant.th || variant.en || `variant-${index + 1}`) || `variant-${index + 1}`),
@@ -266,7 +348,9 @@ function normalizeMenuItem(item) {
       active: variant.active !== false,
     }))
     .filter((variant) => variant.price > 0);
-  const fallback = normalizedVariants.length ? normalizedVariants : [{ id: "default", th: "ราคาเดียว", en: "Single price", price: Number(item.price || 0), active: true }];
+  const fallback = normalizedVariants.length
+    ? normalizedVariants
+    : [{ id: "default", th: "ราคาเดียว", en: "Single price", price: Number(item.price || 0), active: true }];
   return {
     ...item,
     price: Number(item.price || fallback[0]?.price || 0),
@@ -364,7 +448,9 @@ async function fetchServerState({ notify = false, force = false } = {}) {
   const fetchRevision = stateRevision;
   try {
     const previousKitchenIds = new Set(
-      state.orders.filter((order) => order.branchId === state.activeBranchId && order.status === "in_kitchen").map((order) => order.id)
+      state.orders
+        .filter((order) => order.branchId === state.activeBranchId && order.status === "in_kitchen")
+        .map((order) => order.id),
     );
     const response = await fetch("/api/state", { cache: "no-store" });
     if (!response.ok) return;
@@ -387,7 +473,8 @@ async function fetchServerState({ notify = false, force = false } = {}) {
     renderSyncedState();
     if (!notify) return;
     const newKitchenOrder = state.orders.find(
-      (order) => order.branchId === state.activeBranchId && order.status === "in_kitchen" && !previousKitchenIds.has(order.id)
+      (order) =>
+        order.branchId === state.activeBranchId && order.status === "in_kitchen" && !previousKitchenIds.has(order.id),
     );
     if (newKitchenOrder) notifyKitchen(newKitchenOrder);
   } catch {
@@ -431,14 +518,17 @@ function syncStateFromStorage({ notify = false } = {}) {
   const raw = localStorage.getItem(STORAGE_KEY);
   if (!raw || raw === lastStoredStateRaw) return;
   const previousKitchenIds = new Set(
-    state.orders.filter((order) => order.branchId === state.activeBranchId && order.status === "in_kitchen").map((order) => order.id)
+    state.orders
+      .filter((order) => order.branchId === state.activeBranchId && order.status === "in_kitchen")
+      .map((order) => order.id),
   );
   lastStoredStateRaw = raw;
   reloadState();
   renderSyncedState();
   if (!notify) return;
   const newKitchenOrder = state.orders.find(
-    (order) => order.branchId === state.activeBranchId && order.status === "in_kitchen" && !previousKitchenIds.has(order.id)
+    (order) =>
+      order.branchId === state.activeBranchId && order.status === "in_kitchen" && !previousKitchenIds.has(order.id),
   );
   if (newKitchenOrder) notifyKitchen(newKitchenOrder);
 }
@@ -448,8 +538,8 @@ function isMenuManagementEditing() {
   if (!active) return false;
   return Boolean(
     document.querySelector("#menus.view.active") &&
-      active.closest("#menuFormAdmin, #categoryAdmin") &&
-      ["INPUT", "SELECT", "TEXTAREA", "BUTTON"].includes(active.tagName)
+    active.closest("#menuFormAdmin, #categoryAdmin") &&
+    ["INPUT", "SELECT", "TEXTAREA", "BUTTON"].includes(active.tagName),
   );
 }
 
@@ -565,7 +655,9 @@ function defaultVariant(item) {
 }
 
 function hasRealVariants(item) {
-  return activeVariants(item).some((variant) => variant.id !== "default" || !["ราคาเดียว", "Single price"].includes(variant.th));
+  return activeVariants(item).some(
+    (variant) => variant.id !== "default" || !["ราคาเดียว", "Single price"].includes(variant.th),
+  );
 }
 
 function menuPriceLabel(item) {
@@ -617,11 +709,18 @@ function nextOrderNo() {
 }
 
 function activeTokenIds() {
-  return branch().tokens.filter((token) => token.active).map((token) => token.label);
+  return branch()
+    .tokens.filter((token) => token.active)
+    .map((token) => token.label);
 }
 
 function tokenStatus(token) {
-  const activeOrder = state.orders.find((order) => order.branchId === state.activeBranchId && order.queueToken === token.label && !["picked_up", "cancelled"].includes(order.status));
+  const activeOrder = state.orders.find(
+    (order) =>
+      order.branchId === state.activeBranchId &&
+      order.queueToken === token.label &&
+      !["picked_up", "cancelled"].includes(order.status),
+  );
   if (!activeOrder) return "available";
   if (activeOrder.status === "pending_payment") return "waiting_payment";
   if (activeOrder.status === "ready") return "ready";
@@ -631,17 +730,30 @@ function tokenStatus(token) {
 function isTokenAvailable(label) {
   const exists = activeTokenIds().includes(String(label));
   if (!exists) return false;
-  return !state.orders.some((order) => order.branchId === state.activeBranchId && order.queueToken === String(label) && !["picked_up", "cancelled"].includes(order.status));
+  return !state.orders.some(
+    (order) =>
+      order.branchId === state.activeBranchId &&
+      order.queueToken === String(label) &&
+      !["picked_up", "cancelled"].includes(order.status),
+  );
 }
 
 function defaultOptions(item) {
-  return item.options.filter((group) => group.required).map((group) => {
-    const choice =
-      group.id === "sweet" || group.th === "ความหวาน"
-        ? group.choices.find((itemChoice) => itemChoice.th === "100%") || group.choices[0]
-        : group.choices[0];
-    return { groupId: group.id, group: group.th, label: choice.th, price: choice.price || 0, required: group.required };
-  });
+  return item.options
+    .filter((group) => group.required)
+    .map((group) => {
+      const choice =
+        group.id === "sweet" || group.th === "ความหวาน"
+          ? group.choices.find((itemChoice) => itemChoice.th === "100%") || group.choices[0]
+          : group.choices[0];
+      return {
+        groupId: group.id,
+        group: group.th,
+        label: choice.th,
+        price: choice.price || 0,
+        required: group.required,
+      };
+    });
 }
 
 function addToCart(cartName, item, variant = null) {
@@ -671,7 +783,13 @@ function addToCart(cartName, item, variant = null) {
   }
   saveDraftCarts();
   renderCarts();
-  window.requestAnimationFrame(() => renderCart(cartName, cartName === "customer" ? "customerCartList" : "cartList", cartName === "customer" ? "customerTotals" : "cartTotals"));
+  window.requestAnimationFrame(() =>
+    renderCart(
+      cartName,
+      cartName === "customer" ? "customerCartList" : "cartList",
+      cartName === "customer" ? "customerTotals" : "cartTotals",
+    ),
+  );
   toast(`เพิ่ม ${menuName(item)}${storedVariant ? ` - ${variantName(storedVariant)}` : ""} แล้ว`);
 }
 
@@ -726,7 +844,8 @@ function render() {
 }
 
 function renderUserSelect() {
-  $("userSelect").innerHTML = `<option value="${currentUser().id}">${currentUser().name} - ${roles[currentUser().role]?.label || currentUser().role}</option>`;
+  $("userSelect").innerHTML =
+    `<option value="${currentUser().id}">${currentUser().name} - ${roles[currentUser().role]?.label || currentUser().role}</option>`;
   $("userSelect").value = state.activeUserId;
   $("userSelect").disabled = true;
 }
@@ -807,10 +926,20 @@ function buildOptionGroups(flags, categoryId = "") {
   if (["roti", "food"].includes(categoryId)) return [];
   const groups = [];
   if (flags.sweetness) {
-    groups.push({ id: "sweet", th: "ความหวาน", required: true, choices: [{ th: "25%" }, { th: "50%" }, { th: "75%" }, { th: "100%" }] });
+    groups.push({
+      id: "sweet",
+      th: "ความหวาน",
+      required: true,
+      choices: [{ th: "25%" }, { th: "50%" }, { th: "75%" }, { th: "100%" }],
+    });
   }
   if (flags.ice) {
-    groups.push({ id: "ice", th: "น้ำแข็ง", required: true, choices: [{ th: "ปกติ" }, { th: "น้อย" }, { th: "ไม่ใส่น้ำแข็ง" }] });
+    groups.push({
+      id: "ice",
+      th: "น้ำแข็ง",
+      required: true,
+      choices: [{ th: "ปกติ" }, { th: "น้อย" }, { th: "ไม่ใส่น้ำแข็ง" }],
+    });
   }
   return groups;
 }
@@ -1015,14 +1144,25 @@ async function importMenuJsonFile(file) {
     }
     for (const menuItem of imported.menu) {
       if (!categoryById.has(menuItem.categoryId)) {
-        const fallbackCategory = { id: menuItem.categoryId, th: menuItem.categoryId, en: menuItem.categoryId, sort: nextCategorySort() };
+        const fallbackCategory = {
+          id: menuItem.categoryId,
+          th: menuItem.categoryId,
+          en: menuItem.categoryId,
+          sort: nextCategorySort(),
+        };
         state.categories.push(fallbackCategory);
         categoryById.set(fallbackCategory.id, fallbackCategory);
       }
       const existingIndex = state.menu.findIndex((item) => item.sku.toLowerCase() === menuItem.sku.toLowerCase());
       if (existingIndex >= 0) {
-        state.menu[existingIndex] = normalizeMenuItem({ ...state.menu[existingIndex], ...menuItem, id: state.menu[existingIndex].id, image: state.menu[existingIndex].image || "assets/mustang-logo.png" });
-        if (!state.masterTemplate.menuIds.includes(state.menu[existingIndex].id)) state.masterTemplate.menuIds.push(state.menu[existingIndex].id);
+        state.menu[existingIndex] = normalizeMenuItem({
+          ...state.menu[existingIndex],
+          ...menuItem,
+          id: state.menu[existingIndex].id,
+          image: state.menu[existingIndex].image || "assets/mustang-logo.png",
+        });
+        if (!state.masterTemplate.menuIds.includes(state.menu[existingIndex].id))
+          state.masterTemplate.menuIds.push(state.menu[existingIndex].id);
       } else {
         let id = menuItem.id;
         if (state.menu.some((item) => item.id === id)) id = `m-${slugify(menuItem.sku)}-${Date.now()}`;
@@ -1043,7 +1183,9 @@ async function importMenuJsonFile(file) {
 }
 
 function renderBranchSelect() {
-  const branches = currentRole().canSwitchBranches ? state.branches : state.branches.filter((item) => currentUser().branchIds.includes(item.id));
+  const branches = currentRole().canSwitchBranches
+    ? state.branches
+    : state.branches.filter((item) => currentUser().branchIds.includes(item.id));
   $("branchSelect").innerHTML = branches.map((item) => `<option value="${item.id}">${item.nameTh}</option>`).join("");
   $("branchSelect").value = state.activeBranchId;
 }
@@ -1051,19 +1193,31 @@ function renderBranchSelect() {
 function renderTabs() {
   const sortedCategories = [...state.categories].sort((a, b) => Number(a.sort || 0) - Number(b.sort || 0));
   if (!sortedCategories.some((cat) => cat.id === selectedCategory)) selectedCategory = sortedCategories[0]?.id || "";
-  if (!sortedCategories.some((cat) => cat.id === selectedCustomerCategory)) selectedCustomerCategory = sortedCategories[0]?.id || "";
+  if (!sortedCategories.some((cat) => cat.id === selectedCustomerCategory))
+    selectedCustomerCategory = sortedCategories[0]?.id || "";
   const tabs = sortedCategories
-    .map((cat) => `<button class="${cat.id === selectedCategory ? "active" : ""}" data-cat="${cat.id}">${categoryName(cat)}</button>`)
+    .map(
+      (cat) =>
+        `<button class="${cat.id === selectedCategory ? "active" : ""}" data-cat="${cat.id}">${categoryName(cat)}</button>`,
+    )
     .join("");
   $("categoryTabs").innerHTML = tabs;
   $("customerTabs").innerHTML = sortedCategories
-    .map((cat) => `<button class="${cat.id === selectedCustomerCategory ? "active" : ""}" data-customer-cat="${cat.id}">${categoryName(cat)}</button>`)
+    .map(
+      (cat) =>
+        `<button class="${cat.id === selectedCustomerCategory ? "active" : ""}" data-customer-cat="${cat.id}">${categoryName(cat)}</button>`,
+    )
     .join("");
 }
 
 function renderMenus() {
   const search = ($("menuSearch").value || "").toLowerCase();
-  const staffItems = state.menu.filter((item) => item.categoryId === selectedCategory && item.available && (!search || `${item.th} ${item.en} ${item.sku}`.toLowerCase().includes(search)));
+  const staffItems = state.menu.filter(
+    (item) =>
+      item.categoryId === selectedCategory &&
+      item.available &&
+      (!search || `${item.th} ${item.en} ${item.sku}`.toLowerCase().includes(search)),
+  );
   $("menuGrid").innerHTML = staffItems.map(menuCard).join("");
   const customerItems = state.menu.filter((item) => item.categoryId === selectedCustomerCategory && item.available);
   $("customerMenuGrid").innerHTML = customerItems.map((item) => menuCard(item, true)).join("");
@@ -1071,14 +1225,19 @@ function renderMenus() {
 
 function menuCard(item, customer = false) {
   const variants = activeVariants(item);
-  const variantButtons = variants.length > 1
-    ? `<span class="variant-buttons">${variants.map((variant) => `
+  const variantButtons =
+    variants.length > 1
+      ? `<span class="variant-buttons">${variants
+          .map(
+            (variant) => `
         <button type="button" data-menu-variant="${item.id}" data-variant-id="${variant.id}" data-cart="${customer ? "customer" : "staff"}">
           <span>${variantName(variant)}</span>
           <strong>${fmt.format(variant.price)}</strong>
         </button>
-      `).join("")}</span>`
-    : "";
+      `,
+          )
+          .join("")}</span>`
+      : "";
   return `
     <div class="menu-card" role="button" tabindex="0" data-menu-id="${item.id}" data-sku="${item.sku}" data-cart="${customer ? "customer" : "staff"}">
       <img src="${item.image}" alt="${menuName(item)}">
@@ -1097,8 +1256,13 @@ function renderCarts() {
   $("staffCartBadge").textContent = carts.staff.reduce((sum, line) => sum + line.qty, 0);
   $("customerCartBadge").textContent = carts.customer.reduce((sum, line) => sum + line.qty, 0);
   const selectedPromo = $("promotionSelect").value || "none";
-  $("promotionSelect").innerHTML = state.promotions.filter((item) => item.active).map((promo) => `<option value="${promo.id}">${promo.nameTh}</option>`).join("");
-  $("promotionSelect").value = state.promotions.some((promo) => promo.id === selectedPromo && promo.active) ? selectedPromo : "none";
+  $("promotionSelect").innerHTML = state.promotions
+    .filter((item) => item.active)
+    .map((promo) => `<option value="${promo.id}">${promo.nameTh}</option>`)
+    .join("");
+  $("promotionSelect").value = state.promotions.some((promo) => promo.id === selectedPromo && promo.active)
+    ? selectedPromo
+    : "none";
   renderTokenSelect();
   renderCart("staff", "cartList", "cartTotals");
   renderCart("customer", "customerCartList", "customerTotals");
@@ -1111,8 +1275,8 @@ function renderTokenSelect() {
 
 function renderTokenPicker(inputId, buttonsId, actionName) {
   const selected = $(inputId).value;
-  const tokenOptions = branch().tokens
-    .filter((token) => token.active)
+  const tokenOptions = branch()
+    .tokens.filter((token) => token.active)
     .map((token) => ({ token, status: tokenStatus(token) }));
   if (selected && !isTokenAvailable(selected)) $(inputId).value = "";
   const current = $(inputId).value;
@@ -1136,26 +1300,30 @@ function renderCart(cartName, listId, totalsId) {
   if (cart.length) {
     const html = cart
       .map((line, index) => {
-          const item = lineMenu(line);
-          return `
+        const item = lineMenu(line);
+        return `
             <div class="cart-item">
               <div>
                 <strong>${lineDisplayName(line)}</strong>
-                <div class="option-selects">${item.options.map((group) => {
-                  const current = line.options.find((option) => option.groupId === group.id);
-                  return `
+                <div class="option-selects">${item.options
+                  .map((group) => {
+                    const current = line.options.find((option) => option.groupId === group.id);
+                    return `
                     <label>${group.th}${group.required ? " *" : ""}
                       <select data-cart-option="${cartName}" data-index="${index}" data-group="${group.id}">
                         ${group.required ? "" : `<option value="" ${current ? "" : "selected"}>ไม่เลือก</option>`}
-                        ${group.choices.map((choice) => {
-                          const selected = current && current.label === choice.th ? "selected" : "";
-                          const price = choice.price ? ` +${choice.price}` : "";
-                          return `<option value="${choice.th}" ${selected}>${choice.th}${price}</option>`;
-                        }).join("")}
+                        ${group.choices
+                          .map((choice) => {
+                            const selected = current && current.label === choice.th ? "selected" : "";
+                            const price = choice.price ? ` +${choice.price}` : "";
+                            return `<option value="${choice.th}" ${selected}>${choice.th}${price}</option>`;
+                          })
+                          .join("")}
                       </select>
                     </label>
                   `;
-                }).join("")}</div>
+                  })
+                  .join("")}</div>
                 <span class="sku">${item.sku}${line.variant ? ` / ${fmt.format(line.variant.price)}` : ""}</span>
               </div>
               <div>
@@ -1168,9 +1336,13 @@ function renderCart(cartName, listId, totalsId) {
               </div>
             </div>
           `;
-        })
+      })
       .join("");
-    $(listId).innerHTML = html || cart.map((line) => `<div class="cart-item"><strong>${line.nameTh || line.sku || line.menuId}</strong></div>`).join("");
+    $(listId).innerHTML =
+      html ||
+      cart
+        .map((line) => `<div class="cart-item"><strong>${line.nameTh || line.sku || line.menuId}</strong></div>`)
+        .join("");
   } else {
     $(listId).innerHTML = `<p class="sku">ยังไม่มีรายการ</p>`;
   }
@@ -1209,16 +1381,16 @@ async function createOrder(source) {
     paymentMethod,
     cashReceived: source === "staff" ? cash : 0,
     transferReceived: source === "staff" ? transfer : 0,
-	    subtotal: summary.subtotal,
-	    discount: summary.discount,
-	    total: summary.total,
-	    promotion: summary.promo,
-	    status: paidNow ? "in_kitchen" : "pending_payment",
-	    createdAt: new Date().toISOString(),
-	    _updatedAt: Date.now(),
-	    paidAt: paidNow ? new Date().toISOString() : null,
-	    items: cart.map((line) => ({ ...line, done: false })),
-	  };
+    subtotal: summary.subtotal,
+    discount: summary.discount,
+    total: summary.total,
+    promotion: summary.promo,
+    status: paidNow ? "in_kitchen" : "pending_payment",
+    createdAt: new Date().toISOString(),
+    _updatedAt: Date.now(),
+    paidAt: paidNow ? new Date().toISOString() : null,
+    items: cart.map((line) => ({ ...line, done: false })),
+  };
   state.orders.unshift(order);
   carts[cartName] = [];
   saveDraftCarts();
@@ -1232,10 +1404,21 @@ async function createOrder(source) {
   await saveState();
   if (paidNow) {
     notifyKitchen(order);
-	    await broadcastEvent("new_kitchen_order", { orderId: order.id, branchId: order.branchId, orderNo: order.orderNo, queueToken: order.queueToken });
-	  } else {
-	    await broadcastEvent("pending_payment_order", { orderId: order.id, branchId: order.branchId, orderNo: order.orderNo, queueToken: order.queueToken, paymentMethod: order.paymentMethod });
-	  }
+    await broadcastEvent("new_kitchen_order", {
+      orderId: order.id,
+      branchId: order.branchId,
+      orderNo: order.orderNo,
+      queueToken: order.queueToken,
+    });
+  } else {
+    await broadcastEvent("pending_payment_order", {
+      orderId: order.id,
+      branchId: order.branchId,
+      orderNo: order.orderNo,
+      queueToken: order.queueToken,
+      paymentMethod: order.paymentMethod,
+    });
+  }
   render();
   if (paidNow) {
     printReceipt(order.id);
@@ -1288,14 +1471,19 @@ function hideCustomerOrderSummary() {
 
 async function confirmPayment(orderId) {
   const order = state.orders.find((item) => item.id === orderId);
-	  order.status = "in_kitchen";
-	  order.paidAt = new Date().toISOString();
-	  order.cashReceived = order.paymentMethod === "cash" ? order.total : 0;
-	  order.transferReceived = order.paymentMethod === "transfer" ? order.total : 0;
-	  touchOrder(order);
-	  await saveState();
-	  notifyKitchen(order);
-	  await broadcastEvent("new_kitchen_order", { orderId: order.id, branchId: order.branchId, orderNo: order.orderNo, queueToken: order.queueToken });
+  order.status = "in_kitchen";
+  order.paidAt = new Date().toISOString();
+  order.cashReceived = order.paymentMethod === "cash" ? order.total : 0;
+  order.transferReceived = order.paymentMethod === "transfer" ? order.total : 0;
+  touchOrder(order);
+  await saveState();
+  notifyKitchen(order);
+  await broadcastEvent("new_kitchen_order", {
+    orderId: order.id,
+    branchId: order.branchId,
+    orderNo: order.orderNo,
+    queueToken: order.queueToken,
+  });
   render();
 }
 
@@ -1319,8 +1507,12 @@ function orderCardPayment(order) {
 }
 
 function renderKitchen() {
-  const pending = state.orders.filter((order) => order.branchId === state.activeBranchId && order.status === "pending_payment");
-  const active = state.orders.filter((order) => order.branchId === state.activeBranchId && order.status === "in_kitchen");
+  const pending = state.orders.filter(
+    (order) => order.branchId === state.activeBranchId && order.status === "pending_payment",
+  );
+  const active = state.orders.filter(
+    (order) => order.branchId === state.activeBranchId && order.status === "in_kitchen",
+  );
   const done = state.orders.filter((order) => order.branchId === state.activeBranchId && order.status === "ready");
   const sections = [
     { title: "กำลังทำอาหาร", className: "cooking", count: active.length, cards: active.map(orderCardKitchen) },
@@ -1329,13 +1521,17 @@ function renderKitchen() {
   ];
   const hasOrders = sections.some((section) => section.count);
   $("kitchenBoard").innerHTML = hasOrders
-    ? sections.map((section) => `
+    ? sections
+        .map(
+          (section) => `
       <div class="order-section-head ${section.className}">
         <h2>${section.title}</h2>
         <span class="pill">${section.count} ออเดอร์</span>
       </div>
       ${section.cards.join("") || `<p class="pill muted-card">ไม่มีรายการ</p>`}
-    `).join("")
+    `,
+        )
+        .join("")
     : `<p class="pill">ไม่มีรายการ</p>`;
 }
 
@@ -1348,30 +1544,35 @@ function orderCardKitchen(order) {
       </header>
       ${customerLine(order)}
       <span class="pill ${order.status === "ready" ? "success" : ""}">${order.status === "ready" ? "รอลูกค้ารับอาหาร" : "กำลังทำ"}</span>
-      <div>${order.items.map((line, index) => {
-        const item = lineMenu(line);
-        return `
+      <div>${order.items
+        .map((line, index) => {
+          const item = lineMenu(line);
+          return `
           <label class="check-line">
             <input type="checkbox" data-item-done="${order.id}" data-index="${index}" ${line.done ? "checked" : ""}>
             <span>${line.qty} x ${lineDisplayName(line)}<br><small>${optionSummary(line)}</small></span>
             <strong>${item.sku}</strong>
           </label>
         `;
-      }).join("")}</div>
-      ${order.status === "in_kitchen" ? `
+        })
+        .join("")}</div>
+      ${
+        order.status === "in_kitchen"
+          ? `
         <button class="primary" data-order-ready="${order.id}">อาหารเสร็จแล้ว</button>
         <button class="secondary" data-print="${order.id}">พิมพ์บิลอีกครั้ง</button>
-      ` : `
+      `
+          : `
         <span class="pill">พร้อมเรียกคิว ${order.queueToken}</span>
         <button class="primary" data-picked-up="${order.id}">รับอาหารแล้ว / คืน token แล้ว</button>
         <button class="secondary" data-print="${order.id}">พิมพ์บิลอีกครั้ง</button>
-      `}
+      `
+      }
     </article>
   `;
 }
 
 function itemLine(line) {
-  const item = lineMenu(line);
   return `<div class="total-line"><span>${line.qty} x ${lineDisplayName(line)}</span><strong>${fmt.format(linePrice(line))}</strong></div>`;
 }
 
@@ -1407,14 +1608,17 @@ function renderReports() {
     <div class="metric"><span>จำนวนออเดอร์</span><strong>${paid.length}</strong></div>
     <div class="metric"><span>ยกเลิก</span><strong>${cancelled}</strong></div>
   `;
-  const paymentTotals = paid.reduce((totals, order) => {
-    const payment = orderPaymentBreakdown(order);
-    totals.cash += payment.cash;
-    totals.transfer += payment.transfer;
-    totals.mixed += payment.mixed;
-    totals.counts[order.paymentMethod] += 1;
-    return totals;
-  }, { cash: 0, transfer: 0, mixed: 0, counts: { cash: 0, transfer: 0, mixed: 0 } });
+  const paymentTotals = paid.reduce(
+    (totals, order) => {
+      const payment = orderPaymentBreakdown(order);
+      totals.cash += payment.cash;
+      totals.transfer += payment.transfer;
+      totals.mixed += payment.mixed;
+      totals.counts[order.paymentMethod] += 1;
+      return totals;
+    },
+    { cash: 0, transfer: 0, mixed: 0, counts: { cash: 0, transfer: 0, mixed: 0 } },
+  );
   $("reportPaymentSummary").innerHTML = `
     <div class="metric"><span>เงินสด</span><strong>${fmt.format(paymentTotals.cash)}</strong><small>${paymentTotals.counts.cash} ออเดอร์</small></div>
     <div class="metric"><span>โอน/QR</span><strong>${fmt.format(paymentTotals.transfer)}</strong><small>${paymentTotals.counts.transfer} ออเดอร์</small></div>
@@ -1456,9 +1660,11 @@ function renderReports() {
       }
     });
   });
-  $("reportMenuSummaryRows").innerHTML = Array.from(menuSummary.values())
-    .sort((a, b) => a.sku.localeCompare(b.sku) || a.name.localeCompare(b.name))
-    .map((item) => `
+  $("reportMenuSummaryRows").innerHTML =
+    Array.from(menuSummary.values())
+      .sort((a, b) => a.sku.localeCompare(b.sku) || a.name.localeCompare(b.name))
+      .map(
+        (item) => `
       <tr>
         <td>${escapeHtml(item.sku)}</td>
         <td>${escapeHtml(item.name)}</td>
@@ -1468,29 +1674,41 @@ function renderReports() {
         <td>${item.transferQty} / ${fmt.format(item.transferTotal)}</td>
         <td>${item.mixedQty} / ${fmt.format(item.mixedTotal)}</td>
       </tr>
-    `)
-    .join("") || `<tr><td colspan="7">ไม่มีข้อมูลยอดขายในช่วงนี้</td></tr>`;
+    `,
+      )
+      .join("") || `<tr><td colspan="7">ไม่มีข้อมูลยอดขายในช่วงนี้</td></tr>`;
   $("reportRows").innerHTML = rows
-    .map((order) => `
+    .map(
+      (order) => `
       <tr>
         <td>${dateFmt.format(new Date(order.createdAt))}</td>
         <td>${order.orderNo}</td>
         <td>${order.queueToken}</td>
         <td>${escapeHtml(customerLabel(order) || "-")}</td>
-        <td>${order.items.map((line) => {
-          const item = lineMenu(line);
-          return `${line.qty} x ${lineDisplayName(line)}`;
-        }).join("<br>")}</td>
+        <td>${order.items
+          .map((line) => {
+            return `${line.qty} x ${lineDisplayName(line)}`;
+          })
+          .join("<br>")}</td>
         <td>${paymentName(order.paymentMethod)}</td>
         <td>${fmt.format(order.total)}</td>
         <td>${statusName(order.status)}</td>
       </tr>
-    `)
+    `,
+    )
     .join("");
 }
 
 function statusName(status) {
-  return { pending_payment: "รอชำระ", in_kitchen: "อยู่ในครัว", ready: "อาหารพร้อม", picked_up: "รับแล้ว", cancelled: "ยกเลิก" }[status] || status;
+  return (
+    {
+      pending_payment: "รอชำระ",
+      in_kitchen: "อยู่ในครัว",
+      ready: "อาหารพร้อม",
+      picked_up: "รับแล้ว",
+      cancelled: "ยกเลิก",
+    }[status] || status
+  );
 }
 
 function renderAdmin() {
@@ -1504,7 +1722,9 @@ function renderAdmin() {
 
   $("roleAdmin").innerHTML = `
     <div class="admin-list">
-      ${state.users.map((user) => `
+      ${state.users
+        .map(
+          (user) => `
         <div class="admin-row">
           <span>
             <strong>${user.name}</strong><br>
@@ -1512,7 +1732,12 @@ function renderAdmin() {
           </span>
           <div class="role-matrix">
             <select data-user-role="${user.id}">
-              ${Object.entries(roles).map(([roleId, role]) => `<option value="${roleId}" ${user.role === roleId ? "selected" : ""}>${role.label}</option>`).join("")}
+              ${Object.entries(roles)
+                .map(
+                  ([roleId, role]) =>
+                    `<option value="${roleId}" ${user.role === roleId ? "selected" : ""}>${role.label}</option>`,
+                )
+                .join("")}
             </select>
             <select data-user-branch="${user.id}">
               ${state.branches.map((branchItem) => `<option value="${branchItem.id}" ${user.branchIds.includes(branchItem.id) ? "selected" : ""}>${branchItem.nameTh}</option>`).join("")}
@@ -1525,13 +1750,17 @@ function renderAdmin() {
             <button class="secondary" data-delete-user="${user.id}">ลบ user</button>
           </div>
         </div>
-      `).join("")}
+      `,
+        )
+        .join("")}
     </div>
     <div class="admin-form">
       <label class="field"><span>ชื่อผู้ใช้ใหม่</span><input id="newUserName" placeholder="Branch Staff"></label>
       <label class="field"><span>Username</span><input id="newUserUsername" placeholder="staff1"></label>
       <label class="field"><span>Password</span><input id="newUserPassword" type="password" value="mustang666"></label>
-      <label class="field"><span>Role</span><select id="newUserRole">${Object.entries(roles).map(([roleId, role]) => `<option value="${roleId}">${role.label}</option>`).join("")}</select></label>
+      <label class="field"><span>Role</span><select id="newUserRole">${Object.entries(roles)
+        .map(([roleId, role]) => `<option value="${roleId}">${role.label}</option>`)
+        .join("")}</select></label>
       <label class="field"><span>Branch</span><select id="newUserBranch">${state.branches.map((branchItem) => `<option value="${branchItem.id}">${branchItem.nameTh}</option>`).join("")}</select></label>
       <button class="primary" id="addUser">เพิ่ม user</button>
     </div>
@@ -1539,7 +1768,9 @@ function renderAdmin() {
 
   $("branchAdmin").innerHTML = `
     <div class="admin-list">
-      ${state.branches.map((item) => `
+      ${state.branches
+        .map(
+          (item) => `
         <div class="admin-row">
           <span>
             <strong>${item.nameTh}</strong><br>
@@ -1547,7 +1778,9 @@ function renderAdmin() {
           </span>
           <button class="secondary" data-switch-branch="${item.id}">${item.id === state.activeBranchId ? "กำลังใช้" : "เปิดสาขา"}</button>
         </div>
-      `).join("")}
+      `,
+        )
+        .join("")}
     </div>
     <div class="admin-form">
       <label class="field"><span>ชื่อสาขาไทย</span><input id="newBranchTh" placeholder="Mustang Cafe สาขาใหม่"></label>
@@ -1574,23 +1807,34 @@ function renderAdmin() {
     </div>
   `;
 
-  $("tokenAdmin").innerHTML = `<div class="admin-list">${branch().tokens.map((token) => `
+  $("tokenAdmin").innerHTML = `<div class="admin-list">${branch()
+    .tokens.map(
+      (token) => `
     <div class="admin-row">
       <span>Token ${token.label} - ${tokenLabel(tokenStatus(token))}</span>
       <button class="secondary" data-toggle-token="${token.id}">${token.active ? "เปิดใช้" : "ปิด"}</button>
     </div>
-  `).join("")}</div>
+  `,
+    )
+    .join("")}</div>
   <div class="admin-form">
-    <label class="field"><span>Token list ของสาขานี้</span><input id="branchTokenList" value="${branch().tokens.map((token) => token.label).join(",")}"></label>
+    <label class="field"><span>Token list ของสาขานี้</span><input id="branchTokenList" value="${branch()
+      .tokens.map((token) => token.label)
+      .join(",")}"></label>
     <label class="field"><span>QR / bank label</span><input id="branchQrLabel" value="${branch().qrLabel || ""}"></label>
     <button class="primary" id="saveBranchSettings">บันทึกคิวและ QR ของสาขา</button>
   </div>`;
-  $("promoAdmin").innerHTML = `<div class="admin-list">${state.promotions.filter((promo) => promo.id !== "none").map((promo) => `
+  $("promoAdmin").innerHTML = `<div class="admin-list">${state.promotions
+    .filter((promo) => promo.id !== "none")
+    .map(
+      (promo) => `
     <div class="admin-row">
       <span>${promo.nameTh}</span>
       <button class="secondary" data-toggle-promo="${promo.id}">${promo.active ? "เปิดใช้" : "ปิด"}</button>
     </div>
-  `).join("")}</div>`;
+  `,
+    )
+    .join("")}</div>`;
 }
 
 function renderMenuManagement() {
@@ -1605,7 +1849,6 @@ function renderMenuManagement() {
   const sortedCategories = [...state.categories].sort((a, b) => Number(a.sort || 0) - Number(b.sort || 0));
   const editingCategory = state.categories.find((cat) => cat.id === editingCategoryId);
   const editing = state.menu.find((item) => item.id === editingMenuId);
-  const formTitle = editing ? `แก้ไขเมนู ${editing.th}` : "เพิ่มเมนูใหม่";
   const imageValue = editing && !editing.image.startsWith("data:") ? editing.image : "";
   const previewImage = uploadedMenuImageDataUrl || editing?.image || "assets/mustang-logo.png";
   const formCategoryId = editing?.categoryId || sortedCategories[0]?.id || "signature";
@@ -1634,9 +1877,10 @@ function renderMenuManagement() {
           ${editingCategory ? `<button class="secondary" id="cancelCategoryEdit">ยกเลิกการแก้ไข</button>` : ""}
         </div>
         <div class="admin-list category-list">
-          ${sortedCategories.map((cat) => {
-            const count = state.menu.filter((item) => item.categoryId === cat.id).length;
-            return `
+          ${sortedCategories
+            .map((cat) => {
+              const count = state.menu.filter((item) => item.categoryId === cat.id).length;
+              return `
               <div class="admin-row">
                 <span><strong>${cat.th}</strong><br><small>${cat.id} / ${cat.en} / ลำดับ ${cat.sort} / ${count} เมนู</small></span>
                 <div class="role-matrix">
@@ -1645,7 +1889,8 @@ function renderMenuManagement() {
                 </div>
               </div>
             `;
-          }).join("")}
+            })
+            .join("")}
         </div>
       </div>
     </details>
@@ -1681,14 +1926,18 @@ function renderMenuManagement() {
           <span>เปิด</span>
         </div>
         <div id="variantRows">
-          ${editingVariants.map((variant) => `
+          ${editingVariants
+            .map(
+              (variant) => `
             <div class="variant-row" data-price-variant-row data-variant-id="${escapeHtml(variant.id)}">
               <input data-variant-th value="${escapeHtml(variant.th)}" placeholder="ร้อน">
               <input data-variant-en value="${escapeHtml(variant.en)}" placeholder="Hot">
               <input data-variant-price type="number" min="0" inputmode="decimal" value="${variant.price || ""}" placeholder="79">
               <label><input data-variant-active type="checkbox" ${variant.active !== false ? "checked" : ""}></label>
             </div>
-          `).join("")}
+          `,
+            )
+            .join("")}
         </div>
         <button class="secondary" type="button" id="addVariantRow">เพิ่มรูปแบบราคา</button>
       </div>
@@ -1717,10 +1966,11 @@ function renderMenuManagement() {
       </div>
     </div>
     <div class="menu-catalog">
-      ${sortedCategories.map((cat) => {
-        const items = state.menu.filter((item) => item.categoryId === cat.id);
-        if (!items.length) return "";
-        return `
+      ${sortedCategories
+        .map((cat) => {
+          const items = state.menu.filter((item) => item.categoryId === cat.id);
+          if (!items.length) return "";
+          return `
           <section class="menu-catalog-group">
             <header>
               <div>
@@ -1730,13 +1980,15 @@ function renderMenuManagement() {
               <span class="pill">${items.length} เมนู</span>
             </header>
             <div class="menu-catalog-list">
-              ${items.map((item) => {
-                const variants = activeVariants(item);
-                const variantChips = variants.length > 1
-                  ? variants.map((variant) => `<span>${variant.th} ${fmt.format(variant.price)}</span>`).join("")
-                  : "";
-	                const isEditingThisMenu = editing?.id === item.id;
-	                return `
+              ${items
+                .map((item) => {
+                  const variants = activeVariants(item);
+                  const variantChips =
+                    variants.length > 1
+                      ? variants.map((variant) => `<span>${variant.th} ${fmt.format(variant.price)}</span>`).join("")
+                      : "";
+                  const isEditingThisMenu = editing?.id === item.id;
+                  return `
 	                  <article class="menu-admin-card ${item.available ? "" : "is-hidden"} ${isEditingThisMenu ? "editing" : ""}">
                     <img src="${item.image}" alt="${item.th}">
                     <div class="menu-admin-main">
@@ -1761,11 +2013,13 @@ function renderMenuManagement() {
                     </div>
                   </article>
                 `;
-              }).join("")}
+                })
+                .join("")}
             </div>
           </section>
         `;
-      }).join("")}
+        })
+        .join("")}
     </div>
   `;
 }
@@ -1784,9 +2038,11 @@ function printReceipt(orderId) {
     ${customerLabel(order) ? `<p>Customer: ${escapeHtml(customerLabel(order))}</p>` : ""}
     <p>${dateFmt.format(new Date(order.createdAt))}</p>
     <div class="line"></div>
-    ${order.items.map((line) => {
-      return `<div class="row"><span>${line.qty} x ${lineDisplayName(line)}</span><strong>${fmt.format(linePrice(line))}</strong></div>`;
-    }).join("")}
+    ${order.items
+      .map((line) => {
+        return `<div class="row"><span>${line.qty} x ${lineDisplayName(line)}</span><strong>${fmt.format(linePrice(line))}</strong></div>`;
+      })
+      .join("")}
     <div class="line"></div>
     <div class="row"><span>Subtotal</span><strong>${fmt.format(order.subtotal)}</strong></div>
     <div class="row"><span>Discount</span><strong>${fmt.format(order.discount)}</strong></div>
@@ -1909,7 +2165,7 @@ function printReceipt(orderId) {
           image.addEventListener("load", resolve, { once: true });
           image.addEventListener("error", resolve, { once: true });
         });
-      })
+      }),
     );
   };
 
@@ -1921,12 +2177,16 @@ function printReceipt(orderId) {
   }, 250);
 }
 
-function notifyKitchen(payload = {}) {
-  $("ding").play().catch(() => {});
+function notifyKitchen() {
+  $("ding")
+    .play()
+    .catch(() => {});
 }
 
 function exportCsv() {
-  const rows = [["time", "order_no", "queue", "customer_name", "items", "payment", "subtotal", "discount", "total", "status"]];
+  const rows = [
+    ["time", "order_no", "queue", "customer_name", "items", "payment", "subtotal", "discount", "total", "status"],
+  ];
   state.orders
     .filter((order) => order.branchId === state.activeBranchId)
     .forEach((order) => {
@@ -1935,10 +2195,11 @@ function exportCsv() {
         order.orderNo,
         order.queueToken,
         customerLabel(order),
-        order.items.map((line) => {
-          const item = lineMenu(line);
-          return `${line.qty}x ${lineDisplayName(line)}`;
-        }).join("; "),
+        order.items
+          .map((line) => {
+            return `${line.qty}x ${lineDisplayName(line)}`;
+          })
+          .join("; "),
         order.paymentMethod,
         order.subtotal,
         order.discount,
@@ -1963,7 +2224,9 @@ function requireSuperuser() {
 }
 
 function activateMenuCard(menuTarget, variantId = "") {
-  const item = state.menu.find((menuItem) => menuItem.id === menuTarget.dataset.menuId || menuItem.sku === menuTarget.dataset.sku);
+  const item = state.menu.find(
+    (menuItem) => menuItem.id === menuTarget.dataset.menuId || menuItem.sku === menuTarget.dataset.sku,
+  );
   if (!item || !item.available) return;
   const cartName = document.querySelector("#customer.view.active") ? "customer" : "staff";
   const variants = activeVariants(item);
@@ -1995,7 +2258,8 @@ document.addEventListener("click", async (event) => {
   }
   const menuTarget = event.target.closest("[data-menu-id]");
   if (menuTarget) {
-    const recentlyHandled = lastMenuActivation.id.startsWith(`${menuTarget.dataset.menuId}:`) && Date.now() - lastMenuActivation.at < 450;
+    const recentlyHandled =
+      lastMenuActivation.id.startsWith(`${menuTarget.dataset.menuId}:`) && Date.now() - lastMenuActivation.at < 450;
     if (!recentlyHandled) activateMenuCard(menuTarget);
     return;
   }
@@ -2004,7 +2268,9 @@ document.addEventListener("click", async (event) => {
   if (target.id === "loginButton") {
     const username = $("loginUsername").value.trim().toLowerCase();
     const password = $("loginPassword").value;
-    const user = state.users.find((item) => item.active && item.username.toLowerCase() === username && item.password === password);
+    const user = state.users.find(
+      (item) => item.active && item.username.toLowerCase() === username && item.password === password,
+    );
     if (!user) return toast("Username หรือ password ไม่ถูกต้อง");
     localStorage.setItem(AUTH_KEY, user.id);
     state.activeUserId = user.id;
@@ -2052,41 +2318,61 @@ document.addEventListener("click", async (event) => {
   if (target.id === "submitCustomerOrder") createOrder("customer");
   if (target.dataset.closeCustomerSummary) hideCustomerOrderSummary();
   if (target.dataset.confirmPayment) confirmPayment(target.dataset.confirmPayment);
-	  if (target.dataset.cancelOrder) {
-	    const order = state.orders.find((item) => item.id === target.dataset.cancelOrder);
-	    order.status = "cancelled";
-	    touchOrder(order);
-	    await saveState();
-	    await broadcastEvent("order_updated", { orderId: order.id, branchId: order.branchId, status: order.status, queueToken: order.queueToken });
-	    render();
-	  }
-	  if (target.dataset.itemDone) {
-	    const order = state.orders.find((item) => item.id === target.dataset.itemDone);
-	    order.items[Number(target.dataset.index)].done = target.checked;
-	    touchOrder(order);
-	    await saveState();
-	    await broadcastEvent("order_updated", { orderId: order.id, branchId: order.branchId, status: order.status, queueToken: order.queueToken });
-	    renderKitchen();
-	  }
-	  if (target.dataset.orderReady) {
-	    const order = state.orders.find((item) => item.id === target.dataset.orderReady);
-	    if (!order.items.every((item) => item.done)) return toast("กรุณาติ๊กว่าทำครบทุกเมนูก่อน");
-	    order.status = "ready";
-	    order.readyAt = new Date().toISOString();
-	    touchOrder(order);
-	    await saveState();
-	    await broadcastEvent("order_updated", { orderId: order.id, branchId: order.branchId, status: order.status, queueToken: order.queueToken });
-	    render();
-	  }
-	  if (target.dataset.pickedUp) {
-	    const order = state.orders.find((item) => item.id === target.dataset.pickedUp);
-	    order.status = "picked_up";
-	    order.pickedUpAt = new Date().toISOString();
-	    touchOrder(order);
-	    await saveState();
-	    await broadcastEvent("order_updated", { orderId: order.id, branchId: order.branchId, status: order.status, queueToken: order.queueToken });
-	    render();
-	  }
+  if (target.dataset.cancelOrder) {
+    const order = state.orders.find((item) => item.id === target.dataset.cancelOrder);
+    order.status = "cancelled";
+    touchOrder(order);
+    await saveState();
+    await broadcastEvent("order_updated", {
+      orderId: order.id,
+      branchId: order.branchId,
+      status: order.status,
+      queueToken: order.queueToken,
+    });
+    render();
+  }
+  if (target.dataset.itemDone) {
+    const order = state.orders.find((item) => item.id === target.dataset.itemDone);
+    order.items[Number(target.dataset.index)].done = target.checked;
+    touchOrder(order);
+    await saveState();
+    await broadcastEvent("order_updated", {
+      orderId: order.id,
+      branchId: order.branchId,
+      status: order.status,
+      queueToken: order.queueToken,
+    });
+    renderKitchen();
+  }
+  if (target.dataset.orderReady) {
+    const order = state.orders.find((item) => item.id === target.dataset.orderReady);
+    if (!order.items.every((item) => item.done)) return toast("กรุณาติ๊กว่าทำครบทุกเมนูก่อน");
+    order.status = "ready";
+    order.readyAt = new Date().toISOString();
+    touchOrder(order);
+    await saveState();
+    await broadcastEvent("order_updated", {
+      orderId: order.id,
+      branchId: order.branchId,
+      status: order.status,
+      queueToken: order.queueToken,
+    });
+    render();
+  }
+  if (target.dataset.pickedUp) {
+    const order = state.orders.find((item) => item.id === target.dataset.pickedUp);
+    order.status = "picked_up";
+    order.pickedUpAt = new Date().toISOString();
+    touchOrder(order);
+    await saveState();
+    await broadcastEvent("order_updated", {
+      orderId: order.id,
+      branchId: order.branchId,
+      status: order.status,
+      queueToken: order.queueToken,
+    });
+    render();
+  }
   if (target.dataset.print) printReceipt(target.dataset.print);
   if (target.dataset.toggleToken) {
     const token = branch().tokens.find((item) => item.id === target.dataset.toggleToken);
@@ -2132,7 +2418,15 @@ document.addEventListener("click", async (event) => {
     const tokens = tokensFromText($("newBranchTokens").value || "1,2,3,4,5,6,7,8");
     if (!nameTh || !tokens.length) return toast("กรุณาใส่ชื่อสาขาและ token");
     const id = `branch-${Date.now()}`;
-    state.branches.push({ id, nameTh, nameEn, tokens, qrLabel: `บัญชี ${nameTh}`, templateMode: "linked", templateVersion: state.masterTemplate.version });
+    state.branches.push({
+      id,
+      nameTh,
+      nameEn,
+      tokens,
+      qrLabel: `บัญชี ${nameTh}`,
+      templateMode: "linked",
+      templateVersion: state.masterTemplate.version,
+    });
     state.activeBranchId = id;
     saveState();
     render();
@@ -2157,19 +2451,24 @@ document.addEventListener("click", async (event) => {
   if (target.id === "addVariantRow") {
     const rows = $("variantRows");
     const index = rows.querySelectorAll("[data-price-variant-row]").length + 1;
-    rows.insertAdjacentHTML("beforeend", `
+    rows.insertAdjacentHTML(
+      "beforeend",
+      `
       <div class="variant-row" data-price-variant-row data-variant-id="custom-${Date.now()}">
         <input data-variant-th placeholder="แบบที่ ${index}">
         <input data-variant-en placeholder="Variant ${index}">
         <input data-variant-price type="number" min="0" inputmode="decimal" placeholder="79">
         <label><input data-variant-active type="checkbox" checked></label>
       </div>
-    `);
+    `,
+    );
   }
   if (target.dataset.priceMode) {
     menuFormPriceMode = target.dataset.priceMode;
     $("priceMode").value = target.dataset.priceMode;
-    document.querySelectorAll("[data-price-mode]").forEach((button) => button.classList.toggle("active", button === target));
+    document
+      .querySelectorAll("[data-price-mode]")
+      .forEach((button) => button.classList.toggle("active", button === target));
     $("variantEditor")?.classList.toggle("hidden", target.dataset.priceMode !== "variants");
   }
   if (target.id === "addCategory") {
@@ -2263,7 +2562,11 @@ document.addEventListener("click", async (event) => {
     if (!requireSuperuser()) return;
     const tokens = tokensFromText($("branchTokenList").value);
     if (!tokens.length) return toast("ต้องมี token อย่างน้อย 1 หมายเลข");
-    if (branch().tokens.some((token) => tokenStatus(token) !== "available" && !tokens.some((next) => next.label === token.label))) {
+    if (
+      branch().tokens.some(
+        (token) => tokenStatus(token) !== "available" && !tokens.some((next) => next.label === token.label),
+      )
+    ) {
       return toast("ไม่สามารถลบ token ที่กำลังใช้งาน");
     }
     branch().tokens = tokens;
@@ -2277,9 +2580,11 @@ document.addEventListener("click", async (event) => {
     state.masterTemplate.version += 1;
     state.masterTemplate.updatedAt = new Date().toISOString();
     state.masterTemplate.menuIds = state.menu.filter((item) => item.available).map((item) => item.id);
-    state.branches.filter((item) => item.templateMode === "linked").forEach((item) => {
-      item.templateVersion = state.masterTemplate.version;
-    });
+    state.branches
+      .filter((item) => item.templateMode === "linked")
+      .forEach((item) => {
+        item.templateVersion = state.masterTemplate.version;
+      });
     saveState();
     render();
     toast("Publish Mustang menu template แล้ว");
@@ -2315,7 +2620,8 @@ document.addEventListener("click", async (event) => {
     const password = $("newUserPassword").value.trim() || "mustang666";
     if (!name) return toast("กรุณาใส่ชื่อผู้ใช้");
     if (!username) return toast("กรุณาใส่ username");
-    if (state.users.some((item) => item.username.toLowerCase() === username.toLowerCase())) return toast("Username นี้มีอยู่แล้ว");
+    if (state.users.some((item) => item.username.toLowerCase() === username.toLowerCase()))
+      return toast("Username นี้มีอยู่แล้ว");
     state.users.push({
       id: `u-${Date.now()}`,
       name,
@@ -2386,7 +2692,8 @@ document.addEventListener("change", (event) => {
     reader.onload = () => {
       uploadedMenuImageDataUrl = String(reader.result || "");
       $("newMenuImage").value = "";
-      $("newMenuImagePreview").innerHTML = `<img src="${uploadedMenuImageDataUrl}" alt="preview"><span>${file.name}</span>`;
+      $("newMenuImagePreview").innerHTML =
+        `<img src="${uploadedMenuImageDataUrl}" alt="preview"><span>${file.name}</span>`;
     };
     reader.readAsDataURL(file);
   }
@@ -2447,7 +2754,13 @@ document.addEventListener("change", (event) => {
       return;
     }
     const choice = group.choices.find((itemChoice) => itemChoice.th === target.value);
-    const next = { groupId: group.id, group: group.th, label: choice.th, price: choice.price || 0, required: group.required };
+    const next = {
+      groupId: group.id,
+      group: group.th,
+      label: choice.th,
+      price: choice.price || 0,
+      required: group.required,
+    };
     const optionIndex = line.options.findIndex((option) => option.groupId === group.id);
     if (optionIndex >= 0) line.options[optionIndex] = next;
     else line.options.push(next);
@@ -2463,7 +2776,7 @@ document.addEventListener(
       categoryToolsOpen = event.target.open;
     }
   },
-  true
+  true,
 );
 
 ["cashReceived", "transferReceived", "promotionSelect", "menuSearch"].forEach((id) => {
@@ -2503,10 +2816,10 @@ window.addEventListener("storage", (event) => {
   if (event.key === STORAGE_KEY) {
     syncStateFromStorage({ notify: true });
   }
-	  if (event.key === EVENT_KEY && event.newValue) {
-	    handleRealtimeEvent(JSON.parse(event.newValue)).catch(() => {});
-	  }
-	});
+  if (event.key === EVENT_KEY && event.newValue) {
+    handleRealtimeEvent(JSON.parse(event.newValue)).catch(() => {});
+  }
+});
 
 realtimeChannel?.addEventListener("message", (event) => {
   handleRealtimeEvent(event.data).catch(() => {});
@@ -2551,6 +2864,13 @@ $("reportEnd").value = today;
 setSyncStatus(navigator.onLine ? "Online" : "Offline ready", navigator.onLine);
 render();
 const initialMode = routeMode();
-const initialView = initialMode === "pos" ? "pos" : initialMode === "customer" ? "customer" : isAdminRoute() ? "admin" : location.hash.replace("#", "") || currentRole().views[0] || "pos";
+const initialView =
+  initialMode === "pos"
+    ? "pos"
+    : initialMode === "customer"
+      ? "customer"
+      : isAdminRoute()
+        ? "admin"
+        : location.hash.replace("#", "") || currentRole().views[0] || "pos";
 if (updateAuthShell()) showView(initialView, false);
 fetchServerState({ notify: false });

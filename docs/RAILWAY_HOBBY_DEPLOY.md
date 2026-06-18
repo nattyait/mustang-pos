@@ -173,4 +173,3 @@ Warning: this replaces the app state with fixture data.
 - Uploading a menu image creates a file under `uploads/menu`
 - Uploaded image still appears after redeploy
 - POS, kitchen, and pickup screens update without manual refresh
-

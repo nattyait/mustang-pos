@@ -169,13 +169,7 @@
   "masterTemplate": {
     "version": 1,
     "updatedAt": "2026-06-06T14:03:20.692Z",
-    "menuIds": [
-      "m-nutella-oreo",
-      "m-nutella-latte",
-      "m-cha-chak",
-      "m-roti-banana",
-      "m-sig-003"
-    ]
+    "menuIds": ["m-nutella-oreo", "m-nutella-latte", "m-cha-chak", "m-roti-banana", "m-sig-003"]
   },
   "categories": [
     {
@@ -473,10 +467,7 @@
       "username": "owner",
       "name": "Mustang Owner",
       "role": "super_admin",
-      "branchIds": [
-        "branch-kiosk",
-        "branch-main"
-      ],
+      "branchIds": ["branch-kiosk", "branch-main"],
       "active": true
     },
     {
@@ -485,9 +476,7 @@
       "username": "franchise",
       "name": "Kiosk Franchise Owner",
       "role": "branch_owner",
-      "branchIds": [
-        "branch-kiosk"
-      ],
+      "branchIds": ["branch-kiosk"],
       "active": true
     },
     {
@@ -496,9 +485,7 @@
       "username": "manager",
       "name": "Kiosk Manager",
       "role": "branch_manager",
-      "branchIds": [
-        "branch-kiosk"
-      ],
+      "branchIds": ["branch-kiosk"],
       "active": true
     },
     {
@@ -507,9 +494,7 @@
       "username": "cashier",
       "name": "Cashier",
       "role": "cashier",
-      "branchIds": [
-        "branch-kiosk"
-      ],
+      "branchIds": ["branch-kiosk"],
       "active": true
     },
     {
@@ -518,9 +503,7 @@
       "username": "kitchen",
       "name": "Kitchen Staff",
       "role": "kitchen",
-      "branchIds": [
-        "branch-kiosk"
-      ],
+      "branchIds": ["branch-kiosk"],
       "active": true
     },
     {
@@ -529,9 +512,7 @@
       "username": "customer",
       "name": "Customer Kiosk",
       "role": "customer_kiosk",
-      "branchIds": [
-        "branch-kiosk"
-      ],
+      "branchIds": ["branch-kiosk"],
       "active": true
     }
   ],
