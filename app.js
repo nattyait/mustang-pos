@@ -189,6 +189,7 @@ let stateRevision = 0;
 let stateSavePromise = Promise.resolve();
 let realtimeConnected = false;
 let lastServerFetchAt = 0;
+let lastPollingFetchAt = 0;
 
 const $ = (id) => document.getElementById(id);
 const fmt = new Intl.NumberFormat("th-TH", { style: "currency", currency: "THB", maximumFractionDigits: 0 });
@@ -2226,8 +2227,12 @@ if (SERVER_SYNC && "EventSource" in window) {
 }
 
 window.setInterval(() => {
-  if (SERVER_SYNC) fetchServerState({ notify: true });
-  else syncStateFromStorage({ notify: true });
+  if (SERVER_SYNC) {
+    const pollInterval = realtimeConnected ? 15000 : 1200;
+    if (Date.now() - lastPollingFetchAt < pollInterval) return;
+    lastPollingFetchAt = Date.now();
+    fetchServerState({ notify: true });
+  } else syncStateFromStorage({ notify: true });
 }, 1200);
 
 if ("serviceWorker" in navigator && location.protocol !== "file:") {

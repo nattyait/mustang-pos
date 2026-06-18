@@ -1,9 +1,11 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 
 const root = __dirname;
 const dataDir = path.join(root, "data");
+const uploadDir = path.join(root, "uploads", "menu");
 const stateFile = path.join(dataDir, "state.json");
 const fixtureFile = path.join(root, "db", "fixture.json");
 const port = Number(process.env.PORT || 4173);
@@ -12,6 +14,7 @@ const usePostgres = Boolean(process.env.DATABASE_URL);
 let pgPool;
 
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
 function readBody(req) {
   return new Promise((resolve, reject) => {
@@ -70,6 +73,7 @@ async function readState() {
 }
 
 async function writeState(state) {
+  state = normalizeStoredImages(state);
   if (!usePostgres) {
     writeFileState(state);
     return;
@@ -83,6 +87,40 @@ async function writeState(state) {
     `,
     ["default", JSON.stringify(state)]
   );
+}
+
+function safeFilePart(value) {
+  return String(value || "menu")
+    .replace(/[^a-zA-Z0-9._-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80) || "menu";
+}
+
+function imageExtension(mimeType) {
+  return {
+    "image/jpeg": "jpg",
+    "image/jpg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp",
+    "image/gif": "gif",
+  }[mimeType] || "jpg";
+}
+
+function normalizeStoredImages(state) {
+  if (!state || !Array.isArray(state.menu)) return state;
+  for (const item of state.menu) {
+    if (typeof item.image !== "string" || !item.image.startsWith("data:image/")) continue;
+    const match = item.image.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
+    if (!match) continue;
+    const [, mimeType, base64] = match;
+    const buffer = Buffer.from(base64, "base64");
+    const hash = crypto.createHash("sha1").update(buffer).digest("hex").slice(0, 12);
+    const filename = `${safeFilePart(item.sku || item.id)}-${hash}.${imageExtension(mimeType)}`;
+    const absolute = path.join(uploadDir, filename);
+    if (!fs.existsSync(absolute)) fs.writeFileSync(absolute, buffer);
+    item.image = `uploads/menu/${filename}`;
+  }
+  return state;
 }
 
 async function ensureDatabase() {
@@ -221,7 +259,16 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    if (req.url === "/api/events") {
+    if (req.method === "HEAD" && req.url === "/api/events") {
+      return sendHead(res, 200, {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-store",
+        "X-Accel-Buffering": "no",
+        "Access-Control-Allow-Origin": "*",
+      });
+    }
+
+    if (req.method === "GET" && req.url === "/api/events") {
       res.writeHead(200, {
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-store",
