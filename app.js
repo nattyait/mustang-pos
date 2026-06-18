@@ -131,28 +131,28 @@ const seedState = {
 const roles = {
   super_admin: {
     label: "Mustang Superuser",
-    views: ["pos", "customer", "payments", "kitchen", "pickup", "reports", "admin", "menus"],
+    views: ["pos", "customer", "payments", "kitchen", "reports", "admin", "menus"],
     canSwitchBranches: true,
     canManageRoles: true,
     canManageFranchise: true,
   },
   branch_owner: {
     label: "Franchise Owner",
-    views: ["pos", "customer", "payments", "kitchen", "pickup", "reports"],
+    views: ["pos", "customer", "payments", "kitchen", "reports"],
     canSwitchBranches: false,
     canManageRoles: false,
     canManageFranchise: false,
   },
   branch_manager: {
     label: "Branch Manager",
-    views: ["pos", "payments", "kitchen", "pickup", "reports"],
+    views: ["pos", "payments", "kitchen", "reports"],
     canSwitchBranches: false,
     canManageRoles: false,
     canManageFranchise: false,
   },
   cashier: {
     label: "Cashier",
-    views: ["pos", "payments", "pickup"],
+    views: ["pos", "payments", "kitchen"],
     canSwitchBranches: false,
     canManageRoles: false,
     canManageFranchise: false,
@@ -459,7 +459,6 @@ function renderSyncedState() {
     renderCarts();
     renderPayments();
     renderKitchen();
-    renderPickup();
     renderReports();
     renderAdmin();
     return;
@@ -627,7 +626,10 @@ function isTokenAvailable(label) {
 
 function defaultOptions(item) {
   return item.options.filter((group) => group.required).map((group) => {
-    const choice = group.choices[0];
+    const choice =
+      group.id === "sweet" || group.th === "ความหวาน"
+        ? group.choices.find((itemChoice) => itemChoice.th === "100%") || group.choices[0]
+        : group.choices[0];
     return { groupId: group.id, group: group.th, label: choice.th, price: choice.price || 0, required: group.required };
   });
 }
@@ -706,7 +708,6 @@ function render() {
   renderCarts();
   renderPayments();
   renderKitchen();
-  renderPickup();
   renderReports();
   renderAdmin();
   renderMenuManagement();
@@ -1144,14 +1145,18 @@ function orderCardPayment(order) {
 function renderKitchen() {
   const active = state.orders.filter((order) => order.branchId === state.activeBranchId && order.status === "in_kitchen");
   const done = state.orders.filter((order) => order.branchId === state.activeBranchId && order.status === "ready");
-  const list = state.kitchenTab === "active" ? active : done;
+  const list = [...active, ...done];
   $("kitchenBoard").innerHTML = list.length ? list.map(orderCardKitchen).join("") : `<p class="pill">ไม่มีรายการ</p>`;
 }
 
 function orderCardKitchen(order) {
   return `
     <article class="order-card">
-      <header><div><h3>${order.orderNo}</h3><span>${dateFmt.format(new Date(order.createdAt))}</span></div><span class="queue">คิว ${order.queueToken}</span></header>
+      <header>
+        <div><h3>${order.orderNo}</h3><span>${dateFmt.format(new Date(order.createdAt))}</span></div>
+        <span class="queue">คิว ${order.queueToken}</span>
+      </header>
+      <span class="pill ${order.status === "ready" ? "success" : ""}">${order.status === "ready" ? "รอลูกค้ารับอาหาร" : "กำลังทำ"}</span>
       <div>${order.items.map((line, index) => {
         const item = lineMenu(line);
         return `
@@ -1162,22 +1167,15 @@ function orderCardKitchen(order) {
           </label>
         `;
       }).join("")}</div>
-      ${order.status === "in_kitchen" ? `<button class="primary" data-order-ready="${order.id}">อาหารเสร็จแล้ว</button>` : `<span class="pill">พร้อมเรียกคิว ${order.queueToken}</span>`}
-    </article>
-  `;
-}
-
-function renderPickup() {
-  const ready = state.orders.filter((order) => order.branchId === state.activeBranchId && order.status === "ready");
-  $("pickupBoard").innerHTML = ready.length
-    ? ready.map((order) => `
-      <article class="order-card">
-        <header><div><h3>${order.orderNo}</h3><span>เรียกลูกค้าคิว ${order.queueToken}</span></div><span class="queue">คิว ${order.queueToken}</span></header>
+      ${order.status === "in_kitchen" ? `
+        <button class="primary" data-order-ready="${order.id}">อาหารเสร็จแล้ว</button>
+      ` : `
+        <span class="pill">พร้อมเรียกคิว ${order.queueToken}</span>
         <button class="primary" data-picked-up="${order.id}">รับอาหารแล้ว / คืน token แล้ว</button>
         <button class="secondary" data-print="${order.id}">พิมพ์บิลอีกครั้ง</button>
-      </article>
-    `).join("")
-    : `<p class="pill">ยังไม่มีออเดอร์ที่พร้อมรับ</p>`;
+      `}
+    </article>
+  `;
 }
 
 function itemLine(line) {
@@ -1791,11 +1789,6 @@ document.addEventListener("click", async (event) => {
 	    render();
 	  }
   if (target.dataset.print) printReceipt(target.dataset.print);
-  if (target.dataset.kitchenTab) {
-    state.kitchenTab = target.dataset.kitchenTab;
-    document.querySelectorAll("[data-kitchen-tab]").forEach((button) => button.classList.toggle("active", button.dataset.kitchenTab === state.kitchenTab));
-    renderKitchen();
-  }
   if (target.dataset.toggleToken) {
     const token = branch().tokens.find((item) => item.id === target.dataset.toggleToken);
     if (tokenStatus(token) !== "available") return toast("Token นี้กำลังใช้งานอยู่");

@@ -49,7 +49,6 @@
           <button data-view="customer">ลูกค้าสั่งเอง</button>
           <button data-view="payments">ยืนยันชำระเงิน</button>
           <button data-view="kitchen">ครัว</button>
-          <button data-view="pickup">รับอาหาร</button>
           <button data-view="reports">รายงาน</button>
           <button data-view="admin" data-super-only="true">Super Admin</button>
           <button data-view="menus" data-super-only="true">จัดการเมนู</button>
@@ -181,15 +180,7 @@
         </section>
 
         <section id="kitchen" class="view">
-          <div class="board-tabs">
-            <button class="active" data-kitchen-tab="active">กำลังทำ</button>
-            <button data-kitchen-tab="done">เสร็จแล้ว</button>
-          </div>
           <div class="board" id="kitchenBoard"></div>
-        </section>
-
-        <section id="pickup" class="view">
-          <div class="board" id="pickupBoard"></div>
         </section>
 
         <section id="reports" class="view">
@@ -277,6 +268,6 @@
     <audio id="ding" preload="auto">
       <source src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=" type="audio/wav" />
     </audio>
-  <script src="app.js?v=56"></script>
+  <script src="app.js?v=60"></script>
   </body>
 </html>

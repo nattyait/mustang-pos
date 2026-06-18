@@ -3,9 +3,9 @@
   "activeBranchId": "branch-kiosk",
   "activeUserId": "u-super",
   "orderSequenceByDay": {
-    "branch-kiosk-2026-06-18": 2
+    "branch-kiosk-2026-06-18": 4
   },
-  "kitchenTab": "active",
+  "kitchenTab": "done",
   "branches": [
     {
       "templateMode": "linked",
@@ -533,6 +533,188 @@
   ],
   "orders": [
     {
+      "id": "2053b8d4-8d1c-4a61-ae5f-8962c9e4ea58",
+      "branchId": "branch-kiosk",
+      "orderNo": "M004",
+      "queueToken": "11",
+      "source": "staff",
+      "customerName": "",
+      "customerPhone": "",
+      "paymentMethod": "cash",
+      "cashReceived": 99,
+      "transferReceived": 0,
+      "subtotal": 99,
+      "discount": 0,
+      "total": 99,
+      "promotion": {
+        "id": "none",
+        "nameTh": "ไม่ใช้โปรโมชั่น",
+        "type": "none",
+        "value": 0,
+        "active": true
+      },
+      "status": "picked_up",
+      "createdAt": "2026-06-18T11:24:00.861Z",
+      "_updatedAt": 1781781868132,
+      "paidAt": "2026-06-18T11:24:00.861Z",
+      "items": [
+        {
+          "key": "m-sig-003:default:sweet-100%",
+          "menuId": "m-sig-003",
+          "sku": "SIG-003",
+          "nameTh": "กาแฟวานิลลาคลาวด์",
+          "nameEn": "Signature Vanilla Cloud Coffee",
+          "variant": null,
+          "basePrice": 99,
+          "optionGroups": [
+            {
+              "id": "sweet",
+              "th": "ความหวาน",
+              "required": true,
+              "choices": [
+                {
+                  "th": "25%"
+                },
+                {
+                  "th": "50%"
+                },
+                {
+                  "th": "75%"
+                },
+                {
+                  "th": "100%"
+                }
+              ]
+            }
+          ],
+          "qty": 1,
+          "options": [
+            {
+              "groupId": "sweet",
+              "group": "ความหวาน",
+              "label": "100%",
+              "price": 0,
+              "required": true
+            }
+          ],
+          "note": "",
+          "done": true
+        }
+      ],
+      "readyAt": "2026-06-18T11:24:05.642Z",
+      "pickedUpAt": "2026-06-18T11:24:28.132Z"
+    },
+    {
+      "id": "72e2db57-2222-42a7-8c03-078677b48f5f",
+      "branchId": "branch-kiosk",
+      "orderNo": "M003",
+      "queueToken": "10",
+      "source": "staff",
+      "customerName": "",
+      "customerPhone": "",
+      "paymentMethod": "cash",
+      "cashReceived": 900,
+      "transferReceived": 0,
+      "subtotal": 99,
+      "discount": 0,
+      "total": 99,
+      "promotion": {
+        "id": "none",
+        "nameTh": "ไม่ใช้โปรโมชั่น",
+        "type": "none",
+        "value": 0,
+        "active": true
+      },
+      "status": "picked_up",
+      "createdAt": "2026-06-18T11:23:51.027Z",
+      "_updatedAt": 1781781868765,
+      "paidAt": "2026-06-18T11:23:51.027Z",
+      "items": [
+        {
+          "key": "m-nutella-oreo:default:sweet-100%|ice-ปกติ",
+          "menuId": "m-nutella-oreo",
+          "sku": "SIG-001",
+          "nameTh": "นูเทลล่าโอรีโอนมสด",
+          "nameEn": "Nutella Oreo Fresh Milk",
+          "variant": null,
+          "basePrice": 99,
+          "optionGroups": [
+            {
+              "id": "sweet",
+              "th": "ความหวาน",
+              "required": true,
+              "choices": [
+                {
+                  "th": "25%"
+                },
+                {
+                  "th": "50%"
+                },
+                {
+                  "th": "75%"
+                },
+                {
+                  "th": "100%"
+                }
+              ]
+            },
+            {
+              "id": "ice",
+              "th": "น้ำแข็ง",
+              "required": true,
+              "choices": [
+                {
+                  "th": "ปกติ"
+                },
+                {
+                  "th": "น้อย"
+                },
+                {
+                  "th": "ไม่ใส่น้ำแข็ง"
+                }
+              ]
+            },
+            {
+              "id": "topping",
+              "th": "ท็อปปิ้ง",
+              "required": false,
+              "choices": [
+                {
+                  "th": "โอรีโอเพิ่ม",
+                  "price": 10
+                },
+                {
+                  "th": "นูเทลล่าเพิ่ม",
+                  "price": 15
+                }
+              ]
+            }
+          ],
+          "qty": 1,
+          "options": [
+            {
+              "groupId": "sweet",
+              "group": "ความหวาน",
+              "label": "100%",
+              "price": 0,
+              "required": true
+            },
+            {
+              "groupId": "ice",
+              "group": "น้ำแข็ง",
+              "label": "ปกติ",
+              "price": 0,
+              "required": true
+            }
+          ],
+          "note": "",
+          "done": true
+        }
+      ],
+      "readyAt": "2026-06-18T11:24:25.363Z",
+      "pickedUpAt": "2026-06-18T11:24:28.765Z"
+    },
+    {
       "id": "9eebe113-7e24-4222-8137-34705d0c2a7d",
       "branchId": "branch-kiosk",
       "orderNo": "M002",
@@ -639,7 +821,8 @@
         }
       ],
       "readyAt": "2026-06-18T05:37:18.949Z",
-      "pickedUpAt": "2026-06-18T05:37:35.716Z"
+      "pickedUpAt": "2026-06-18T05:37:35.716Z",
+      "_updatedAt": 1781761055716
     },
     {
       "id": "b382826b-fb6e-40fa-8388-fa2b19b3cab0",
@@ -662,7 +845,7 @@
         "value": 0,
         "active": true
       },
-      "status": "ready",
+      "status": "picked_up",
       "createdAt": "2026-06-18T05:04:21.415Z",
       "paidAt": "2026-06-18T05:04:21.415Z",
       "items": [
@@ -789,7 +972,9 @@
           "done": true
         }
       ],
-      "readyAt": "2026-06-18T05:07:10.499Z"
+      "readyAt": "2026-06-18T05:07:10.499Z",
+      "_updatedAt": 1781781806660,
+      "pickedUpAt": "2026-06-18T11:23:26.659Z"
     }
   ]
 }
