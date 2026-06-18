@@ -131,28 +131,28 @@ const seedState = {
 const roles = {
   super_admin: {
     label: "Mustang Superuser",
-    views: ["pos", "customer", "payments", "kitchen", "reports", "admin", "menus"],
+    views: ["pos", "customer", "kitchen", "reports", "admin", "menus"],
     canSwitchBranches: true,
     canManageRoles: true,
     canManageFranchise: true,
   },
   branch_owner: {
     label: "Franchise Owner",
-    views: ["pos", "customer", "payments", "kitchen", "reports"],
+    views: ["pos", "customer", "kitchen", "reports"],
     canSwitchBranches: false,
     canManageRoles: false,
     canManageFranchise: false,
   },
   branch_manager: {
     label: "Branch Manager",
-    views: ["pos", "payments", "kitchen", "reports"],
+    views: ["pos", "kitchen", "reports"],
     canSwitchBranches: false,
     canManageRoles: false,
     canManageFranchise: false,
   },
   cashier: {
     label: "Cashier",
-    views: ["pos", "payments", "kitchen"],
+    views: ["pos", "kitchen"],
     canSwitchBranches: false,
     canManageRoles: false,
     canManageFranchise: false,
@@ -734,6 +734,7 @@ function renderUserSelect() {
 function showView(viewId, updateHash = true) {
   if (routeMode() === "pos") viewId = "pos";
   if (routeMode() === "customer") viewId = "customer";
+  if (viewId === "payments") viewId = "kitchen";
   const requested = $(viewId) ? viewId : "pos";
   const fallback = currentRole().views[0] || "pos";
   const view = isAdminRoute() && requested === "admin" ? "admin" : canView(requested) ? requested : fallback;
@@ -1254,16 +1255,15 @@ async function confirmPayment(orderId) {
 }
 
 function renderPayments() {
-  const branchIds = currentRole().canSwitchBranches ? state.branches.map((item) => item.id) : currentUser().branchIds;
-  const pending = state.orders.filter((order) => branchIds.includes(order.branchId) && order.status === "pending_payment");
-  $("paymentBoard").innerHTML = pending.length ? pending.map(orderCardPayment).join("") : `<p class="pill">ไม่มีออเดอร์รอยืนยันชำระเงิน</p>`;
+  // Kept as a legacy hook because older render paths still call it.
 }
 
 function orderCardPayment(order) {
   return `
-    <article class="order-card">
+    <article class="order-card order-card-payment">
       <header><div><h3>${order.orderNo}</h3><span>${dateFmt.format(new Date(order.createdAt))}</span></div><span class="queue">คิว ${order.queueToken}</span></header>
       ${customerLine(order)}
+      <span class="pill warn">รอยืนยันชำระเงิน</span>
       <div>${order.items.map(itemLine).join("")}</div>
       <div class="total-line final"><span>ยอดชำระ</span><strong>${fmt.format(order.total)}</strong></div>
       <p>วิธีชำระ: ${paymentName(order.paymentMethod)}</p>
@@ -1274,15 +1274,29 @@ function orderCardPayment(order) {
 }
 
 function renderKitchen() {
+  const pending = state.orders.filter((order) => order.branchId === state.activeBranchId && order.status === "pending_payment");
   const active = state.orders.filter((order) => order.branchId === state.activeBranchId && order.status === "in_kitchen");
   const done = state.orders.filter((order) => order.branchId === state.activeBranchId && order.status === "ready");
-  const list = [...active, ...done];
-  $("kitchenBoard").innerHTML = list.length ? list.map(orderCardKitchen).join("") : `<p class="pill">ไม่มีรายการ</p>`;
+  const sections = [
+    { title: "รอยืนยันชำระเงิน", className: "waiting", count: pending.length, cards: pending.map(orderCardPayment) },
+    { title: "กำลังทำอาหาร", className: "cooking", count: active.length, cards: active.map(orderCardKitchen) },
+    { title: "รอลูกค้ารับอาหาร", className: "ready", count: done.length, cards: done.map(orderCardKitchen) },
+  ];
+  const hasOrders = sections.some((section) => section.count);
+  $("kitchenBoard").innerHTML = hasOrders
+    ? sections.map((section) => `
+      <div class="order-section-head ${section.className}">
+        <h2>${section.title}</h2>
+        <span class="pill">${section.count} ออเดอร์</span>
+      </div>
+      ${section.cards.join("") || `<p class="pill muted-card">ไม่มีรายการ</p>`}
+    `).join("")
+    : `<p class="pill">ไม่มีรายการ</p>`;
 }
 
 function orderCardKitchen(order) {
   return `
-    <article class="order-card">
+    <article class="order-card ${order.status === "ready" ? "order-card-ready" : "order-card-cooking"}">
       <header>
         <div><h3>${order.orderNo}</h3><span>${dateFmt.format(new Date(order.createdAt))}</span></div>
         <span class="queue">คิว ${order.queueToken}</span>

@@ -640,43 +640,130 @@ select,
 
 .board {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 6px;
 }
 
 .order-card {
   display: grid;
-  gap: 12px;
+  gap: 5px;
   border: 1px solid rgba(114, 70, 35, 0.2);
-  border-radius: 8px;
-  padding: 14px;
+  border-radius: 6px;
+  padding: 6px;
   background: rgba(255, 250, 241, 0.88);
-  box-shadow: var(--shadow);
+  box-shadow: 0 4px 12px rgba(50, 31, 19, 0.06);
+}
+
+.order-card h3 {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.1;
+}
+
+.order-card p {
+  margin: 0;
+  font-size: 12px;
+}
+
+.order-card button {
+  min-height: 32px;
+  padding: 6px 8px;
+  font-size: 13px;
+}
+
+.order-card .total-line {
+  padding: 2px 0;
+  font-size: 12px;
+}
+
+.order-card-payment {
+  border-color: #d99a31;
+  background: #fff4d7;
+}
+
+.order-card-cooking {
+  border-color: #8aa0be;
+  background: #eef5ff;
+}
+
+.order-card-ready {
+  border-color: #73a36a;
+  background: #edf8e9;
+}
+
+.order-section-head {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 2px;
+  border-radius: 6px;
+  padding: 5px 8px;
+}
+
+.order-section-head h2 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.muted-card {
+  align-self: start;
+  justify-self: start;
+  opacity: 0.72;
+}
+
+.pill.warn {
+  color: #4d2a12;
+  background: #ffe0a8;
+}
+
+.order-section-head.waiting {
+  background: #ffe9b8;
+}
+
+.order-section-head.cooking {
+  background: #dceaff;
+}
+
+.order-section-head.ready {
+  background: #dff2d8;
 }
 
 .order-card header {
   display: flex;
   justify-content: space-between;
-  gap: 10px;
+  gap: 5px;
+}
+
+.order-card header span {
+  font-size: 11px;
 }
 
 .queue {
   color: var(--milk);
   background: var(--espresso);
-  border-radius: 8px;
-  padding: 8px 10px;
+  border-radius: 6px;
+  padding: 4px 6px;
   font-weight: 800;
+  white-space: nowrap;
+  font-size: 12px;
 }
 
 .check-line {
   display: grid;
-  grid-template-columns: 26px 1fr auto;
-  gap: 8px;
+  grid-template-columns: 18px 1fr auto;
+  gap: 4px;
   align-items: center;
+  font-size: 12px;
 }
 
 .check-line input {
-  min-height: 22px;
+  min-height: 18px;
+}
+
+.check-line small {
+  font-size: 10px;
 }
 
 .metric-grid,

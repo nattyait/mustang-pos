@@ -7,7 +7,7 @@
     <title>Mustang Cafe Franchise POS</title>
     <base href="../" />
     <link rel="manifest" href="manifest.webmanifest?v=37" />
-    <link rel="stylesheet" href="styles.css?v=66" />
+    <link rel="stylesheet" href="styles.css?v=69" />
   </head>
   <body>
     <section id="loginScreen" class="login-screen hidden">
@@ -47,8 +47,7 @@
         <nav class="nav" id="mainNav">
           <button class="active" data-view="pos">ขายหน้าร้าน</button>
           <button data-view="customer">ลูกค้าสั่งเอง</button>
-          <button data-view="payments">ยืนยันชำระเงิน</button>
-          <button data-view="kitchen">ครัว</button>
+          <button data-view="kitchen">จัดการออเดอร์</button>
           <button data-view="reports">รายงาน</button>
           <button data-view="admin" data-super-only="true">Super Admin</button>
           <button data-view="menus" data-super-only="true">จัดการเมนู</button>
@@ -185,10 +184,6 @@
           </div>
         </section>
 
-        <section id="payments" class="view">
-          <div class="board" id="paymentBoard"></div>
-        </section>
-
         <section id="kitchen" class="view">
           <div class="board" id="kitchenBoard"></div>
         </section>
@@ -279,6 +274,6 @@
     <audio id="ding" preload="auto">
       <source src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=" type="audio/wav" />
     </audio>
-  <script src="app.js?v=66"></script>
+  <script src="app.js?v=69"></script>
   </body>
 </html>
