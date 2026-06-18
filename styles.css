@@ -1170,7 +1170,45 @@ input[readonly] {
 @media (max-width: 640px) {
   .content,
   .sidebar {
-    padding: 14px;
+    padding: 10px;
+  }
+
+  .app-shell {
+    min-height: 100dvh;
+  }
+
+  .sidebar {
+    gap: 8px;
+    border-right: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .brand {
+    gap: 8px;
+  }
+
+  .brand img {
+    width: 40px;
+    height: 40px;
+  }
+
+  .brand strong {
+    font-size: 16px;
+  }
+
+  .brand span,
+  .sidebar .field span {
+    font-size: 11px;
+  }
+
+  .sidebar .field.compact {
+    display: none;
+  }
+
+  .sidebar-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    margin-top: 0;
   }
 
   .topbar,
@@ -1181,20 +1219,144 @@ input[readonly] {
   }
 
   .nav {
-    grid-template-columns: repeat(2, minmax(132px, 1fr));
+    display: flex;
+    gap: 6px;
+    margin: 0 -10px;
+    padding: 0 10px 2px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .nav::-webkit-scrollbar,
+  .tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nav button,
+  .ghost,
+  .secondary,
+  .primary {
+    min-height: 38px;
+    border-radius: 7px;
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+
+  .nav button {
+    flex: 0 0 auto;
+    min-width: 92px;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .content {
+    padding-top: 10px;
+  }
+
+  .topbar {
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  h1 {
+    font-size: 24px;
+  }
+
+  h2 {
+    font-size: 18px;
+  }
+
+  .status-row {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .pill {
+    min-height: 28px;
+    padding: 4px 9px;
+    font-size: 12px;
+  }
+
+  .menu-pane,
+  .cart-pane,
+  .panel,
+  .customer-screen {
+    padding: 10px;
+  }
+
+  .tabs {
+    gap: 6px;
+    margin: 0 -10px;
+    padding: 8px 10px;
+    scrollbar-width: none;
+  }
+
+  .tabs button {
+    min-height: 34px;
+    padding: 7px 10px;
+    font-size: 13px;
   }
 
   .menu-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
   }
 
   .menu-card {
-    grid-template-rows: 104px auto;
-    min-height: 222px;
+    grid-template-rows: 82px auto;
+    min-height: 174px;
   }
 
   .menu-card img {
-    height: 104px;
+    height: 82px;
+  }
+
+  .menu-card .info {
+    gap: 4px;
+    padding: 8px;
+  }
+
+  .menu-card strong,
+  .cart-item strong {
+    font-size: 14px;
+  }
+
+  .price {
+    font-size: 17px;
+  }
+
+  .variant-buttons {
+    grid-template-columns: repeat(auto-fit, minmax(56px, 1fr));
+    gap: 4px;
+  }
+
+  .variant-buttons button {
+    min-height: 42px;
+    padding: 5px 4px;
+    font-size: 11px;
+  }
+
+  .variant-buttons button strong {
+    font-size: 12px;
+  }
+
+  .search,
+  input,
+  select {
+    min-height: 40px;
+    padding: 8px 10px;
+  }
+
+  .cart-item {
+    padding: 8px;
+  }
+
+  .qty {
+    grid-template-columns: 34px 38px 34px;
+  }
+
+  .qty button {
+    min-height: 34px;
   }
 
   .menu-admin-card {
@@ -1221,6 +1383,10 @@ input[readonly] {
   }
 
   .money-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .menu-transfer-tools {
     grid-template-columns: 1fr;
   }
 }
