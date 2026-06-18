@@ -913,6 +913,124 @@ function readCategoryForm(existingId = "") {
   return { id, th, en, sort };
 }
 
+function menuExportPayload() {
+  const categoryIds = new Set(state.menu.map((item) => item.categoryId));
+  const categories = state.categories
+    .filter((category) => categoryIds.has(category.id))
+    .map((category) => ({ ...category }));
+  const menu = state.menu.map((item) => {
+    const normalized = normalizeMenuItem(item);
+    return {
+      id: normalized.id,
+      sku: normalized.sku,
+      categoryId: normalized.categoryId,
+      th: normalized.th,
+      en: normalized.en,
+      price: normalized.price,
+      variants: structuredClone(normalized.variants || []),
+      available: normalized.available !== false,
+      options: structuredClone(normalized.options || []),
+    };
+  });
+  return {
+    type: "mustang-menu-export",
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    categories,
+    menu,
+  };
+}
+
+function exportMenuJson() {
+  const payload = menuExportPayload();
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `mustang-menu-${todayKey()}.json`;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+function normalizeImportedMenuPayload(payload) {
+  const categories = Array.isArray(payload?.categories) ? payload.categories : [];
+  const menu = Array.isArray(payload?.menu) ? payload.menu : Array.isArray(payload) ? payload : [];
+  return {
+    categories: categories
+      .map((category, index) => ({
+        id: slugify(category.id || category.en || category.th || `category-${index + 1}`),
+        th: String(category.th || category.en || category.id || "").trim(),
+        en: String(category.en || category.th || category.id || "").trim(),
+        sort: Number(category.sort || index + 1),
+      }))
+      .filter((category) => category.id && category.th),
+    menu: menu
+      .map((item) => {
+        const sku = String(item.sku || "").trim();
+        const th = String(item.th || item.nameTh || "").trim();
+        const categoryId = slugify(item.categoryId || item.category || "imported");
+        if (!sku || !th || !categoryId) return null;
+        return normalizeMenuItem({
+          id: item.id ? slugify(item.id) : `m-${slugify(sku)}`,
+          sku,
+          categoryId,
+          th,
+          en: String(item.en || item.nameEn || th).trim(),
+          price: Number(item.price || item.variants?.[0]?.price || 0),
+          variants: Array.isArray(item.variants) ? item.variants : [],
+          image: "assets/mustang-logo.png",
+          available: item.available !== false,
+          options: Array.isArray(item.options) ? item.options : [],
+          _updatedAt: Date.now(),
+        });
+      })
+      .filter(Boolean),
+  };
+}
+
+async function importMenuJsonFile(file) {
+  if (!file) return;
+  try {
+    const payload = JSON.parse(await file.text());
+    const imported = normalizeImportedMenuPayload(payload);
+    if (!imported.menu.length) return toast("ไม่พบข้อมูลเมนูในไฟล์");
+    const categoryById = new Map(state.categories.map((category) => [category.id, category]));
+    for (const category of imported.categories) {
+      const existing = categoryById.get(category.id);
+      if (existing) Object.assign(existing, { th: category.th, en: category.en, sort: category.sort });
+      else {
+        state.categories.push(category);
+        categoryById.set(category.id, category);
+      }
+    }
+    for (const menuItem of imported.menu) {
+      if (!categoryById.has(menuItem.categoryId)) {
+        const fallbackCategory = { id: menuItem.categoryId, th: menuItem.categoryId, en: menuItem.categoryId, sort: nextCategorySort() };
+        state.categories.push(fallbackCategory);
+        categoryById.set(fallbackCategory.id, fallbackCategory);
+      }
+      const existingIndex = state.menu.findIndex((item) => item.sku.toLowerCase() === menuItem.sku.toLowerCase());
+      if (existingIndex >= 0) {
+        state.menu[existingIndex] = normalizeMenuItem({ ...state.menu[existingIndex], ...menuItem, id: state.menu[existingIndex].id, image: state.menu[existingIndex].image || "assets/mustang-logo.png" });
+        if (!state.masterTemplate.menuIds.includes(state.menu[existingIndex].id)) state.masterTemplate.menuIds.push(state.menu[existingIndex].id);
+      } else {
+        let id = menuItem.id;
+        if (state.menu.some((item) => item.id === id)) id = `m-${slugify(menuItem.sku)}-${Date.now()}`;
+        state.menu.push({ ...menuItem, id });
+        if (!state.masterTemplate.menuIds.includes(id)) state.masterTemplate.menuIds.push(id);
+      }
+    }
+    state.masterTemplate.updatedAt = new Date().toISOString();
+    editingMenuId = "";
+    uploadedMenuImageDataUrl = "";
+    menuFormPriceMode = "";
+    await saveState();
+    render();
+    toast(`นำเข้าเมนู ${imported.menu.length} รายการแล้ว`);
+  } catch {
+    toast("นำเข้าไฟล์ไม่สำเร็จ กรุณาตรวจสอบไฟล์ JSON");
+  }
+}
+
 function renderBranchSelect() {
   const branches = currentRole().canSwitchBranches ? state.branches : state.branches.filter((item) => currentUser().branchIds.includes(item.id));
   $("branchSelect").innerHTML = branches.map((item) => `<option value="${item.id}">${item.nameTh}</option>`).join("");
@@ -1437,6 +1555,17 @@ function renderMenuManagement() {
   `;
 
   $("menuAdmin").innerHTML = `
+    <div class="menu-transfer-tools">
+      <div>
+        <strong>นำเข้า / ส่งออกเมนู</strong>
+        <span>ส่งออกเฉพาะข้อมูลตัวหนังสือ ราคา SKU หมวดหมู่ และตัวเลือก ไม่รวมรูปภาพ</span>
+      </div>
+      <div class="form-actions">
+        <button class="secondary" type="button" id="exportMenuJson">Export menu JSON</button>
+        <button class="primary" type="button" id="importMenuJsonButton">Import menu JSON</button>
+        <input id="importMenuJsonFile" class="hidden" type="file" accept="application/json,.json">
+      </div>
+    </div>
     <div class="menu-catalog">
       ${sortedCategories.map((cat) => {
         const items = state.menu.filter((item) => item.categoryId === cat.id);
@@ -2017,6 +2146,15 @@ document.addEventListener("click", async (event) => {
     toast("Apply template ให้สาขานี้แล้ว");
   }
   if (target.id === "exportCsv") exportCsv();
+  if (target.id === "exportMenuJson") {
+    if (!requireSuperuser()) return;
+    exportMenuJson();
+    toast("ส่งออกไฟล์เมนูแล้ว");
+  }
+  if (target.id === "importMenuJsonButton") {
+    if (!requireSuperuser()) return;
+    $("importMenuJsonFile")?.click();
+  }
   if (target.id === "addUser") {
     if (!requireSuperuser()) return;
     const name = $("newUserName").value.trim();
@@ -2098,6 +2236,11 @@ document.addEventListener("change", (event) => {
       $("newMenuImagePreview").innerHTML = `<img src="${uploadedMenuImageDataUrl}" alt="preview"><span>${file.name}</span>`;
     };
     reader.readAsDataURL(file);
+  }
+  if (target.id === "importMenuJsonFile") {
+    if (!requireSuperuser()) return;
+    importMenuJsonFile(target.files?.[0]);
+    target.value = "";
   }
   if (target.id === "priceMode") {
     $("variantEditor")?.classList.toggle("hidden", target.value !== "variants");
