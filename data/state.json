@@ -3,7 +3,7 @@
   "activeBranchId": "branch-kiosk",
   "activeUserId": "u-super",
   "orderSequenceByDay": {
-    "branch-kiosk-2026-06-18": 7
+    "branch-kiosk-2026-06-18": 9
   },
   "kitchenTab": "done",
   "branches": [
@@ -532,6 +532,168 @@
     }
   ],
   "orders": [
+    {
+      "id": "5bab44cf-ec4f-4d69-9e6f-3364b4a16996",
+      "branchId": "branch-kiosk",
+      "orderNo": "M009",
+      "queueToken": "14",
+      "source": "customer",
+      "customerName": "",
+      "customerPhone": "",
+      "paymentMethod": "transfer",
+      "cashReceived": 0,
+      "transferReceived": 0,
+      "subtotal": 99,
+      "discount": 0,
+      "total": 99,
+      "promotion": {
+        "id": "none",
+        "nameTh": "ไม่ใช้โปรโมชั่น",
+        "type": "none",
+        "value": 0,
+        "active": true
+      },
+      "status": "pending_payment",
+      "createdAt": "2026-06-18T12:38:18.735Z",
+      "_updatedAt": 1781786298735,
+      "paidAt": null,
+      "items": [
+        {
+          "key": "m-nutella-latte:default:sweet-100%",
+          "menuId": "m-nutella-latte",
+          "sku": "SIG-002",
+          "nameTh": "นูเทลล่าคอฟฟี่ลาเต้",
+          "nameEn": "Nutella Coffee Latte",
+          "variant": null,
+          "basePrice": 99,
+          "optionGroups": [
+            {
+              "id": "sweet",
+              "th": "ความหวาน",
+              "required": true,
+              "choices": [
+                {
+                  "th": "25%"
+                },
+                {
+                  "th": "50%"
+                },
+                {
+                  "th": "75%"
+                },
+                {
+                  "th": "100%"
+                }
+              ]
+            },
+            {
+              "id": "shot",
+              "th": "กาแฟ",
+              "required": false,
+              "choices": [
+                {
+                  "th": "เพิ่มช็อต",
+                  "price": 20
+                }
+              ]
+            }
+          ],
+          "qty": 1,
+          "options": [
+            {
+              "groupId": "sweet",
+              "group": "ความหวาน",
+              "label": "100%",
+              "price": 0,
+              "required": true
+            }
+          ],
+          "note": "",
+          "done": false
+        }
+      ]
+    },
+    {
+      "id": "0334c271-2997-4310-827d-406f6d6fd1bd",
+      "branchId": "branch-kiosk",
+      "orderNo": "M008",
+      "queueToken": "15",
+      "source": "customer",
+      "customerName": "",
+      "customerPhone": "",
+      "paymentMethod": "transfer",
+      "cashReceived": 0,
+      "transferReceived": 0,
+      "subtotal": 99,
+      "discount": 0,
+      "total": 99,
+      "promotion": {
+        "id": "none",
+        "nameTh": "ไม่ใช้โปรโมชั่น",
+        "type": "none",
+        "value": 0,
+        "active": true
+      },
+      "status": "pending_payment",
+      "createdAt": "2026-06-18T12:38:02.655Z",
+      "_updatedAt": 1781786282655,
+      "paidAt": null,
+      "items": [
+        {
+          "key": "m-nutella-latte:default:sweet-100%",
+          "menuId": "m-nutella-latte",
+          "sku": "SIG-002",
+          "nameTh": "นูเทลล่าคอฟฟี่ลาเต้",
+          "nameEn": "Nutella Coffee Latte",
+          "variant": null,
+          "basePrice": 99,
+          "optionGroups": [
+            {
+              "id": "sweet",
+              "th": "ความหวาน",
+              "required": true,
+              "choices": [
+                {
+                  "th": "25%"
+                },
+                {
+                  "th": "50%"
+                },
+                {
+                  "th": "75%"
+                },
+                {
+                  "th": "100%"
+                }
+              ]
+            },
+            {
+              "id": "shot",
+              "th": "กาแฟ",
+              "required": false,
+              "choices": [
+                {
+                  "th": "เพิ่มช็อต",
+                  "price": 20
+                }
+              ]
+            }
+          ],
+          "qty": 1,
+          "options": [
+            {
+              "groupId": "sweet",
+              "group": "ความหวาน",
+              "label": "100%",
+              "price": 0,
+              "required": true
+            }
+          ],
+          "note": "",
+          "done": false
+        }
+      ]
+    },
     {
       "id": "c51ca871-5b45-4c2b-9433-fd36e4d2293a",
       "branchId": "branch-kiosk",

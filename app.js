@@ -1237,8 +1237,53 @@ async function createOrder(source) {
 	    await broadcastEvent("pending_payment_order", { orderId: order.id, branchId: order.branchId, orderNo: order.orderNo, queueToken: order.queueToken, paymentMethod: order.paymentMethod });
 	  }
   render();
-  if (paidNow) printReceipt(order.id);
-  toast(paidNow ? "ส่งออเดอร์เข้าครัวแล้ว" : "ส่งออเดอร์แล้ว รอพนักงานยืนยันชำระเงิน");
+  if (paidNow) {
+    printReceipt(order.id);
+    toast("ส่งออเดอร์เข้าครัวแล้ว");
+  } else {
+    showCustomerOrderSummary(order);
+  }
+}
+
+function showCustomerOrderSummary(order) {
+  const target = $("customerOrderSummary");
+  if (!target) return toast("ส่งออเดอร์แล้ว รอพนักงานยืนยันชำระเงิน");
+  const phone = String(order.customerPhone || "").trim();
+  target.innerHTML = `
+    <div class="customer-summary-card">
+      <div class="customer-summary-top">
+        <img src="assets/mustang-logo.png" alt="Mustang cafe" />
+        <div>
+          <p class="eyebrow">Mustang Cafe</p>
+          <h2>ส่งออเดอร์เรียบร้อย</h2>
+          <span>รอพนักงานยืนยันชำระเงิน</span>
+        </div>
+      </div>
+      <div class="customer-summary-queue">
+        <span>หมายเลขคิว</span>
+        <strong>${escapeHtml(order.queueToken)}</strong>
+      </div>
+      <div class="customer-summary-meta">
+        <div><span>เลขออเดอร์</span><strong>${escapeHtml(order.orderNo)}</strong></div>
+        <div><span>เวลา</span><strong>${dateFmt.format(new Date(order.createdAt))}</strong></div>
+        <div><span>ชำระเงิน</span><strong>${paymentName(order.paymentMethod)}</strong></div>
+        ${customerLabel(order) ? `<div><span>ชื่อลูกค้า</span><strong>${escapeHtml(customerLabel(order))}</strong></div>` : ""}
+        ${phone ? `<div><span>โทรศัพท์</span><strong>${escapeHtml(phone)}</strong></div>` : ""}
+      </div>
+      <div class="customer-summary-items">
+        <h3>รายการที่สั่ง</h3>
+        ${order.items.map(itemLine).join("")}
+      </div>
+      <div class="total-line final customer-summary-total"><span>ยอดรวม</span><strong>${fmt.format(order.total)}</strong></div>
+      <p class="customer-summary-note">กรุณาแคปหน้าจอนี้ หรือแสดงหน้านี้ให้พนักงานที่ kiosk เพื่อยืนยันออเดอร์และรับบัตรคิวให้ถูกต้อง</p>
+      <button class="primary" data-close-customer-summary="true">สั่งออเดอร์ใหม่</button>
+    </div>
+  `;
+  target.classList.remove("hidden");
+}
+
+function hideCustomerOrderSummary() {
+  $("customerOrderSummary")?.classList.add("hidden");
 }
 
 async function confirmPayment(orderId) {
@@ -1929,6 +1974,7 @@ document.addEventListener("click", async (event) => {
   }
   if (target.id === "completeStaffOrder") createOrder("staff");
   if (target.id === "submitCustomerOrder") createOrder("customer");
+  if (target.dataset.closeCustomerSummary) hideCustomerOrderSummary();
   if (target.dataset.confirmPayment) confirmPayment(target.dataset.confirmPayment);
 	  if (target.dataset.cancelOrder) {
 	    const order = state.orders.find((item) => item.id === target.dataset.cancelOrder);
