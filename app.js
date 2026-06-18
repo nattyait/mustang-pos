@@ -187,10 +187,22 @@ let categoryToolsOpen = false;
 let lastLocalWriteAt = 0;
 let stateRevision = 0;
 let stateSavePromise = Promise.resolve();
+let realtimeConnected = false;
+let lastServerFetchAt = 0;
 
 const $ = (id) => document.getElementById(id);
 const fmt = new Intl.NumberFormat("th-TH", { style: "currency", currency: "THB", maximumFractionDigits: 0 });
 const dateFmt = new Intl.DateTimeFormat("th-TH", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Bangkok" });
+
+function setSyncStatus(text, isOnline = navigator.onLine) {
+  $("syncStatus").textContent = text;
+  $("syncStatus").classList.toggle("dark", Boolean(isOnline));
+}
+
+function markServerOnline() {
+  lastServerFetchAt = Date.now();
+  setSyncStatus(realtimeConnected ? "Realtime" : "Online");
+}
 
 function loadState() {
   const raw = localStorage.getItem(STORAGE_KEY);
@@ -356,6 +368,7 @@ async function fetchServerState({ notify = false, force = false } = {}) {
     const response = await fetch("/api/state", { cache: "no-store" });
     if (!response.ok) return;
     const data = await response.json();
+    markServerOnline();
     if (!data.state) {
       await saveState();
       return;
@@ -377,7 +390,8 @@ async function fetchServerState({ notify = false, force = false } = {}) {
     );
     if (newKitchenOrder) notifyKitchen(newKitchenOrder);
   } catch {
-    $("syncStatus").textContent = "Local only";
+    realtimeConnected = false;
+    setSyncStatus("Local only", false);
   }
 }
 
@@ -2169,13 +2183,13 @@ $("branchSelect").addEventListener("change", (event) => {
 ["reportStart", "reportEnd"].forEach((id) => $(id).addEventListener("change", renderReports));
 
 window.addEventListener("online", () => {
-  $("syncStatus").textContent = "Online";
-  $("syncStatus").classList.add("dark");
+  setSyncStatus(SERVER_SYNC && realtimeConnected ? "Realtime" : "Online");
+  fetchServerState({ notify: true, force: true });
 });
 
 window.addEventListener("offline", () => {
-  $("syncStatus").textContent = "Offline ready";
-  $("syncStatus").classList.remove("dark");
+  realtimeConnected = false;
+  setSyncStatus("Offline ready", false);
 });
 
 window.addEventListener("storage", (event) => {
@@ -2193,6 +2207,10 @@ realtimeChannel?.addEventListener("message", (event) => {
 
 if (SERVER_SYNC && "EventSource" in window) {
   const events = new EventSource("/api/events");
+  events.onopen = () => {
+    realtimeConnected = true;
+    markServerOnline();
+  };
   events.onmessage = (message) => {
     try {
       handleRealtimeEvent(JSON.parse(message.data)).catch(() => {});
@@ -2201,7 +2219,9 @@ if (SERVER_SYNC && "EventSource" in window) {
     }
   };
   events.onerror = () => {
-    $("syncStatus").textContent = "Reconnecting";
+    realtimeConnected = false;
+    if (Date.now() - lastServerFetchAt < 5000) setSyncStatus("Online");
+    else setSyncStatus("Connecting");
   };
 }
 
@@ -2217,7 +2237,7 @@ if ("serviceWorker" in navigator && location.protocol !== "file:") {
 const today = todayKey();
 $("reportStart").value = today;
 $("reportEnd").value = today;
-$("syncStatus").textContent = navigator.onLine ? "Online" : "Offline ready";
+setSyncStatus(navigator.onLine ? "Online" : "Offline ready", navigator.onLine);
 render();
 const initialMode = routeMode();
 const initialView = initialMode === "pos" ? "pos" : initialMode === "customer" ? "customer" : isAdminRoute() ? "admin" : location.hash.replace("#", "") || currentRole().views[0] || "pos";

@@ -37,6 +37,11 @@ function sendJson(res, data, status = 200) {
   res.end(JSON.stringify(data));
 }
 
+function sendHead(res, status = 200, headers = {}) {
+  res.writeHead(status, headers);
+  res.end();
+}
+
 function getPool() {
   if (!usePostgres) return null;
   if (!pgPool) {
@@ -220,6 +225,7 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(200, {
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-store",
+        "X-Accel-Buffering": "no",
         Connection: "keep-alive",
         "Access-Control-Allow-Origin": "*",
       });
@@ -227,6 +233,22 @@ const server = http.createServer(async (req, res) => {
       clients.add(res);
       req.on("close", () => clients.delete(res));
       return;
+    }
+
+    if ((req.method === "GET" || req.method === "HEAD") && req.url === "/api/health") {
+      if (req.method === "HEAD") {
+        return sendHead(res, 200, {
+          "Cache-Control": "no-store",
+          "Access-Control-Allow-Origin": "*",
+        });
+      }
+      return sendJson(res, {
+        ok: true,
+        backend: usePostgres ? "postgresql" : "local-json",
+        realtime: "sse",
+        realtimeClients: clients.size,
+        now: new Date().toISOString(),
+      });
     }
 
     if ((req.method === "GET" || req.method === "HEAD") && req.url === "/api/state") {
