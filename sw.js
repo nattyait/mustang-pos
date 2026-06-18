@@ -1,4 +1,4 @@
-const CACHE_NAME = "mustang-pos-v44";
+const CACHE_NAME = "mustang-pos-v52";
 const ASSETS = [
   "./",
   "./index.html",
@@ -8,6 +8,7 @@ const ASSETS = [
   "./app.js",
   "./manifest.webmanifest",
   "./assets/mustang-logo.png",
+  "./assets/receipt-horse-line.png",
   "./assets/nutella-oreo-fresh-milk.png",
   "./assets/nutella-coffee-latte.jpg",
 ];

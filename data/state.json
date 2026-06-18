@@ -2,7 +2,9 @@
   "language": "th",
   "activeBranchId": "branch-kiosk",
   "activeUserId": "u-super",
-  "orderSequenceByDay": {},
+  "orderSequenceByDay": {
+    "branch-kiosk-2026-06-18": 1
+  },
   "kitchenTab": "active",
   "branches": [
     {
@@ -535,5 +537,156 @@
       "active": true
     }
   ],
-  "orders": []
+  "orders": [
+    {
+      "id": "b382826b-fb6e-40fa-8388-fa2b19b3cab0",
+      "branchId": "branch-kiosk",
+      "orderNo": "M001",
+      "queueToken": "3",
+      "source": "staff",
+      "customerName": "",
+      "customerPhone": "",
+      "paymentMethod": "cash",
+      "cashReceived": 198,
+      "transferReceived": 0,
+      "subtotal": 198,
+      "discount": 0,
+      "total": 198,
+      "promotion": {
+        "id": "none",
+        "nameTh": "ไม่ใช้โปรโมชั่น",
+        "type": "none",
+        "value": 0,
+        "active": true
+      },
+      "status": "ready",
+      "createdAt": "2026-06-18T05:04:21.415Z",
+      "paidAt": "2026-06-18T05:04:21.415Z",
+      "items": [
+        {
+          "key": "m-sig-003:default:sweet-25%",
+          "menuId": "m-sig-003",
+          "sku": "SIG-003",
+          "nameTh": "กาแฟวานิลลาคลาวด์",
+          "nameEn": "Signature Vanilla Cloud Coffee",
+          "variant": null,
+          "basePrice": 99,
+          "optionGroups": [
+            {
+              "id": "sweet",
+              "th": "ความหวาน",
+              "required": true,
+              "choices": [
+                {
+                  "th": "25%"
+                },
+                {
+                  "th": "50%"
+                },
+                {
+                  "th": "75%"
+                },
+                {
+                  "th": "100%"
+                }
+              ]
+            }
+          ],
+          "qty": 1,
+          "options": [
+            {
+              "groupId": "sweet",
+              "group": "ความหวาน",
+              "label": "25%",
+              "price": 0,
+              "required": true
+            }
+          ],
+          "note": "",
+          "done": true
+        },
+        {
+          "key": "m-nutella-oreo:default:sweet-25%|ice-ปกติ",
+          "menuId": "m-nutella-oreo",
+          "sku": "SIG-001",
+          "nameTh": "นูเทลล่าโอรีโอนมสด",
+          "nameEn": "Nutella Oreo Fresh Milk",
+          "variant": null,
+          "basePrice": 99,
+          "optionGroups": [
+            {
+              "id": "sweet",
+              "th": "ความหวาน",
+              "required": true,
+              "choices": [
+                {
+                  "th": "25%"
+                },
+                {
+                  "th": "50%"
+                },
+                {
+                  "th": "75%"
+                },
+                {
+                  "th": "100%"
+                }
+              ]
+            },
+            {
+              "id": "ice",
+              "th": "น้ำแข็ง",
+              "required": true,
+              "choices": [
+                {
+                  "th": "ปกติ"
+                },
+                {
+                  "th": "น้อย"
+                },
+                {
+                  "th": "ไม่ใส่น้ำแข็ง"
+                }
+              ]
+            },
+            {
+              "id": "topping",
+              "th": "ท็อปปิ้ง",
+              "required": false,
+              "choices": [
+                {
+                  "th": "โอรีโอเพิ่ม",
+                  "price": 10
+                },
+                {
+                  "th": "นูเทลล่าเพิ่ม",
+                  "price": 15
+                }
+              ]
+            }
+          ],
+          "qty": 1,
+          "options": [
+            {
+              "groupId": "sweet",
+              "group": "ความหวาน",
+              "label": "25%",
+              "price": 0,
+              "required": true
+            },
+            {
+              "groupId": "ice",
+              "group": "น้ำแข็ง",
+              "label": "ปกติ",
+              "price": 0,
+              "required": true
+            }
+          ],
+          "note": "",
+          "done": true
+        }
+      ],
+      "readyAt": "2026-06-18T05:07:10.499Z"
+    }
+  ]
 }

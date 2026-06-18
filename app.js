@@ -1473,7 +1473,7 @@ function printReceipt(orderId) {
   if (!order) return;
   const receiptHtml = `
     <div class="receipt">
-    <img src="${new URL("assets/mustang-logo.png", window.location.href).href}" alt="">
+    <img class="receipt-logo" src="${new URL("assets/receipt-horse-line.png", window.location.href).href}" alt="Mustang horse">
     <h2>Mustang Cafe</h2>
     <p>${branch().nameTh}</p>
     <p>${order.orderNo} / Queue ${order.queueToken}</p>
@@ -1489,6 +1489,7 @@ function printReceipt(orderId) {
     <div class="row"><span>Payment</span><strong>${paymentName(order.paymentMethod)}</strong></div>
     <div class="line"></div>
     <p>ขอบคุณค่ะ / Thank you</p>
+    <div class="receipt-feed" aria-hidden="true">&nbsp;<br>&nbsp;<br>&nbsp;<br>&nbsp;<br>&nbsp;<br>&nbsp;<br>&nbsp;<br>&nbsp;</div>
     </div>
   `;
   const frame = document.createElement("iframe");
@@ -1511,49 +1512,55 @@ function printReceipt(orderId) {
         <meta charset="utf-8">
         <title>${order.orderNo}</title>
         <style>
-          @page { size: 80mm auto; margin: 0; }
+          @page { size: 57mm auto; margin: 0; }
           * { box-sizing: border-box; }
           html, body {
-            width: 80mm;
-            min-width: 80mm;
+            width: 57mm;
+            min-width: 57mm;
             margin: 0;
             padding: 0;
             background: #fff;
             color: #000;
           }
           .receipt {
-            width: 80mm;
+            width: 48mm;
             margin: 0;
-            padding: 3mm;
+            padding: 0 1.5mm 2mm;
             color: #000;
             background: #fff;
-            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-            font-size: 11px;
-            line-height: 1.35;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-size: 13px;
+            font-weight: 450;
+            line-height: 1.22;
             page-break-after: avoid;
             break-after: avoid;
           }
-          img {
+          .receipt-logo {
             display: block;
-            width: 24mm;
-            height: 24mm;
-            margin: 0 auto 2mm;
-            object-fit: contain;
+            width: 17mm;
+            height: 17mm;
+            margin: 0 auto 0.2mm;
+            fill: none;
+            stroke: #000;
+            stroke-width: 4;
+            stroke-linecap: round;
+            stroke-linejoin: round;
           }
+          h2 { font-size: 15px; line-height: 1.1; }
           h2, p {
             text-align: center;
-            margin: 0 0 1.5mm;
+            margin: 0 0 0.7mm;
           }
           .line {
             border-top: 1px dashed #000;
-            margin: 2mm 0;
+            margin: 1mm 0;
           }
           .row {
             display: flex;
             align-items: flex-start;
             justify-content: space-between;
-            gap: 3mm;
-            margin-bottom: 1mm;
+            gap: 1.4mm;
+            margin-bottom: 0.6mm;
           }
           .row span {
             flex: 1;
@@ -1563,6 +1570,15 @@ function printReceipt(orderId) {
           .row strong {
             flex: 0 0 auto;
             white-space: nowrap;
+            font-weight: 650;
+          }
+          .receipt-feed {
+            display: block;
+            height: auto;
+            font-size: 13px;
+            line-height: 5mm;
+            margin: 0;
+            padding: 0;
           }
         </style>
       </head>
