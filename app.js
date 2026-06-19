@@ -636,6 +636,10 @@ function menuName(item) {
   return state.language === "en" ? item.en : item.th;
 }
 
+function isCatalogMenu(item) {
+  return item && item.archived !== true;
+}
+
 function categoryName(item) {
   return state.language === "en" ? item.en : item.th;
 }
@@ -1214,12 +1218,13 @@ function renderMenus() {
   const search = ($("menuSearch").value || "").toLowerCase();
   const staffItems = state.menu.filter(
     (item) =>
+      isCatalogMenu(item) &&
       item.categoryId === selectedCategory &&
       item.available &&
       (!search || `${item.th} ${item.en} ${item.sku}`.toLowerCase().includes(search)),
   );
   $("menuGrid").innerHTML = staffItems.map(menuCard).join("");
-  const customerItems = state.menu.filter((item) => item.categoryId === selectedCustomerCategory && item.available);
+  const customerItems = state.menu.filter((item) => isCatalogMenu(item) && item.categoryId === selectedCustomerCategory && item.available);
   $("customerMenuGrid").innerHTML = customerItems.map((item) => menuCard(item, true)).join("");
 }
 
@@ -1879,7 +1884,7 @@ function renderMenuManagement() {
         <div class="admin-list category-list">
           ${sortedCategories
             .map((cat) => {
-              const count = state.menu.filter((item) => item.categoryId === cat.id).length;
+              const count = state.menu.filter((item) => isCatalogMenu(item) && item.categoryId === cat.id).length;
               return `
               <div class="admin-row">
                 <span><strong>${cat.th}</strong><br><small>${cat.id} / ${cat.en} / ลำดับ ${cat.sort} / ${count} เมนู</small></span>
@@ -1968,7 +1973,7 @@ function renderMenuManagement() {
     <div class="menu-catalog">
       ${sortedCategories
         .map((cat) => {
-          const items = state.menu.filter((item) => item.categoryId === cat.id);
+          const items = state.menu.filter((item) => isCatalogMenu(item) && item.categoryId === cat.id);
           if (!items.length) return "";
           return `
           <section class="menu-catalog-group">
@@ -2389,13 +2394,25 @@ document.addEventListener("click", async (event) => {
   }
   if (target.dataset.deleteMenu) {
     if (!requireSuperuser()) return;
-    const inOrder = state.orders.some((order) => order.items.some((line) => line.menuId === target.dataset.deleteMenu));
-    if (inOrder) return toast("เมนูนี้มีประวัติออเดอร์แล้ว กรุณาใช้ซ่อนแทนลบ");
-    state.menu = state.menu.filter((item) => item.id !== target.dataset.deleteMenu);
+    const menuId = target.dataset.deleteMenu;
+    const inOrder = state.orders.some((order) => order.items.some((line) => line.menuId === menuId));
+    const item = state.menu.find((menuItem) => menuItem.id === menuId);
+    if (!item) return toast("ไม่พบเมนูนี้");
+    if (inOrder) {
+      item.archived = true;
+      item.available = false;
+    } else {
+      state.menu = state.menu.filter((menuItem) => menuItem.id !== menuId);
+    }
     state.masterTemplate.menuIds = state.masterTemplate.menuIds.filter((id) => id !== target.dataset.deleteMenu);
-    saveState();
+    if (editingMenuId === target.dataset.deleteMenu) {
+      editingMenuId = "";
+      uploadedMenuImageDataUrl = "";
+      menuFormPriceMode = "";
+    }
+    await saveState();
     render();
-    toast("ลบเมนูแล้ว");
+    toast(inOrder ? "ลบออกจากรายการเมนูแล้ว ประวัติออเดอร์เดิมยังเก็บไว้" : "ลบเมนูแล้ว");
   }
   if (target.dataset.togglePromo) {
     const promo = state.promotions.find((item) => item.id === target.dataset.togglePromo);
@@ -2508,15 +2525,21 @@ document.addEventListener("click", async (event) => {
     if (!requireSuperuser()) return;
     const id = target.dataset.deleteCategory;
     if (state.categories.length <= 1) return toast("ต้องมีหมวดหมู่อย่างน้อย 1 หมวด");
-    const count = state.menu.filter((item) => item.categoryId === id).length;
-    if (count) return toast("หมวดหมู่นี้ยังมีเมนูอยู่ กรุณาย้ายหรือลบ/ซ่อนเมนูก่อน");
+    const fallbackCategory = state.categories
+      .filter((cat) => cat.id !== id)
+      .sort((a, b) => (a.sort || 0) - (b.sort || 0))[0];
+    if (!fallbackCategory) return toast("ต้องมีหมวดหมู่อื่นสำหรับย้ายเมนูก่อน");
+    const movedCount = state.menu.filter((item) => isCatalogMenu(item) && item.categoryId === id).length;
+    state.menu.forEach((item) => {
+      if (isCatalogMenu(item) && item.categoryId === id) item.categoryId = fallbackCategory.id;
+    });
     state.categories = state.categories.filter((cat) => cat.id !== id);
-    if (selectedCategory === id) selectedCategory = state.categories[0]?.id || "";
-    if (selectedCustomerCategory === id) selectedCustomerCategory = state.categories[0]?.id || "";
+    if (selectedCategory === id) selectedCategory = fallbackCategory.id;
+    if (selectedCustomerCategory === id) selectedCustomerCategory = fallbackCategory.id;
     if (editingCategoryId === id) editingCategoryId = "";
     saveState();
     render();
-    toast("ลบหมวดหมู่แล้ว");
+    toast(movedCount ? `ลบหมวดหมู่แล้ว และย้าย ${movedCount} เมนูไป ${fallbackCategory.th}` : "ลบหมวดหมู่แล้ว");
   }
   if (target.dataset.editMenu) {
     if (!requireSuperuser()) return;
@@ -2579,7 +2602,7 @@ document.addEventListener("click", async (event) => {
     if (!requireSuperuser()) return;
     state.masterTemplate.version += 1;
     state.masterTemplate.updatedAt = new Date().toISOString();
-    state.masterTemplate.menuIds = state.menu.filter((item) => item.available).map((item) => item.id);
+    state.masterTemplate.menuIds = state.menu.filter((item) => isCatalogMenu(item) && item.available).map((item) => item.id);
     state.branches
       .filter((item) => item.templateMode === "linked")
       .forEach((item) => {
