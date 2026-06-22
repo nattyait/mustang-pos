@@ -6,6 +6,53 @@ const SERVER_SYNC = location.protocol.startsWith("http");
 const realtimeChannel = "BroadcastChannel" in window ? new BroadcastChannel("mustang-franchise-pos") : null;
 const PAGE_ID = crypto.randomUUID();
 
+const thaiEnglishWords = [
+  ["เครื่องดื่ม", "drink"],
+  ["กูโรตี", "guroti"],
+  ["ชาชัก", "cha-chak"],
+  ["โรตี", "roti"],
+  ["อาหาร", "food"],
+  ["นมสด", "fresh-milk"],
+  ["กาแฟ", "coffee"],
+  ["ชา", "tea"],
+  ["โกโก้", "cocoa"],
+  ["นูเทลล่า", "nutella"],
+  ["โอรีโอ", "oreo"],
+  ["กล้วย", "banana"],
+  ["ข้าว", "rice"],
+  ["ไก่", "chicken"],
+  ["หมู", "pork"],
+  ["เนื้อ", "beef"],
+  ["ปลา", "fish"],
+  ["ไข่", "egg"],
+  ["น้ำแข็ง", "ice"],
+  ["ความหวาน", "sweetness"],
+  ["หวาน", "sweet"],
+  ["ร้อน", "hot"],
+  ["เย็น", "iced"],
+  ["ปั่น", "blended"],
+  ["สด", "fresh"],
+  ["หลัก", "main"],
+];
+
+function englishifyText(text) {
+  let value = String(text || "").toLowerCase();
+  thaiEnglishWords.forEach(([thai, english]) => {
+    value = value.replaceAll(thai, ` ${english} `);
+  });
+  return value;
+}
+
+function slugify(text) {
+  return englishifyText(text)
+    .trim()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/gi, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48);
+}
+
 const seedState = {
   language: "th",
   activeBranchId: "branch-kiosk",
@@ -251,6 +298,8 @@ const roles = {
   },
 };
 
+let legacySlugMigrationApplied = false;
+let lastNormalizeMigratedLegacySlugs = false;
 let state = loadState();
 let carts = loadDraftCarts();
 let selectedCategory = "signature";
@@ -268,6 +317,10 @@ let stateSavePromise = Promise.resolve();
 let realtimeConnected = false;
 let lastServerFetchAt = 0;
 let lastPollingFetchAt = 0;
+
+if (legacySlugMigrationApplied) {
+  queueMicrotask(() => saveState().catch(() => {}));
+}
 
 const $ = (id) => document.getElementById(id);
 const fmt = new Intl.NumberFormat("th-TH", { style: "currency", currency: "THB", maximumFractionDigits: 0 });
@@ -294,6 +347,7 @@ function loadState() {
 }
 
 function normalizeState(rawState) {
+  lastNormalizeMigratedLegacySlugs = false;
   const next = { ...structuredClone(seedState), ...rawState };
   next.masterTemplate = next.masterTemplate || structuredClone(seedState.masterTemplate);
   const defaultUsersById = new Map(seedState.users.map((user) => [user.id, user]));
@@ -315,6 +369,7 @@ function normalizeState(rawState) {
     ...item,
     tokens: item.tokens || [],
   }));
+  migrateLegacySlugs(next);
   next.menu = (next.menu || []).map(normalizeMenuItem);
   next.orders = (next.orders || []).map((order) => ({
     ...order,
@@ -326,6 +381,72 @@ function normalizeState(rawState) {
     items: (order.items || []).map(normalizeCartLine),
   }));
   return next;
+}
+
+function markLegacySlugMigration() {
+  legacySlugMigrationApplied = true;
+  lastNormalizeMigratedLegacySlugs = true;
+}
+
+function isAsciiId(value) {
+  return /^[a-z0-9_-]+$/i.test(String(value || ""));
+}
+
+function uniqueSlug(base, used, fallback) {
+  const root = slugify(base) || fallback;
+  let candidate = root;
+  let index = 2;
+  while (used.has(candidate)) {
+    candidate = `${root}-${index}`;
+    index += 1;
+  }
+  used.add(candidate);
+  return candidate;
+}
+
+function migrateLegacySlugs(next) {
+  const categoryMap = new Map();
+  const usedCategoryIds = new Set();
+  next.categories = (next.categories || []).map((category, index) => {
+    const currentId = String(category.id || "");
+    const keepId = currentId && isAsciiId(currentId) && slugify(currentId) === currentId.toLowerCase();
+    const nextId = keepId
+      ? uniqueSlug(currentId, usedCategoryIds, `category-${index + 1}`)
+      : uniqueSlug(category.en || category.th || currentId, usedCategoryIds, `category-${index + 1}`);
+    if (currentId && currentId !== nextId) {
+      categoryMap.set(currentId, nextId);
+      markLegacySlugMigration();
+    }
+    return { ...category, id: nextId };
+  });
+
+  const menuMap = new Map();
+  const usedMenuIds = new Set();
+  next.menu = (next.menu || []).map((menuItem, index) => {
+    const currentId = String(menuItem.id || "");
+    const keepId = currentId && isAsciiId(currentId) && slugify(currentId) === currentId.toLowerCase();
+    const fallback = `menu-${index + 1}`;
+    const base = menuItem.en || menuItem.th || menuItem.sku || currentId || fallback;
+    const nextCore = keepId ? uniqueSlug(currentId.replace(/^m-/, ""), usedMenuIds, fallback) : uniqueSlug(base, usedMenuIds, fallback);
+    const nextId = nextCore.startsWith("m-") ? nextCore : `m-${nextCore}`;
+    if (currentId && currentId !== nextId) {
+      menuMap.set(currentId, nextId);
+      markLegacySlugMigration();
+    }
+    const categoryId = categoryMap.get(menuItem.categoryId) || menuItem.categoryId;
+    if (categoryId !== menuItem.categoryId) markLegacySlugMigration();
+    return { ...menuItem, id: nextId, categoryId };
+  });
+
+  next.masterTemplate.menuIds = (next.masterTemplate.menuIds || []).map((id) => menuMap.get(id) || id);
+  next.orders = (next.orders || []).map((order) => ({
+    ...order,
+    items: (order.items || []).map((line) => {
+      const menuId = menuMap.get(line.menuId) || line.menuId;
+      if (menuId !== line.menuId) markLegacySlugMigration();
+      return { ...line, menuId };
+    }),
+  }));
 }
 
 function touchOrder(order) {
@@ -462,6 +583,7 @@ async function fetchServerState({ notify = false, force = false } = {}) {
     }
     if (fetchStartedAt < lastLocalWriteAt || fetchRevision !== stateRevision) return;
     const nextState = normalizeState(data.state);
+    const migratedServerSlugs = lastNormalizeMigratedLegacySlugs;
     nextState.activeUserId = state.activeUserId;
     nextState.activeBranchId = state.activeBranchId;
     const nextStateRaw = JSON.stringify(nextState);
@@ -470,6 +592,7 @@ async function fetchServerState({ notify = false, force = false } = {}) {
     lastStoredStateRaw = nextStateRaw;
     localStorage.setItem(STORAGE_KEY, lastStoredStateRaw);
     enforceBranchAccess();
+    if (migratedServerSlugs) await saveState();
     renderSyncedState();
     if (!notify) return;
     const newKitchenOrder = state.orders.find(
@@ -889,13 +1012,18 @@ function tokensFromText(text) {
     .map((label) => ({ id: label, label, active: true }));
 }
 
-function slugify(text) {
-  return String(text || "")
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9ก-๙]+/gi, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 48);
+function categorySkuPrefix(categoryId) {
+  const category = state.categories.find((item) => item.id === categoryId);
+  const source = category?.en || category?.th || categoryId || "menu";
+  const slug = slugify(source) || "menu";
+  return slug
+    .split("-")
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 4)
+    .toUpperCase()
+    .padEnd(3, "X");
 }
 
 function escapeHtml(value) {
@@ -918,12 +1046,23 @@ function readNumber(value) {
 
 function nextSku(categoryId) {
   const prefixMap = { signature: "SIG", "cha-chak": "CHA", roti: "ROT", food: "FOOD" };
-  const prefix = prefixMap[categoryId] || categoryId.slice(0, 4).toUpperCase();
+  const prefix = prefixMap[categoryId] || categorySkuPrefix(categoryId);
   const numbers = state.menu
     .filter((item) => item.sku?.startsWith(`${prefix}-`))
     .map((item) => Number(item.sku.split("-")[1] || 0))
     .filter(Boolean);
   return `${prefix}-${String(Math.max(0, ...numbers) + 1).padStart(3, "0")}`;
+}
+
+function nextMenuId(form) {
+  const base = slugify(form.en) || slugify(form.th) || slugify(form.sku) || "menu";
+  let id = `m-${base}`;
+  let index = 2;
+  while (state.menu.some((item) => item.id === id)) {
+    id = `m-${base}-${index}`;
+    index += 1;
+  }
+  return id;
 }
 
 function buildOptionGroups(flags, categoryId = "") {
@@ -1045,7 +1184,7 @@ function readCategoryForm(existingId = "") {
   const th = $("categoryTh").value.trim();
   const en = $("categoryEn").value.trim() || th;
   const sort = Number($("categorySort").value || nextCategorySort());
-  const id = existingId || slugify($("categoryId").value.trim() || en || th);
+  const id = existingId || slugify($("categoryId").value.trim() || en || th) || `category-${Date.now()}`;
   if (!th || !id) {
     toast("กรุณาใส่ชื่อหมวดหมู่");
     return null;
@@ -1101,7 +1240,7 @@ function normalizeImportedMenuPayload(payload) {
   return {
     categories: categories
       .map((category, index) => ({
-        id: slugify(category.id || category.en || category.th || `category-${index + 1}`),
+        id: slugify(category.id || category.en || category.th || `category-${index + 1}`) || `category-${index + 1}`,
         th: String(category.th || category.en || category.id || "").trim(),
         en: String(category.en || category.th || category.id || "").trim(),
         sort: Number(category.sort || index + 1),
@@ -1111,7 +1250,7 @@ function normalizeImportedMenuPayload(payload) {
       .map((item) => {
         const sku = String(item.sku || "").trim();
         const th = String(item.th || item.nameTh || "").trim();
-        const categoryId = slugify(item.categoryId || item.category || "imported");
+        const categoryId = slugify(item.categoryId || item.category || "imported") || "imported";
         if (!sku || !th || !categoryId) return null;
         return normalizeMenuItem({
           id: item.id ? slugify(item.id) : `m-${slugify(sku)}`,
@@ -2453,7 +2592,7 @@ document.addEventListener("click", async (event) => {
     if (!requireSuperuser()) return;
     const form = readMenuForm();
     if (!form) return;
-    const id = `m-${slugify(form.sku || form.th) || Date.now()}`;
+    const id = nextMenuId(form);
     const menuItem = { id, ...form };
     state.menu.push(menuItem);
     if (!state.masterTemplate.menuIds.includes(id)) state.masterTemplate.menuIds.push(id);
