@@ -908,6 +908,7 @@ function addToCart(cartName, item, variant = null) {
       key,
       menuId: item.id,
       sku: item.sku,
+      categoryId: item.categoryId,
       nameTh: item.th,
       nameEn: item.en,
       variant: storedVariant ? structuredClone(storedVariant) : null,
@@ -937,9 +938,22 @@ function lineMenu(line) {
     sku: line.sku || item?.sku || "",
     th: line.nameTh || item?.th || "เมนู",
     en: line.nameEn || item?.en || line.nameTh || "Menu",
+    categoryId: line.categoryId || item?.categoryId || "",
     price: Number(line.basePrice ?? line.variant?.price ?? item?.price ?? 0),
     options: line.optionGroups || item?.options || [],
   };
+}
+
+function lineCategoryName(line) {
+  const fallbackMenu = state.menu.find(
+    (item) =>
+      (line.sku && item.sku === line.sku) ||
+      (line.nameTh && item.th === line.nameTh) ||
+      (line.nameEn && item.en === line.nameEn),
+  );
+  const categoryId = line.categoryId || lineMenu(line).categoryId || fallbackMenu?.categoryId;
+  const category = state.categories.find((item) => item.id === categoryId);
+  return category?.th || category?.en || categoryId || "ไม่ระบุหมวดหมู่";
 }
 
 function linePrice(line) {
@@ -1818,10 +1832,12 @@ function renderReports() {
     order.items.forEach((line) => {
       const item = lineMenu(line);
       const name = lineDisplayName(line);
-      const key = `${line.menuId}:${line.variant?.id || ""}:${name}`;
+      const category = lineCategoryName(line);
+      const key = `${category}:${line.menuId}:${line.variant?.id || ""}:${name}`;
       if (!menuSummary.has(key)) {
         menuSummary.set(key, {
           sku: item.sku || line.sku || "-",
+          category,
           name,
           qty: 0,
           total: 0,
@@ -1851,11 +1867,17 @@ function renderReports() {
   });
   $("reportMenuSummaryRows").innerHTML =
     Array.from(menuSummary.values())
-      .sort((a, b) => a.sku.localeCompare(b.sku) || a.name.localeCompare(b.name))
+      .sort(
+        (a, b) =>
+          a.category.localeCompare(b.category, "th") ||
+          a.sku.localeCompare(b.sku) ||
+          a.name.localeCompare(b.name, "th"),
+      )
       .map(
         (item) => `
       <tr>
         <td>${escapeHtml(item.sku)}</td>
+        <td>${escapeHtml(item.category)}</td>
         <td>${escapeHtml(item.name)}</td>
         <td>${item.qty}</td>
         <td>${fmt.format(item.total)}</td>
@@ -1865,7 +1887,7 @@ function renderReports() {
       </tr>
     `,
       )
-      .join("") || `<tr><td colspan="7">ไม่มีข้อมูลยอดขายในช่วงนี้</td></tr>`;
+      .join("") || `<tr><td colspan="8">ไม่มีข้อมูลยอดขายในช่วงนี้</td></tr>`;
   $("reportRows").innerHTML = rows
     .map(
       (order) => `
@@ -1876,7 +1898,7 @@ function renderReports() {
         <td>${escapeHtml(customerLabel(order) || "-")}</td>
         <td>${order.items
           .map((line) => {
-            return `${line.qty} x ${lineDisplayName(line)}`;
+            return `${line.qty} x [${escapeHtml(lineCategoryName(line))}] ${lineDisplayName(line)}`;
           })
           .join("<br>")}</td>
         <td>${paymentName(order.paymentMethod)}</td>
@@ -2409,7 +2431,7 @@ function exportCsv() {
         customerLabel(order),
         order.items
           .map((line) => {
-            return `${line.qty}x ${lineDisplayName(line)}`;
+            return `${line.qty}x [${lineCategoryName(line)}] ${lineDisplayName(line)}`;
           })
           .join("; "),
         order.paymentMethod,
