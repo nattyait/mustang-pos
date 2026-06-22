@@ -159,23 +159,34 @@ function orderFreshness(order) {
   );
 }
 
-async function mergeStateByFreshness(incomingState) {
+async function mergeStateByFreshness(incomingState, { allowCatalogWrite = false } = {}) {
   const currentState = await readState();
   if (!currentState || !incomingState) return incomingState || currentState;
-  const mergedState = { ...incomingState };
-  if (!currentState?.menu?.length || !incomingState?.menu?.length)
-    return mergeOrdersByFreshness(currentState, mergedState);
-  const currentById = new Map(currentState.menu.map((item) => [item.id, item]));
-  mergedState.menu = incomingState.menu.map((incomingItem) => {
-    const currentItem = currentById.get(incomingItem.id);
-    if (!currentItem) return incomingItem;
-    const currentTime = Number(currentItem._updatedAt || 0);
-    const incomingTime = Number(incomingItem._updatedAt || 0);
-    if (currentTime > incomingTime) return currentItem;
-    return incomingItem;
-  });
-  for (const currentItem of currentState.menu) {
-    if (!mergedState.menu.some((item) => item.id === currentItem.id)) mergedState.menu.push(currentItem);
+  const mergedState = {
+    ...incomingState,
+    menu: currentState.menu,
+    categories: currentState.categories,
+    masterTemplate: currentState.masterTemplate,
+  };
+  if (allowCatalogWrite) {
+    mergedState.categories = incomingState.categories;
+    mergedState.masterTemplate = incomingState.masterTemplate;
+    if (!currentState?.menu?.length || !incomingState?.menu?.length) {
+      mergedState.menu = incomingState.menu;
+      return mergeOrdersByFreshness(currentState, mergedState);
+    }
+    const currentById = new Map(currentState.menu.map((item) => [item.id, item]));
+    mergedState.menu = incomingState.menu.map((incomingItem) => {
+      const currentItem = currentById.get(incomingItem.id);
+      if (!currentItem) return incomingItem;
+      const currentTime = Number(currentItem._updatedAt || 0);
+      const incomingTime = Number(incomingItem._updatedAt || 0);
+      if (currentTime > incomingTime) return currentItem;
+      return incomingItem;
+    });
+    for (const currentItem of currentState.menu) {
+      if (!mergedState.menu.some((item) => item.id === currentItem.id)) mergedState.menu.push(currentItem);
+    }
   }
   return mergeOrdersByFreshness(currentState, mergedState);
 }
@@ -315,7 +326,7 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === "POST" && req.url === "/api/state") {
       const body = JSON.parse(await readBody(req));
-      await writeState(await mergeStateByFreshness(body.state));
+      await writeState(await mergeStateByFreshness(body.state, { allowCatalogWrite: body.allowCatalogWrite === true }));
       broadcast({ type: "state_updated", payload: {} });
       return sendJson(res, { ok: true });
     }
@@ -339,7 +350,8 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === "POST" && req.url === "/api/event") {
       const event = JSON.parse(await readBody(req));
-      if (event.state) await writeState(await mergeStateByFreshness(event.state));
+      if (event.state)
+        await writeState(await mergeStateByFreshness(event.state, { allowCatalogWrite: event.allowCatalogWrite === true }));
       broadcast(event);
       return sendJson(res, { ok: true });
     }

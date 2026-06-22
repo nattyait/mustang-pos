@@ -318,10 +318,6 @@ let realtimeConnected = false;
 let lastServerFetchAt = 0;
 let lastPollingFetchAt = 0;
 
-if (legacySlugMigrationApplied) {
-  queueMicrotask(() => saveState().catch(() => {}));
-}
-
 const $ = (id) => document.getElementById(id);
 const fmt = new Intl.NumberFormat("th-TH", { style: "currency", currency: "THB", maximumFractionDigits: 0 });
 const dateFmt = new Intl.DateTimeFormat("th-TH", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Bangkok" });
@@ -369,8 +365,9 @@ function normalizeState(rawState) {
     ...item,
     tokens: item.tokens || [],
   }));
-  migrateLegacySlugs(next);
-  next.menu = (next.menu || []).map(normalizeMenuItem);
+  next.categories = Array.isArray(next.categories) ? next.categories : [];
+  next.menu = Array.isArray(next.menu) ? next.menu : [];
+  next.masterTemplate.menuIds = Array.isArray(next.masterTemplate.menuIds) ? next.masterTemplate.menuIds : [];
   next.orders = (next.orders || []).map((order) => ({
     ...order,
     _updatedAt: Number(
@@ -455,12 +452,7 @@ function touchOrder(order) {
 }
 
 function normalizeMenuItem(item) {
-  const options = (Array.isArray(item.options) ? item.options : []).map((group) => {
-    if (group.id !== "sweet" && group.th !== "ความหวาน") return group;
-    const choices = Array.isArray(group.choices) ? group.choices : [];
-    const hasNoSweet = choices.some((choice) => choice.th === "ไม่หวาน");
-    return { ...group, choices: hasNoSweet ? choices : [{ th: "ไม่หวาน" }, ...choices] };
-  });
+  const options = Array.isArray(item.options) ? item.options : [];
   const variants =
     Array.isArray(item.variants) && item.variants.length
       ? item.variants
@@ -513,7 +505,7 @@ function saveDraftCarts() {
   sessionStorage.setItem(CART_KEY, JSON.stringify(carts));
 }
 
-async function saveState() {
+async function saveState({ allowCatalogWrite = false } = {}) {
   stateRevision += 1;
   lastLocalWriteAt = Date.now();
   state = normalizeState(state);
@@ -523,7 +515,7 @@ async function saveState() {
     stateSavePromise = fetch("/api/state", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ state }),
+      body: JSON.stringify({ state, allowCatalogWrite }),
     }).catch(() => {});
     await stateSavePromise;
   }
@@ -582,13 +574,9 @@ async function fetchServerState({ notify = false, force = false } = {}) {
     if (!response.ok) return;
     const data = await response.json();
     markServerOnline();
-    if (!data.state) {
-      await saveState();
-      return;
-    }
+    if (!data.state) return;
     if (fetchStartedAt < lastLocalWriteAt || fetchRevision !== stateRevision) return;
     const nextState = normalizeState(data.state);
-    const migratedServerSlugs = lastNormalizeMigratedLegacySlugs;
     nextState.activeUserId = state.activeUserId;
     nextState.activeBranchId = state.activeBranchId;
     const nextStateRaw = JSON.stringify(nextState);
@@ -597,7 +585,6 @@ async function fetchServerState({ notify = false, force = false } = {}) {
     lastStoredStateRaw = nextStateRaw;
     localStorage.setItem(STORAGE_KEY, lastStoredStateRaw);
     enforceBranchAccess();
-    if (migratedServerSlugs) await saveState();
     renderSyncedState();
     if (!notify) return;
     const newKitchenOrder = state.orders.find(
@@ -1326,7 +1313,7 @@ async function importMenuJsonFile(file) {
     editingMenuId = "";
     uploadedMenuImageDataUrl = "";
     menuFormPriceMode = "";
-    await saveState();
+    await saveState({ allowCatalogWrite: true });
     render();
     toast(`นำเข้าเมนู ${imported.menu.length} รายการแล้ว`);
   } catch {
@@ -2597,7 +2584,7 @@ document.addEventListener("click", async (event) => {
   if (target.dataset.toggleMenu) {
     const item = state.menu.find((menuItem) => menuItem.id === target.dataset.toggleMenu);
     item.available = !item.available;
-    saveState();
+    saveState({ allowCatalogWrite: true });
     render();
   }
   if (target.dataset.deleteMenu) {
@@ -2618,7 +2605,7 @@ document.addEventListener("click", async (event) => {
       uploadedMenuImageDataUrl = "";
       menuFormPriceMode = "";
     }
-    await saveState();
+    await saveState({ allowCatalogWrite: true });
     render();
     toast(inOrder ? "ลบออกจากรายการเมนูแล้ว ประวัติออเดอร์เดิมยังเก็บไว้" : "ลบเมนูแล้ว");
   }
@@ -2669,7 +2656,7 @@ document.addEventListener("click", async (event) => {
     selectedCustomerCategory = form.categoryId;
     uploadedMenuImageDataUrl = "";
     menuFormPriceMode = "";
-    saveState();
+    saveState({ allowCatalogWrite: true });
     render();
     toast(`เพิ่มเมนู ${form.th} แล้ว`);
   }
@@ -2703,7 +2690,7 @@ document.addEventListener("click", async (event) => {
     state.categories.push(form);
     selectedCategory = form.id;
     selectedCustomerCategory = form.id;
-    saveState();
+    saveState({ allowCatalogWrite: true });
     render();
     toast(`เพิ่มหมวดหมู่ ${form.th} แล้ว`);
   }
@@ -2725,7 +2712,7 @@ document.addEventListener("click", async (event) => {
     if (!form) return;
     Object.assign(existing, { th: form.th, en: form.en, sort: form.sort });
     editingCategoryId = "";
-    saveState();
+    saveState({ allowCatalogWrite: true });
     render();
     toast(`บันทึกหมวดหมู่ ${form.th} แล้ว`);
   }
@@ -2745,7 +2732,7 @@ document.addEventListener("click", async (event) => {
     if (selectedCategory === id) selectedCategory = fallbackCategory.id;
     if (selectedCustomerCategory === id) selectedCustomerCategory = fallbackCategory.id;
     if (editingCategoryId === id) editingCategoryId = "";
-    saveState();
+    saveState({ allowCatalogWrite: true });
     render();
     toast(movedCount ? `ลบหมวดหมู่แล้ว และย้าย ${movedCount} เมนูไป ${fallbackCategory.th}` : "ลบหมวดหมู่แล้ว");
   }
@@ -2816,7 +2803,7 @@ document.addEventListener("click", async (event) => {
       .forEach((item) => {
         item.templateVersion = state.masterTemplate.version;
       });
-    saveState();
+    saveState({ allowCatalogWrite: true });
     render();
     toast("Publish Mustang menu template แล้ว");
   }
