@@ -169,24 +169,9 @@ async function mergeStateByFreshness(incomingState, { allowCatalogWrite = false 
     masterTemplate: currentState.masterTemplate,
   };
   if (allowCatalogWrite) {
-    mergedState.categories = incomingState.categories;
-    mergedState.masterTemplate = incomingState.masterTemplate;
-    if (!currentState?.menu?.length || !incomingState?.menu?.length) {
-      mergedState.menu = incomingState.menu;
-      return mergeOrdersByFreshness(currentState, mergedState);
-    }
-    const currentById = new Map(currentState.menu.map((item) => [item.id, item]));
-    mergedState.menu = incomingState.menu.map((incomingItem) => {
-      const currentItem = currentById.get(incomingItem.id);
-      if (!currentItem) return incomingItem;
-      const currentTime = Number(currentItem._updatedAt || 0);
-      const incomingTime = Number(incomingItem._updatedAt || 0);
-      if (currentTime > incomingTime) return currentItem;
-      return incomingItem;
-    });
-    for (const currentItem of currentState.menu) {
-      if (!mergedState.menu.some((item) => item.id === currentItem.id)) mergedState.menu.push(currentItem);
-    }
+    mergedState.menu = Array.isArray(incomingState.menu) ? incomingState.menu : currentState.menu;
+    mergedState.categories = Array.isArray(incomingState.categories) ? incomingState.categories : currentState.categories;
+    mergedState.masterTemplate = incomingState.masterTemplate || currentState.masterTemplate;
   }
   return mergeOrdersByFreshness(currentState, mergedState);
 }
