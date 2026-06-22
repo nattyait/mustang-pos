@@ -1000,6 +1000,43 @@ select,
   margin: 0 0 8px;
 }
 
+.report-order-line {
+  display: grid;
+  gap: 5px;
+  min-width: 210px;
+  padding: 5px 0;
+  border-bottom: 1px dashed var(--line);
+}
+
+.report-order-line:last-child {
+  border-bottom: 0;
+}
+
+.report-order-line label {
+  display: grid;
+  gap: 3px;
+  align-items: start;
+  min-width: 0;
+}
+
+.report-link-controls {
+  display: grid;
+  grid-template-columns: minmax(130px, 0.8fr) minmax(180px, 1.2fr);
+  gap: 6px;
+}
+
+.report-order-line label span,
+.report-order-line small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.report-order-line select {
+  min-height: 32px;
+  padding: 5px 7px;
+  font-size: 12px;
+}
+
 .metric small {
   display: block;
   margin-top: 4px;
@@ -1475,6 +1512,10 @@ input[readonly] {
 }
 
 @media (max-width: 640px) {
+  .report-link-controls {
+    grid-template-columns: 1fr;
+  }
+
   .content,
   .sidebar {
     padding: 10px;

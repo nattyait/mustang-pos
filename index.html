@@ -7,7 +7,7 @@
     <title>Mustang Cafe Franchise POS</title>
     <base href="/" />
     <link rel="manifest" href="manifest.webmanifest?v=37" />
-    <link rel="stylesheet" href="styles.css?v=83" />
+    <link rel="stylesheet" href="styles.css?v=87" />
   </head>
   <body>
     <section id="loginScreen" class="login-screen hidden">
@@ -210,6 +210,24 @@
             <div class="metric-grid" id="reportPaymentSummary"></div>
           </section>
           <section class="report-summary">
+            <h2>สรุปยอดขายตามหมวดหมู่</h2>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>หมวดหมู่</th>
+                    <th>รวมจำนวน</th>
+                    <th>รวมยอด</th>
+                    <th>เงินสด</th>
+                    <th>โอน/QR</th>
+                    <th>ผสม</th>
+                  </tr>
+                </thead>
+                <tbody id="reportCategorySummaryRows"></tbody>
+              </table>
+            </div>
+          </section>
+          <section class="report-summary">
             <h2>สรุปยอดขายตามเมนูสำหรับลง POS หลัก</h2>
             <div class="table-wrap">
               <table>
@@ -306,6 +324,6 @@
         type="audio/wav"
       />
     </audio>
-    <script src="app.js?v=83"></script>
+    <script src="app.js?v=87"></script>
   </body>
 </html>

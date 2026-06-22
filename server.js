@@ -329,6 +329,9 @@ const server = http.createServer(async (req, res) => {
       state.menu = Array.isArray(state.menu) ? state.menu : [];
       body.menu._updatedAt = Date.now();
       const index = state.menu.findIndex((item) => item.id === body.menu.id);
+      if (index >= 0 && state.menu[index].sku !== body.menu.sku && body.actorRole !== "super_admin") {
+        return sendJson(res, { error: "Only Mustang admin can change menu SKU" }, 403);
+      }
       if (index >= 0) state.menu[index] = body.menu;
       else state.menu.push(body.menu);
       state.masterTemplate = state.masterTemplate || { version: 1, menuIds: [] };

@@ -311,6 +311,7 @@ let editingMenuId = "";
 let editingCategoryId = "";
 let menuFormPriceMode = "";
 let categoryToolsOpen = false;
+const reportMenuCategoryFilters = new Map();
 let lastLocalWriteAt = 0;
 let stateRevision = 0;
 let stateSavePromise = Promise.resolve();
@@ -546,7 +547,7 @@ async function saveMenuItemToLatestState(menuId, menuItem) {
     const response = await fetch("/api/menu", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ state: optimisticState, menu: normalizedMenu }),
+      body: JSON.stringify({ state: optimisticState, menu: normalizedMenu, actorRole: currentUser().role }),
     });
     if (!response.ok) throw new Error("Save failed");
     const data = await response.json();
@@ -945,15 +946,20 @@ function lineMenu(line) {
 }
 
 function lineCategoryName(line) {
+  const categoryId = lineCategoryId(line);
+  const category = state.categories.find((item) => item.id === categoryId);
+  return category?.th || category?.en || categoryId || "ไม่ระบุหมวดหมู่";
+}
+
+function lineCategoryId(line) {
+  const exactMenu = state.menu.find((item) => item.id === line.menuId);
   const fallbackMenu = state.menu.find(
     (item) =>
       (line.sku && item.sku === line.sku) ||
       (line.nameTh && item.th === line.nameTh) ||
       (line.nameEn && item.en === line.nameEn),
   );
-  const categoryId = line.categoryId || lineMenu(line).categoryId || fallbackMenu?.categoryId;
-  const category = state.categories.find((item) => item.id === categoryId);
-  return category?.th || category?.en || categoryId || "ไม่ระบุหมวดหมู่";
+  return line.categoryId || exactMenu?.categoryId || fallbackMenu?.categoryId || "";
 }
 
 function linePrice(line) {
@@ -1172,6 +1178,14 @@ function readMenuForm(existingId = "") {
   const ice = !["roti", "food"].includes(categoryId) && $("newMenuIce").checked;
   if (!th) {
     toast("กรุณาใส่ชื่อเมนู");
+    return null;
+  }
+  if (existing && sku !== existing.sku && currentUser().role !== "super_admin") {
+    toast("เฉพาะ Mustang admin เท่านั้นที่แก้ไข SKU ได้");
+    return null;
+  }
+  if (!/^[A-Za-z0-9][A-Za-z0-9_-]*$/.test(sku)) {
+    toast("SKU ต้องเป็นภาษาอังกฤษ ตัวเลข เครื่องหมาย - หรือ _ เท่านั้น");
     return null;
   }
   if (mode === "single" && price <= 0) {
@@ -1865,6 +1879,47 @@ function renderReports() {
       }
     });
   });
+  const categorySummary = new Map();
+  menuSummary.forEach((item) => {
+    if (!categorySummary.has(item.category)) {
+      categorySummary.set(item.category, {
+        category: item.category,
+        qty: 0,
+        total: 0,
+        cashQty: 0,
+        cashTotal: 0,
+        transferQty: 0,
+        transferTotal: 0,
+        mixedQty: 0,
+        mixedTotal: 0,
+      });
+    }
+    const category = categorySummary.get(item.category);
+    category.qty += item.qty;
+    category.total += item.total;
+    category.cashQty += item.cashQty;
+    category.cashTotal += item.cashTotal;
+    category.transferQty += item.transferQty;
+    category.transferTotal += item.transferTotal;
+    category.mixedQty += item.mixedQty;
+    category.mixedTotal += item.mixedTotal;
+  });
+  $("reportCategorySummaryRows").innerHTML =
+    Array.from(categorySummary.values())
+      .sort((a, b) => a.category.localeCompare(b.category, "th"))
+      .map(
+        (item) => `
+      <tr>
+        <td>${escapeHtml(item.category)}</td>
+        <td>${item.qty}</td>
+        <td>${fmt.format(item.total)}</td>
+        <td>${item.cashQty} / ${fmt.format(item.cashTotal)}</td>
+        <td>${item.transferQty} / ${fmt.format(item.transferTotal)}</td>
+        <td>${item.mixedQty} / ${fmt.format(item.mixedTotal)}</td>
+      </tr>
+    `,
+      )
+      .join("") || `<tr><td colspan="6">ไม่มีข้อมูลยอดขายในช่วงนี้</td></tr>`;
   $("reportMenuSummaryRows").innerHTML =
     Array.from(menuSummary.values())
       .sort(
@@ -1888,6 +1943,7 @@ function renderReports() {
     `,
       )
       .join("") || `<tr><td colspan="8">ไม่มีข้อมูลยอดขายในช่วงนี้</td></tr>`;
+  const reportCategories = [...state.categories].sort((a, b) => Number(a.sort || 0) - Number(b.sort || 0));
   $("reportRows").innerHTML = rows
     .map(
       (order) => `
@@ -1897,10 +1953,47 @@ function renderReports() {
         <td>${order.queueToken}</td>
         <td>${escapeHtml(customerLabel(order) || "-")}</td>
         <td>${order.items
-          .map((line) => {
-            return `${line.qty} x [${escapeHtml(lineCategoryName(line))}] ${lineDisplayName(line)}`;
+          .map((line, index) => {
+            const filterKey = `${order.id}:${index}`;
+            const linkedMenu = state.menu.find((item) => item.id === line.menuId);
+            const selectedCategoryId =
+              reportMenuCategoryFilters.get(filterKey) || lineCategoryId(line) || reportCategories[0]?.id || "";
+            const filteredMenus = state.menu
+              .filter((item) => isCatalogMenu(item) && item.categoryId === selectedCategoryId)
+              .sort((a, b) => (a.th || a.en || "").localeCompare(b.th || b.en || "", "th"));
+            return `
+              <div class="report-order-line">
+                <strong>${line.qty} x ${escapeHtml(lineDisplayName(line))}</strong>
+                <small>เชื่อมกับ: ${linkedMenu ? `${escapeHtml(lineCategoryName(line))} / ${escapeHtml(linkedMenu.th || linkedMenu.en)}` : "ยังไม่พบเมนูหลัก"}</small>
+                <div class="report-link-controls">
+                  <label>
+                    <span>กรองหมวดหมู่</span>
+                    <select data-order-menu-category="${order.id}" data-line-index="${index}">
+                    ${reportCategories
+                      .map(
+                        (category) =>
+                          `<option value="${escapeHtml(category.id)}" ${category.id === selectedCategoryId ? "selected" : ""}>${escapeHtml(category.th || category.en)}</option>`,
+                      )
+                      .join("")}
+                    </select>
+                  </label>
+                  <label>
+                    <span>เลือกเมนูที่ถูกต้อง</span>
+                    <select data-order-menu="${order.id}" data-line-index="${index}">
+                      <option value="">เลือกเมนู...</option>
+                      ${filteredMenus
+                        .map(
+                          (menu) =>
+                            `<option value="${escapeHtml(menu.id)}" ${menu.id === line.menuId ? "selected" : ""}>${escapeHtml(menu.sku)} · ${escapeHtml(menu.th || menu.en)}</option>`,
+                        )
+                        .join("")}
+                    </select>
+                  </label>
+                </div>
+              </div>
+            `;
           })
-          .join("<br>")}</td>
+          .join("")}</td>
         <td>${paymentName(order.paymentMethod)}</td>
         <td>${fmt.format(order.total)}</td>
         <td>${statusName(order.status)}${!isOrderPaid(order) && order.status !== "cancelled" ? " / ยังไม่ชำระ" : ""}</td>
@@ -2060,6 +2153,7 @@ function renderMenuManagement() {
   const sortedCategories = [...state.categories].sort((a, b) => Number(a.sort || 0) - Number(b.sort || 0));
   const editingCategory = state.categories.find((cat) => cat.id === editingCategoryId);
   const editing = state.menu.find((item) => item.id === editingMenuId);
+  const canEditSku = currentUser().role === "super_admin";
   const imageValue = editing && !editing.image.startsWith("data:") ? editing.image : "";
   const previewImage = uploadedMenuImageDataUrl || editing?.image || "assets/mustang-logo.png";
   const formCategoryId = editing?.categoryId || sortedCategories[0]?.id || "signature";
@@ -2118,7 +2212,7 @@ function renderMenuManagement() {
         ${editing ? `<button class="primary" type="button" id="startNewMenu">เพิ่มเมนูใหม่แทน</button>` : ""}
       </div>
       <label class="field"><span>หมวดหมู่</span><select id="newMenuCategory">${sortedCategories.map((cat) => `<option value="${cat.id}" ${editing?.categoryId === cat.id ? "selected" : ""}>${cat.th}</option>`).join("")}</select></label>
-      <label class="field"><span>SKU${editing ? " (ล็อกไว้ตอนแก้ไข)" : ""}</span><input id="newMenuSku" value="${escapeHtml(editing?.sku || "")}" placeholder="เว้นว่างเพื่อสร้างอัตโนมัติ" ${editing ? "readonly" : ""}></label>
+      <label class="field"><span>SKU *${editing && !canEditSku ? " (แก้ไขได้เฉพาะ Mustang admin)" : ""}</span><input id="newMenuSku" value="${escapeHtml(editing?.sku || "")}" placeholder="เช่น COFFEE-001" autocapitalize="characters" spellcheck="false" ${editing && !canEditSku ? "readonly" : ""}></label>
       <label class="field"><span>ชื่อเมนูไทย *</span><input id="newMenuTh" value="${escapeHtml(editing?.th || "")}" placeholder="เช่น นมสดคาราเมล"></label>
       <label class="field"><span>English name</span><input id="newMenuEn" value="${escapeHtml(editing?.en || "")}" placeholder="Caramel Fresh Milk"></label>
       <label class="field"><span>ราคาเริ่มต้น / ราคาเดียว *</span><input id="newMenuPrice" type="number" min="0" inputmode="decimal" value="${basePrice}" placeholder="79"></label>
@@ -2930,7 +3024,7 @@ document.addEventListener("keydown", (event) => {
   activateMenuCard(menuTarget);
 });
 
-document.addEventListener("change", (event) => {
+document.addEventListener("change", async (event) => {
   const target = event.target;
   if (target.id === "newMenuCategory") {
     syncMenuOptionControlsForCategory(target.value);
@@ -2994,6 +3088,34 @@ document.addEventListener("change", (event) => {
     saveState();
     render();
     toast("บันทึกข้อมูล user แล้ว");
+  }
+  if (target.dataset.orderMenuCategory) {
+    const filterKey = `${target.dataset.orderMenuCategory}:${target.dataset.lineIndex}`;
+    reportMenuCategoryFilters.set(filterKey, target.value);
+    renderReports();
+  }
+  if (target.dataset.orderMenu) {
+    if (!target.value) return;
+    const order = state.orders.find((item) => item.id === target.dataset.orderMenu);
+    const line = order?.items[Number(target.dataset.lineIndex)];
+    if (!order || !line) return toast("ไม่พบรายการออเดอร์ที่ต้องการแก้ไข");
+    const menu = state.menu.find((item) => item.id === target.value && isCatalogMenu(item));
+    if (!menu) return toast("ไม่พบเมนูที่เลือก");
+    line.menuId = menu.id;
+    line.sku = menu.sku;
+    line.nameTh = menu.th;
+    line.nameEn = menu.en;
+    line.categoryId = menu.categoryId;
+    touchOrder(order);
+    await saveState();
+    await broadcastEvent("order_updated", {
+      orderId: order.id,
+      branchId: order.branchId,
+      status: order.status,
+      queueToken: order.queueToken,
+    });
+    renderReports();
+    toast(`เชื่อมรายการออเดอร์กับเมนู ${menu.th || menu.en} แล้ว`);
   }
   if (target.dataset.cartOption) {
     const line = carts[target.dataset.cartOption][Number(target.dataset.index)];
