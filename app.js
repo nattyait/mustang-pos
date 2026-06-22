@@ -512,10 +512,15 @@ async function saveState({ allowCatalogWrite = false } = {}) {
   lastStoredStateRaw = JSON.stringify(state);
   localStorage.setItem(STORAGE_KEY, lastStoredStateRaw);
   if (SERVER_SYNC) {
+    const stateForServer = allowCatalogWrite
+      ? state
+      : Object.fromEntries(
+          Object.entries(state).filter(([key]) => !["menu", "categories", "masterTemplate"].includes(key)),
+        );
     stateSavePromise = fetch("/api/state", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ state, allowCatalogWrite }),
+      body: JSON.stringify({ state: stateForServer, allowCatalogWrite }),
     }).catch(() => {});
     await stateSavePromise;
   }
@@ -559,7 +564,7 @@ function reloadState() {
   enforceBranchAccess();
 }
 
-async function fetchServerState({ notify = false, force = false } = {}) {
+async function fetchServerState({ notify = false, force = false, operationalOnly = false } = {}) {
   if (!SERVER_SYNC) return;
   if (!force && Date.now() - lastLocalWriteAt < 1800) return;
   const fetchStartedAt = Date.now();
@@ -570,13 +575,22 @@ async function fetchServerState({ notify = false, force = false } = {}) {
         .filter((order) => order.branchId === state.activeBranchId && order.status === "in_kitchen")
         .map((order) => order.id),
     );
-    const response = await fetch("/api/state", { cache: "no-store" });
+    const response = await fetch(operationalOnly ? "/api/state?scope=operations" : "/api/state", { cache: "no-store" });
     if (!response.ok) return;
     const data = await response.json();
     markServerOnline();
     if (!data.state) return;
     if (fetchStartedAt < lastLocalWriteAt || fetchRevision !== stateRevision) return;
-    const nextState = normalizeState(data.state);
+    const serverState = operationalOnly
+      ? {
+          ...state,
+          ...data.state,
+          menu: state.menu,
+          categories: state.categories,
+          masterTemplate: state.masterTemplate,
+        }
+      : data.state;
+    const nextState = normalizeState(serverState);
     nextState.activeUserId = state.activeUserId;
     nextState.activeBranchId = state.activeBranchId;
     const nextStateRaw = JSON.stringify(nextState);
@@ -614,18 +628,18 @@ async function broadcastEvent(type, payload = {}) {
 async function handleRealtimeEvent(event) {
   if (!event || event.sourceId === PAGE_ID) return;
   if (event.type === "state_updated") {
-    await fetchServerState({ notify: true, force: true });
+    await fetchServerState({ notify: true, force: true, operationalOnly: !event.payload?.menuId });
   }
   if (event.type === "new_kitchen_order") {
-    await fetchServerState({ notify: true, force: true });
+    await fetchServerState({ notify: true, force: true, operationalOnly: true });
     notifyKitchen(event.payload);
   }
   if (event.type === "pending_payment_order") {
-    await fetchServerState({ notify: false, force: true });
+    await fetchServerState({ notify: false, force: true, operationalOnly: true });
     toast(`มีออเดอร์รอยืนยันชำระเงิน ${event.payload.orderNo} / คิว ${event.payload.queueToken}`);
   }
   if (event.type === "order_updated") {
-    await fetchServerState({ notify: false, force: true });
+    await fetchServerState({ notify: false, force: true, operationalOnly: true });
   }
 }
 
@@ -3068,7 +3082,7 @@ window.setInterval(() => {
     const pollInterval = realtimeConnected ? 15000 : 1200;
     if (Date.now() - lastPollingFetchAt < pollInterval) return;
     lastPollingFetchAt = Date.now();
-    fetchServerState({ notify: true });
+    fetchServerState({ notify: true, operationalOnly: true });
   } else syncStateFromStorage({ notify: true });
 }, 1200);
 

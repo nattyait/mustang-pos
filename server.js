@@ -320,8 +320,14 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
-    if ((req.method === "GET" || req.method === "HEAD") && req.url === "/api/state") {
-      return sendJson(res, { state: await readState() });
+    if ((req.method === "GET" || req.method === "HEAD") && req.url.startsWith("/api/state")) {
+      const requestUrl = new URL(req.url, `http://${req.headers.host}`);
+      const state = await readState();
+      if (requestUrl.searchParams.get("scope") === "operations" && state) {
+        const { menu, categories, masterTemplate, ...operationalState } = state;
+        return sendJson(res, { state: operationalState });
+      }
+      return sendJson(res, { state });
     }
 
     if (req.method === "POST" && req.url === "/api/state") {
