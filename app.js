@@ -105,7 +105,7 @@ const seedState = {
           id: "sweet",
           th: "ความหวาน",
           required: true,
-          choices: [{ th: "25%" }, { th: "50%" }, { th: "75%" }, { th: "100%" }],
+          choices: [{ th: "ไม่หวาน" }, { th: "25%" }, { th: "50%" }, { th: "75%" }, { th: "100%" }],
         },
         {
           id: "ice",
@@ -143,7 +143,7 @@ const seedState = {
           id: "sweet",
           th: "ความหวาน",
           required: true,
-          choices: [{ th: "25%" }, { th: "50%" }, { th: "75%" }, { th: "100%" }],
+          choices: [{ th: "ไม่หวาน" }, { th: "25%" }, { th: "50%" }, { th: "75%" }, { th: "100%" }],
         },
         { id: "shot", th: "กาแฟ", required: false, choices: [{ th: "เพิ่มช็อต", price: 20 }] },
       ],
@@ -162,7 +162,7 @@ const seedState = {
           id: "sweet",
           th: "ความหวาน",
           required: true,
-          choices: [{ th: "25%" }, { th: "50%" }, { th: "75%" }, { th: "100%" }],
+          choices: [{ th: "ไม่หวาน" }, { th: "25%" }, { th: "50%" }, { th: "75%" }, { th: "100%" }],
         },
       ],
     },
@@ -455,7 +455,12 @@ function touchOrder(order) {
 }
 
 function normalizeMenuItem(item) {
-  const options = Array.isArray(item.options) ? item.options : [];
+  const options = (Array.isArray(item.options) ? item.options : []).map((group) => {
+    if (group.id !== "sweet" && group.th !== "ความหวาน") return group;
+    const choices = Array.isArray(group.choices) ? group.choices : [];
+    const hasNoSweet = choices.some((choice) => choice.th === "ไม่หวาน");
+    return { ...group, choices: hasNoSweet ? choices : [{ th: "ไม่หวาน" }, ...choices] };
+  });
   const variants =
     Array.isArray(item.variants) && item.variants.length
       ? item.variants
@@ -854,6 +859,10 @@ function tokenStatus(token) {
   return "in_kitchen";
 }
 
+function isOrderPaid(order) {
+  return Boolean(order?.paidAt);
+}
+
 function isTokenAvailable(label) {
   const exists = activeTokenIds().includes(String(label));
   if (!exists) return false;
@@ -1073,7 +1082,7 @@ function buildOptionGroups(flags, categoryId = "") {
       id: "sweet",
       th: "ความหวาน",
       required: true,
-      choices: [{ th: "25%" }, { th: "50%" }, { th: "75%" }, { th: "100%" }],
+      choices: [{ th: "ไม่หวาน" }, { th: "25%" }, { th: "50%" }, { th: "75%" }, { th: "100%" }],
     });
   }
   if (flags.ice) {
@@ -1410,6 +1419,7 @@ function renderCarts() {
   renderTokenSelect();
   renderCart("staff", "cartList", "cartTotals");
   renderCart("customer", "customerCartList", "customerTotals");
+  renderRecentStaffBills();
 }
 
 function renderTokenSelect() {
@@ -1491,7 +1501,7 @@ function renderCart(cartName, listId, totalsId) {
     $(listId).innerHTML = `<p class="sku">ยังไม่มีรายการ</p>`;
   }
   const summary = cartSummary(cartName);
-  const received = Number($("cashReceived").value || 0) + Number($("transferReceived").value || 0);
+  const received = Number($("paymentAmount").value || 0);
   const change = cartName === "staff" ? Math.max(0, received - summary.total) : 0;
   $(totalsId).innerHTML = `
     <div class="total-line"><span>ยอดรวม</span><strong>${fmt.format(summary.subtotal)}</strong></div>
@@ -1501,7 +1511,44 @@ function renderCart(cartName, listId, totalsId) {
   `;
 }
 
-async function createOrder(source) {
+function renderRecentStaffBills() {
+  const target = $("recentStaffBills");
+  if (!target) return;
+  const orders = state.orders
+    .filter((order) => order.branchId === state.activeBranchId && order.source === "staff" && order.status !== "cancelled")
+    .slice(0, 4);
+  target.innerHTML = orders.length
+    ? orders
+        .map((order) => {
+          const paid = isOrderPaid(order);
+          const status = paid ? "ชำระแล้ว" : "ยังไม่ชำระ";
+          const confirmButton = !paid ? `<button class="primary" data-confirm-payment="${order.id}">รับเงินแล้ว</button>` : "";
+          return `
+            <article class="recent-bill ${paid ? "paid" : "unpaid"}">
+              <div>
+                <strong>${order.orderNo} / คิว ${escapeHtml(order.queueToken)}</strong>
+                <span>${status} · ${fmt.format(order.total)}</span>
+              </div>
+              <div class="recent-bill-items">
+                ${order.items
+                  .map((line) => {
+                    const options = optionSummary(line);
+                    return `<div><span>${line.qty} x ${lineDisplayName(line)}</span>${options ? `<small>${escapeHtml(options)}</small>` : ""}</div>`;
+                  })
+                  .join("")}
+              </div>
+              <div class="recent-bill-actions">
+                <button class="secondary" data-print="${order.id}">${paid ? "พิมพ์บิลอีกครั้ง" : "พิมพ์ Invoice"}</button>
+                ${confirmButton}
+              </div>
+            </article>
+          `;
+        })
+        .join("")
+    : `<p class="sku">ยังไม่มีบิลล่าสุด</p>`;
+}
+
+async function createOrder(source, forceInvoice = false) {
   const cartName = source === "customer" ? "customer" : "staff";
   const cart = carts[cartName];
   if (!cart.length) return toast("กรุณาเลือกเมนูก่อน");
@@ -1510,10 +1557,11 @@ async function createOrder(source) {
   if (!isTokenAvailable(token)) return toast("หมายเลขคิวนี้ไม่พร้อมใช้งาน กรุณาตรวจสอบอีกครั้ง");
   const summary = cartSummary(cartName);
   const paymentMethod = source === "customer" ? $("customerPayment").value : $("paymentMethod").value;
-  const paidNow = source === "staff";
-  const cash = Number($("cashReceived").value || 0);
-  const transfer = Number($("transferReceived").value || 0);
-  if (source === "staff" && cash + transfer < summary.total) return toast("จำนวนเงินที่รับยังไม่ครบ");
+  const paymentAmount = source === "staff" ? Number($("paymentAmount").value || 0) : 0;
+  const paidNow = source === "staff" && !forceInvoice && paymentAmount >= summary.total;
+  if (source === "staff" && !forceInvoice && paymentAmount > 0 && paymentAmount < summary.total) {
+    return toast("จำนวนเงินที่รับยังไม่ครบ ถ้าต้องการออก Invoice ให้เว้นช่องจำนวนเงินไว้");
+  }
   const order = {
     id: crypto.randomUUID(),
     branchId: state.activeBranchId,
@@ -1523,13 +1571,13 @@ async function createOrder(source) {
     customerName: source === "customer" ? $("customerName").value.trim() : $("staffCustomerName").value.trim(),
     customerPhone: source === "customer" ? $("customerPhone").value.trim() : $("staffCustomerPhone").value.trim(),
     paymentMethod,
-    cashReceived: source === "staff" ? cash : 0,
-    transferReceived: source === "staff" ? transfer : 0,
+    cashReceived: source === "staff" && paidNow && paymentMethod === "cash" ? paymentAmount : 0,
+    transferReceived: source === "staff" && paidNow && paymentMethod === "transfer" ? paymentAmount : 0,
     subtotal: summary.subtotal,
     discount: summary.discount,
     total: summary.total,
     promotion: summary.promo,
-    status: paidNow ? "in_kitchen" : "pending_payment",
+    status: "in_kitchen",
     createdAt: new Date().toISOString(),
     _updatedAt: Date.now(),
     paidAt: paidNow ? new Date().toISOString() : null,
@@ -1543,30 +1591,22 @@ async function createOrder(source) {
   $("customerPhone").value = "";
   $("staffCustomerName").value = "";
   $("staffCustomerPhone").value = "";
-  $("cashReceived").value = "";
-  $("transferReceived").value = "";
+  $("paymentAmount").value = "";
   await saveState();
-  if (paidNow) {
-    notifyKitchen(order);
-    await broadcastEvent("new_kitchen_order", {
-      orderId: order.id,
-      branchId: order.branchId,
-      orderNo: order.orderNo,
-      queueToken: order.queueToken,
-    });
-  } else {
-    await broadcastEvent("pending_payment_order", {
-      orderId: order.id,
-      branchId: order.branchId,
-      orderNo: order.orderNo,
-      queueToken: order.queueToken,
-      paymentMethod: order.paymentMethod,
-    });
-  }
+  notifyKitchen(order);
+  await broadcastEvent("new_kitchen_order", {
+    orderId: order.id,
+    branchId: order.branchId,
+    orderNo: order.orderNo,
+    queueToken: order.queueToken,
+  });
   render();
   if (paidNow) {
     printReceipt(order.id);
     toast("ส่งออเดอร์เข้าครัวแล้ว");
+  } else if (source === "staff") {
+    printReceipt(order.id);
+    toast("ออก Invoice และส่งเข้าครัวแล้ว");
   } else {
     showCustomerOrderSummary(order);
   }
@@ -1574,7 +1614,7 @@ async function createOrder(source) {
 
 function showCustomerOrderSummary(order) {
   const target = $("customerOrderSummary");
-  if (!target) return toast("ส่งออเดอร์แล้ว รอพนักงานยืนยันชำระเงิน");
+  if (!target) return toast("ส่งออเดอร์เข้าครัวแล้ว กรุณาชำระเงินก่อนรับอาหาร");
   const phone = String(order.customerPhone || "").trim();
   target.innerHTML = `
     <div class="customer-summary-card">
@@ -1582,8 +1622,8 @@ function showCustomerOrderSummary(order) {
         <img src="assets/mustang-logo.png" alt="Mustang cafe" />
         <div>
           <p class="eyebrow">Mustang Cafe</p>
-          <h2>ส่งออเดอร์เรียบร้อย</h2>
-          <span>รอพนักงานยืนยันชำระเงิน</span>
+          <h2>ส่งออเดอร์เข้าครัวแล้ว</h2>
+          <span>กรุณาชำระเงินก่อนรับอาหาร</span>
         </div>
       </div>
       <div class="customer-summary-queue">
@@ -1602,7 +1642,7 @@ function showCustomerOrderSummary(order) {
         ${order.items.map(itemLine).join("")}
       </div>
       <div class="total-line final customer-summary-total"><span>ยอดรวม</span><strong>${fmt.format(order.total)}</strong></div>
-      <p class="customer-summary-note">กรุณาแคปหน้าจอนี้ หรือแสดงหน้านี้ให้พนักงานที่ kiosk เพื่อยืนยันออเดอร์และรับบัตรคิวให้ถูกต้อง</p>
+      <p class="customer-summary-note">กรุณาแคปหน้าจอนี้ หรือแสดงหน้านี้ให้พนักงานที่ kiosk เพื่อยืนยันออเดอร์และชำระเงินก่อนรับอาหาร</p>
       <button class="primary" data-close-customer-summary="true">สั่งออเดอร์ใหม่</button>
     </div>
   `;
@@ -1615,16 +1655,15 @@ function hideCustomerOrderSummary() {
 
 async function confirmPayment(orderId) {
   const order = state.orders.find((item) => item.id === orderId);
-  order.status = "in_kitchen";
   order.paidAt = new Date().toISOString();
   order.cashReceived = order.paymentMethod === "cash" ? order.total : 0;
   order.transferReceived = order.paymentMethod === "transfer" ? order.total : 0;
   touchOrder(order);
   await saveState();
-  notifyKitchen(order);
-  await broadcastEvent("new_kitchen_order", {
+  await broadcastEvent("order_updated", {
     orderId: order.id,
     branchId: order.branchId,
+    status: order.status,
     orderNo: order.orderNo,
     queueToken: order.queueToken,
   });
@@ -1644,6 +1683,7 @@ function orderCardPayment(order) {
       <div>${order.items.map(itemLine).join("")}</div>
       <div class="total-line final"><span>ยอดชำระ</span><strong>${fmt.format(order.total)}</strong></div>
       <p>วิธีชำระ: ${paymentName(order.paymentMethod)}</p>
+      <button class="secondary" data-print="${order.id}">พิมพ์ Invoice / ใบแจ้งยอด</button>
       <button class="primary" data-confirm-payment="${order.id}">ยืนยันชำระเงินและส่งเข้าครัว</button>
       <button class="secondary" data-cancel-order="${order.id}">ยกเลิกออเดอร์</button>
     </article>
@@ -1688,6 +1728,7 @@ function orderCardKitchen(order) {
       </header>
       ${customerLine(order)}
       <span class="pill ${order.status === "ready" ? "success" : ""}">${order.status === "ready" ? "รอลูกค้ารับอาหาร" : "กำลังทำ"}</span>
+      ${isOrderPaid(order) ? `<span class="pill success">ชำระแล้ว</span>` : `<span class="pill warn">ยังไม่ชำระ</span>`}
       <div>${order.items
         .map((line, index) => {
           const item = lineMenu(line);
@@ -1704,12 +1745,14 @@ function orderCardKitchen(order) {
         order.status === "in_kitchen"
           ? `
         <button class="primary" data-order-ready="${order.id}">อาหารเสร็จแล้ว</button>
-        <button class="secondary" data-print="${order.id}">พิมพ์บิลอีกครั้ง</button>
+        ${isOrderPaid(order) ? "" : `<button class="secondary" data-confirm-payment="${order.id}">รับเงินแล้ว</button>`}
+        <button class="secondary" data-print="${order.id}">${isOrderPaid(order) ? "พิมพ์บิลอีกครั้ง" : "พิมพ์ Invoice"}</button>
       `
           : `
         <span class="pill">พร้อมเรียกคิว ${order.queueToken}</span>
+        ${isOrderPaid(order) ? "" : `<button class="secondary" data-confirm-payment="${order.id}">รับเงินแล้ว</button>`}
         <button class="primary" data-picked-up="${order.id}">รับอาหารแล้ว / คืน token แล้ว</button>
-        <button class="secondary" data-print="${order.id}">พิมพ์บิลอีกครั้ง</button>
+        <button class="secondary" data-print="${order.id}">${isOrderPaid(order) ? "พิมพ์บิลอีกครั้ง" : "พิมพ์ Invoice"}</button>
       `
       }
     </article>
@@ -1717,7 +1760,8 @@ function orderCardKitchen(order) {
 }
 
 function itemLine(line) {
-  return `<div class="total-line"><span>${line.qty} x ${lineDisplayName(line)}</span><strong>${fmt.format(linePrice(line))}</strong></div>`;
+  const options = optionSummary(line);
+  return `<div class="total-line"><span>${line.qty} x ${lineDisplayName(line)}${options ? `<br><small>${escapeHtml(options)}</small>` : ""}</span><strong>${fmt.format(linePrice(line))}</strong></div>`;
 }
 
 function paymentName(method) {
@@ -1744,7 +1788,7 @@ function renderReports() {
     const day = order.createdAt.slice(0, 10);
     return (!start || day >= start) && (!end || day <= end);
   });
-  const paid = rows.filter((order) => !["pending_payment", "cancelled"].includes(order.status));
+  const paid = rows.filter((order) => isOrderPaid(order) && order.status !== "cancelled");
   const sales = paid.reduce((sum, order) => sum + order.total, 0);
   const cancelled = rows.filter((order) => order.status === "cancelled").length;
   $("metricGrid").innerHTML = `
@@ -1836,7 +1880,7 @@ function renderReports() {
           .join("<br>")}</td>
         <td>${paymentName(order.paymentMethod)}</td>
         <td>${fmt.format(order.total)}</td>
-        <td>${statusName(order.status)}</td>
+        <td>${statusName(order.status)}${!isOrderPaid(order) && order.status !== "cancelled" ? " / ยังไม่ชำระ" : ""}</td>
       </tr>
     `,
     )
@@ -2171,20 +2215,26 @@ function renderMenuManagement() {
 function printReceipt(orderId) {
   const order = state.orders.find((item) => item.id === orderId);
   if (!order) return;
+  const isUnpaid = !isOrderPaid(order);
+  const documentTitle = isUnpaid ? "INVOICE / ยังไม่ชำระ" : "RECEIPT / ชำระเงินแล้ว";
+  const paymentStatus = isUnpaid ? "UNPAID - กรุณาชำระเงินก่อนรับอาหาร" : "PAID - ชำระเงินแล้ว";
   const receiptLogoUrl = new URL("assets/receipt-horse-line.png", window.location.href);
   receiptLogoUrl.searchParams.set("v", "receipt-2");
   const receiptHtml = `
     <div class="receipt">
     <img class="receipt-logo" src="${receiptLogoUrl.href}" alt="Mustang horse">
     <h2>Mustang Cafe</h2>
+    <p class="${isUnpaid ? "unpaid" : "paid"}">${documentTitle}</p>
     <p>${branch().nameTh}</p>
     <p>${order.orderNo} / Queue ${order.queueToken}</p>
     ${customerLabel(order) ? `<p>Customer: ${escapeHtml(customerLabel(order))}</p>` : ""}
     <p>${dateFmt.format(new Date(order.createdAt))}</p>
+    <p class="${isUnpaid ? "unpaid" : "paid"}">${paymentStatus}</p>
     <div class="line"></div>
     ${order.items
       .map((line) => {
-        return `<div class="row"><span>${line.qty} x ${lineDisplayName(line)}</span><strong>${fmt.format(linePrice(line))}</strong></div>`;
+        const options = optionSummary(line);
+        return `<div class="row"><span>${line.qty} x ${escapeHtml(lineDisplayName(line))}${options ? `<small>${escapeHtml(options)}</small>` : ""}</span><strong>${fmt.format(linePrice(line))}</strong></div>`;
       })
       .join("")}
     <div class="line"></div>
@@ -2192,6 +2242,7 @@ function printReceipt(orderId) {
     <div class="row"><span>Discount</span><strong>${fmt.format(order.discount)}</strong></div>
     <div class="row"><span>Total</span><strong>${fmt.format(order.total)}</strong></div>
     <div class="row"><span>Payment</span><strong>${paymentName(order.paymentMethod)}</strong></div>
+    ${isUnpaid ? `<p class="unpaid">ยอดนี้ยังไม่ได้รับชำระ</p>` : ""}
     <div class="line"></div>
     <p>ขอบคุณค่ะ / Thank you</p>
     <div class="receipt-feed" aria-hidden="true">&nbsp;<br>&nbsp;<br>&nbsp;<br>&nbsp;<br>&nbsp;<br>&nbsp;<br>&nbsp;<br>&nbsp;</div>
@@ -2256,6 +2307,16 @@ function printReceipt(orderId) {
             text-align: center;
             margin: 0 0 0.7mm;
           }
+          .paid,
+          .unpaid {
+            border: 1px solid #000;
+            padding: 0.8mm;
+            font-weight: 800;
+            text-transform: uppercase;
+          }
+          .unpaid {
+            font-size: 14px;
+          }
           .line {
             border-top: 1px dashed #000;
             margin: 1mm 0;
@@ -2271,6 +2332,12 @@ function printReceipt(orderId) {
             flex: 1;
             min-width: 0;
             overflow-wrap: anywhere;
+          }
+          .row small {
+            display: block;
+            margin-top: 0.4mm;
+            font-size: 11px;
+            line-height: 1.18;
           }
           .row strong {
             flex: 0 0 auto;
@@ -2459,6 +2526,7 @@ document.addEventListener("click", async (event) => {
     renderTokenSelect();
   }
   if (target.id === "completeStaffOrder") createOrder("staff");
+  if (target.id === "invoiceStaffOrder") createOrder("staff", true);
   if (target.id === "submitCustomerOrder") createOrder("customer");
   if (target.dataset.closeCustomerSummary) hideCustomerOrderSummary();
   if (target.dataset.confirmPayment) confirmPayment(target.dataset.confirmPayment);
@@ -2505,6 +2573,7 @@ document.addEventListener("click", async (event) => {
   }
   if (target.dataset.pickedUp) {
     const order = state.orders.find((item) => item.id === target.dataset.pickedUp);
+    if (!isOrderPaid(order)) return toast("ออเดอร์นี้ยังไม่ชำระ กรุณากดรับเงินแล้วก่อนคืน token");
     order.status = "picked_up";
     order.pickedUpAt = new Date().toISOString();
     touchOrder(order);
@@ -2941,7 +3010,7 @@ document.addEventListener(
   true,
 );
 
-["cashReceived", "transferReceived", "promotionSelect", "menuSearch"].forEach((id) => {
+["paymentAmount", "promotionSelect", "menuSearch"].forEach((id) => {
   document.addEventListener("input", (event) => {
     if (event.target.id === id) {
       renderMenus();

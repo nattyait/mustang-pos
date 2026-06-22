@@ -7,7 +7,7 @@
     <title>Mustang Cafe Franchise POS</title>
     <base href="/" />
     <link rel="manifest" href="manifest.webmanifest?v=37" />
-    <link rel="stylesheet" href="styles.css?v=77" />
+    <link rel="stylesheet" href="styles.css?v=80" />
   </head>
   <body>
     <section id="loginScreen" class="login-screen hidden">
@@ -118,21 +118,19 @@
                 <select id="paymentMethod">
                   <option value="cash">เงินสด</option>
                   <option value="transfer">โอน/QR</option>
-                  <option value="mixed">ผสม</option>
                 </select>
               </label>
-              <div class="money-grid">
-                <label class="field">
-                  <span>รับเงินสด</span>
-                  <input id="cashReceived" type="number" min="0" inputmode="decimal" />
-                </label>
-                <label class="field">
-                  <span>เงินโอน</span>
-                  <input id="transferReceived" type="number" min="0" inputmode="decimal" />
-                </label>
-              </div>
+              <label class="field">
+                <span>จำนวนเงินที่รับ</span>
+                <input id="paymentAmount" type="number" min="0" inputmode="decimal" placeholder="เว้นว่างเพื่อออก Invoice" />
+              </label>
               <div class="totals" id="cartTotals"></div>
-              <button class="primary" id="completeStaffOrder">ชำระเงินและส่งเข้าครัว</button>
+              <button class="primary" id="completeStaffOrder">ส่งเข้าครัว / พิมพ์บิล</button>
+              <button class="secondary" id="invoiceStaffOrder">ออก Invoice และส่งเข้าครัว</button>
+              <section class="recent-bills">
+                <h3>บิลล่าสุด</h3>
+                <div id="recentStaffBills"></div>
+              </section>
             </aside>
           </div>
         </section>
@@ -307,6 +305,6 @@
         type="audio/wav"
       />
     </audio>
-    <script src="app.js?v=77"></script>
+    <script src="app.js?v=80"></script>
   </body>
 </html>

@@ -585,6 +585,78 @@ select,
   padding-top: 12px;
 }
 
+.recent-bills {
+  display: grid;
+  gap: 8px;
+  border-top: 1px dashed var(--line);
+  padding-top: 10px;
+}
+
+.recent-bills h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.recent-bill {
+  display: grid;
+  gap: 7px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.recent-bill.unpaid {
+  border-color: #d99a31;
+  background: #fff4d7;
+}
+
+.recent-bill strong,
+.recent-bill span {
+  display: block;
+}
+
+.recent-bill span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.recent-bill-items {
+  display: grid;
+  gap: 4px;
+  border-top: 1px dashed var(--line);
+  padding-top: 6px;
+}
+
+.recent-bill-items div {
+  display: grid;
+  gap: 2px;
+}
+
+.recent-bill-items span {
+  color: var(--espresso);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.recent-bill-items small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.recent-bill-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.recent-bill-actions button {
+  min-height: 34px;
+  padding: 7px 8px;
+  font-size: 13px;
+}
+
 .total-line {
   display: flex;
   justify-content: space-between;
