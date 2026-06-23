@@ -1714,7 +1714,7 @@ function orderCardPayment(order) {
       <p>วิธีชำระ: ${paymentName(order.paymentMethod)}</p>
       <button class="secondary" data-print="${order.id}">พิมพ์ Invoice / ใบแจ้งยอด</button>
       <button class="primary" data-confirm-payment="${order.id}">ยืนยันชำระเงินและส่งเข้าครัว</button>
-      <button class="secondary" data-cancel-order="${order.id}">ยกเลิกออเดอร์</button>
+      <button class="secondary danger" data-cancel-order="${order.id}">ยกเลิกออเดอร์</button>
     </article>
   `;
 }
@@ -1776,6 +1776,7 @@ function orderCardKitchen(order) {
         <button class="primary" data-order-ready="${order.id}">อาหารเสร็จแล้ว</button>
         ${isOrderPaid(order) ? "" : `<button class="secondary" data-confirm-payment="${order.id}">รับเงินแล้ว</button>`}
         <button class="secondary" data-print="${order.id}">${isOrderPaid(order) ? "พิมพ์บิลอีกครั้ง" : "พิมพ์ Invoice"}</button>
+        <button class="secondary danger" data-cancel-order="${order.id}">ยกเลิกออเดอร์</button>
       `
           : `
         <span class="pill">พร้อมเรียกคิว ${order.queueToken}</span>
@@ -2649,7 +2650,13 @@ document.addEventListener("click", async (event) => {
   if (target.dataset.confirmPayment) confirmPayment(target.dataset.confirmPayment);
   if (target.dataset.cancelOrder) {
     const order = state.orders.find((item) => item.id === target.dataset.cancelOrder);
+    if (!order) return toast("ไม่พบออเดอร์ที่ต้องการยกเลิก");
+    if (!["pending_payment", "in_kitchen"].includes(order.status)) {
+      return toast("ออเดอร์รอรับอาหารหรือปิดแล้ว ไม่สามารถยกเลิกได้");
+    }
+    if (!window.confirm(`ยืนยันยกเลิกออเดอร์ ${order.orderNo} / คิว ${order.queueToken}?`)) return;
     order.status = "cancelled";
+    order.cancelledAt = new Date().toISOString();
     touchOrder(order);
     await saveState();
     await broadcastEvent("order_updated", {

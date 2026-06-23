@@ -681,6 +681,12 @@ select,
   background: #fffaf1;
 }
 
+.secondary.danger {
+  color: #8b1e1e;
+  border: 1px solid rgba(139, 30, 30, 0.35);
+  background: #fff3f1;
+}
+
 .customer-screen {
   padding: 18px;
 }
