@@ -1820,10 +1820,15 @@ function renderReports() {
   });
   const paid = rows.filter((order) => isOrderPaid(order) && order.status !== "cancelled");
   const sales = paid.reduce((sum, order) => sum + order.total, 0);
+  const totalUnits = paid.reduce(
+    (sum, order) => sum + order.items.reduce((orderTotal, line) => orderTotal + Number(line.qty || 0), 0),
+    0,
+  );
   const cancelled = rows.filter((order) => order.status === "cancelled").length;
   $("metricGrid").innerHTML = `
     <div class="metric"><span>ยอดขาย</span><strong>${fmt.format(sales)}</strong></div>
     <div class="metric"><span>จำนวนออเดอร์</span><strong>${paid.length}</strong></div>
+    <div class="metric"><span>จำนวนแก้ว/ชิ้นรวม</span><strong>${totalUnits}</strong></div>
     <div class="metric"><span>ยกเลิก</span><strong>${cancelled}</strong></div>
   `;
   const paymentTotals = paid.reduce(
