@@ -311,6 +311,9 @@ let editingMenuId = "";
 let editingCategoryId = "";
 let menuFormPriceMode = "";
 let categoryToolsOpen = false;
+let costingMenuId = "";
+let costingVariantId = "";
+let menuCostDraft = {};
 const reportMenuCategoryFilters = new Map();
 let lastLocalWriteAt = 0;
 let stateRevision = 0;
@@ -321,6 +324,12 @@ let lastPollingFetchAt = 0;
 
 const $ = (id) => document.getElementById(id);
 const fmt = new Intl.NumberFormat("th-TH", { style: "currency", currency: "THB", maximumFractionDigits: 0 });
+const costFmt = new Intl.NumberFormat("th-TH", {
+  style: "currency",
+  currency: "THB",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
 const dateFmt = new Intl.DateTimeFormat("th-TH", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Bangkok" });
 
 function setSyncStatus(text, isOnline = navigator.onLine) {
@@ -802,6 +811,112 @@ function menuPriceLabel(item) {
   return `${fmt.format(Math.min(...prices))} - ${fmt.format(Math.max(...prices))}`;
 }
 
+function costingVariants(item) {
+  const variants = activeVariants(item);
+  return variants.length ? variants : [defaultVariant(item)].filter(Boolean);
+}
+
+function ingredientCostTotal(ingredients) {
+  return (ingredients || []).reduce((sum, ingredient) => sum + Number(ingredient.cost || 0), 0);
+}
+
+function syncCostDraftFromModal() {
+  if (!costingVariantId || !$("costIngredientRows")) return;
+  menuCostDraft[costingVariantId] = [...document.querySelectorAll("[data-cost-ingredient-row]")]
+    .map((row) => ({
+      id: row.dataset.ingredientId || crypto.randomUUID(),
+      ingredient: row.querySelector("[data-cost-ingredient-name]")?.value.trim() || "",
+      cost: Number(row.querySelector("[data-cost-ingredient-price]")?.value || 0),
+    }))
+    .filter((ingredient) => ingredient.ingredient || ingredient.cost > 0);
+}
+
+function updateCostModalTotal() {
+  const target = $("costTotalValue");
+  if (!target) return;
+  const total = [...document.querySelectorAll("[data-cost-ingredient-price]")].reduce(
+    (sum, input) => sum + Number(input.value || 0),
+    0,
+  );
+  target.textContent = costFmt.format(total);
+}
+
+function openMenuCostModal(menuId) {
+  const item = state.menu.find((menuItem) => menuItem.id === menuId);
+  if (!item) return toast("ไม่พบเมนูที่ต้องการตั้งต้นทุน");
+  costingMenuId = item.id;
+  const variants = costingVariants(item);
+  costingVariantId = variants[0]?.id || "default";
+  menuCostDraft = structuredClone(item.costing || {});
+  variants.forEach((variant) => {
+    if (!Array.isArray(menuCostDraft[variant.id])) menuCostDraft[variant.id] = [];
+  });
+  renderMenuCostModal();
+}
+
+function closeMenuCostModal() {
+  costingMenuId = "";
+  costingVariantId = "";
+  menuCostDraft = {};
+  $("menuCostModal")?.classList.add("hidden");
+}
+
+function renderMenuCostModal() {
+  const modal = $("menuCostModal");
+  const item = state.menu.find((menuItem) => menuItem.id === costingMenuId);
+  if (!modal || !item) return;
+  const variants = costingVariants(item);
+  if (!variants.some((variant) => variant.id === costingVariantId)) costingVariantId = variants[0]?.id || "default";
+  const selectedVariant = variants.find((variant) => variant.id === costingVariantId) || variants[0];
+  const ingredients = menuCostDraft[costingVariantId] || [];
+  const total = ingredientCostTotal(ingredients);
+  modal.innerHTML = `
+    <div class="cost-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="costModalTitle">
+      <header>
+        <div>
+          <p class="eyebrow">ต้นทุนเมนู / Menu costing</p>
+          <h2 id="costModalTitle">${escapeHtml(item.th)}</h2>
+          <span>${escapeHtml(item.sku)} · ราคาขาย ${fmt.format(selectedVariant?.price || item.price || 0)}</span>
+        </div>
+        <button class="ghost cost-modal-close" type="button" data-close-cost-modal aria-label="ปิด">×</button>
+      </header>
+      ${
+        variants.length > 1
+          ? `<label class="field"><span>สูตรต้นทุนสำหรับรูปแบบราคา</span>
+              <select id="costVariantSelect">${variants
+                .map(
+                  (variant) =>
+                    `<option value="${escapeHtml(variant.id)}" ${variant.id === costingVariantId ? "selected" : ""}>${escapeHtml(variant.th || variant.en)} · ${fmt.format(variant.price)}</option>`,
+                )
+                .join("")}</select>
+            </label>`
+          : `<p class="cost-variant-label">สูตรต้นทุน: ${escapeHtml(selectedVariant?.th || "ราคาเดียว")}</p>`
+      }
+      <div class="cost-ingredient-head"><span>ส่วนผสม</span><span>ต้นทุน</span><span></span></div>
+      <div class="cost-ingredient-rows" id="costIngredientRows">
+        ${ingredients
+          .map(
+            (ingredient, index) => `
+              <div class="cost-ingredient-row" data-cost-ingredient-row data-ingredient-id="${escapeHtml(ingredient.id || `ingredient-${index + 1}`)}">
+                <input data-cost-ingredient-name value="${escapeHtml(ingredient.ingredient || "")}" placeholder="เช่น นมสด 150 ml">
+                <input data-cost-ingredient-price type="number" min="0" step="0.01" inputmode="decimal" value="${Number(ingredient.cost || 0) || ""}" placeholder="0.00">
+                <button class="secondary danger" type="button" data-remove-cost-ingredient="${index}" aria-label="ลบส่วนผสม">ลบ</button>
+              </div>
+            `,
+          )
+          .join("") || `<p class="cost-empty">ยังไม่มีส่วนผสม กดเพิ่มส่วนผสมเพื่อเริ่มกรอกต้นทุน</p>`}
+      </div>
+      <button class="secondary" type="button" id="addCostIngredient">+ เพิ่มส่วนผสม</button>
+      <div class="cost-total"><span>ต้นทุนรวมต่อแก้ว/ชิ้น</span><strong id="costTotalValue">${costFmt.format(total)}</strong></div>
+      <div class="cost-modal-actions">
+        <button class="secondary" type="button" data-close-cost-modal>ยกเลิก</button>
+        <button class="primary" type="button" id="saveMenuCost">บันทึกต้นทุนเมนู</button>
+      </div>
+    </div>
+  `;
+  modal.classList.remove("hidden");
+}
+
 function lineDisplayName(line) {
   const item = lineMenu(line);
   const variant = line.variant;
@@ -1251,6 +1366,7 @@ function menuExportPayload() {
       variants: structuredClone(normalized.variants || []),
       available: normalized.available !== false,
       options: structuredClone(normalized.options || []),
+      costing: structuredClone(normalized.costing || {}),
     };
   });
   return {
@@ -1301,6 +1417,7 @@ function normalizeImportedMenuPayload(payload) {
           image: "assets/mustang-logo.png",
           available: item.available !== false,
           options: Array.isArray(item.options) ? item.options : [],
+          costing: item.costing && typeof item.costing === "object" ? item.costing : {},
           _updatedAt: Date.now(),
         });
       })
@@ -2268,7 +2385,7 @@ function renderMenuManagement() {
     <div class="menu-transfer-tools">
       <div>
         <strong>นำเข้า / ส่งออกเมนู</strong>
-        <span>ส่งออกเฉพาะข้อมูลตัวหนังสือ ราคา SKU หมวดหมู่ และตัวเลือก ไม่รวมรูปภาพ</span>
+        <span>ส่งออกข้อมูลตัวหนังสือ ราคา SKU หมวดหมู่ ตัวเลือก และต้นทุน ไม่รวมรูปภาพ</span>
       </div>
       <div class="form-actions">
         <button class="secondary" type="button" id="exportMenuJson">Export menu JSON</button>
@@ -2319,6 +2436,7 @@ function renderMenuManagement() {
                     </div>
                     <div class="menu-admin-actions">
                       <button class="primary" data-edit-menu="${item.id}">แก้ไข</button>
+                      <button class="secondary" data-menu-cost="${item.id}">เพิ่ม/แก้ต้นทุน</button>
                       <button class="secondary" data-toggle-menu="${item.id}">${item.available ? "ซ่อน" : "เปิดขาย"}</button>
                       <button class="secondary" data-delete-menu="${item.id}">ลบ</button>
                     </div>
@@ -2599,6 +2717,51 @@ document.addEventListener("click", async (event) => {
   }
   const target = event.target.closest("button, input");
   if (!target) return;
+  if (target.dataset.menuCost) {
+    if (!requireSuperuser()) return;
+    openMenuCostModal(target.dataset.menuCost);
+    return;
+  }
+  if (target.hasAttribute("data-close-cost-modal")) {
+    closeMenuCostModal();
+    return;
+  }
+  if (target.id === "addCostIngredient") {
+    syncCostDraftFromModal();
+    if (!Array.isArray(menuCostDraft[costingVariantId])) menuCostDraft[costingVariantId] = [];
+    menuCostDraft[costingVariantId].push({ id: crypto.randomUUID(), ingredient: "", cost: 0 });
+    renderMenuCostModal();
+    $("costIngredientRows")
+      ?.querySelector("[data-cost-ingredient-row]:last-child [data-cost-ingredient-name]")
+      ?.focus();
+    return;
+  }
+  if (target.dataset.removeCostIngredient !== undefined) {
+    syncCostDraftFromModal();
+    menuCostDraft[costingVariantId]?.splice(Number(target.dataset.removeCostIngredient), 1);
+    renderMenuCostModal();
+    return;
+  }
+  if (target.id === "saveMenuCost") {
+    if (!requireSuperuser()) return;
+    const item = state.menu.find((menuItem) => menuItem.id === costingMenuId);
+    if (!item) return toast("ไม่พบเมนูที่ต้องการบันทึกต้นทุน");
+    syncCostDraftFromModal();
+    const costing = structuredClone(menuCostDraft);
+    target.disabled = true;
+    target.textContent = "กำลังบันทึก...";
+    try {
+      await saveMenuItemToLatestState(item.id, { ...item, costing });
+      closeMenuCostModal();
+      render();
+      toast(`บันทึกต้นทุน ${item.th} แล้ว`);
+    } catch {
+      target.disabled = false;
+      target.textContent = "บันทึกต้นทุนเมนู";
+      toast("บันทึกต้นทุนไม่สำเร็จ กรุณาลองอีกครั้ง");
+    }
+    return;
+  }
   if (target.id === "loginButton") {
     const username = $("loginUsername").value.trim().toLowerCase();
     const password = $("loginPassword").value;
@@ -3024,6 +3187,10 @@ document.addEventListener("click", async (event) => {
 });
 
 document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !$("menuCostModal")?.classList.contains("hidden")) {
+    closeMenuCostModal();
+    return;
+  }
   if (event.key === "Enter" && event.target.closest("#loginScreen")) {
     event.preventDefault();
     $("loginButton")?.click();
@@ -3038,6 +3205,12 @@ document.addEventListener("keydown", (event) => {
 
 document.addEventListener("change", async (event) => {
   const target = event.target;
+  if (target.id === "costVariantSelect") {
+    syncCostDraftFromModal();
+    costingVariantId = target.value;
+    renderMenuCostModal();
+    return;
+  }
   if (target.id === "newMenuCategory") {
     syncMenuOptionControlsForCategory(target.value);
   }
@@ -3154,6 +3327,12 @@ document.addEventListener("change", async (event) => {
     else line.options.push(next);
     saveDraftCarts();
     renderCarts();
+  }
+});
+
+document.addEventListener("input", (event) => {
+  if (event.target.matches("[data-cost-ingredient-name], [data-cost-ingredient-price]")) {
+    updateCostModalTotal();
   }
 });
 

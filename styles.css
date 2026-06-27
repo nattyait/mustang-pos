@@ -716,6 +716,113 @@ select,
   display: none;
 }
 
+.cost-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(28, 20, 14, 0.72);
+}
+
+.cost-modal-overlay.hidden {
+  display: none;
+}
+
+.cost-modal-dialog {
+  display: grid;
+  gap: 14px;
+  width: min(720px, 100%);
+  max-height: calc(100dvh - 36px);
+  overflow: auto;
+  border: 1px solid rgba(114, 70, 35, 0.28);
+  border-radius: 8px;
+  padding: 18px;
+  color: var(--ink);
+  background: #fffaf1;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.3);
+}
+
+.cost-modal-dialog > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cost-modal-dialog h2,
+.cost-modal-dialog p {
+  margin: 0;
+}
+
+.cost-modal-dialog header span,
+.cost-variant-label,
+.cost-empty {
+  color: var(--muted);
+}
+
+.cost-modal-close {
+  width: 42px;
+  min-height: 42px;
+  padding: 0;
+  font-size: 28px;
+  line-height: 1;
+}
+
+.cost-ingredient-head,
+.cost-ingredient-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 140px 64px;
+  gap: 8px;
+  align-items: center;
+}
+
+.cost-ingredient-head {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.cost-ingredient-rows {
+  display: grid;
+  gap: 8px;
+}
+
+.cost-ingredient-row input {
+  min-width: 0;
+}
+
+.cost-ingredient-row button {
+  min-height: 42px;
+  padding: 8px;
+}
+
+.cost-empty {
+  padding: 12px 0;
+  text-align: center;
+}
+
+.cost-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-top: 1px dashed var(--line);
+  padding-top: 12px;
+}
+
+.cost-total strong {
+  color: var(--espresso);
+  font-size: 26px;
+}
+
+.cost-modal-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
 .customer-summary-card {
   display: grid;
   gap: 12px;
@@ -1518,6 +1625,27 @@ input[readonly] {
 }
 
 @media (max-width: 640px) {
+  .cost-modal-overlay {
+    padding: 8px;
+  }
+
+  .cost-modal-dialog {
+    max-height: calc(100dvh - 16px);
+    padding: 14px;
+  }
+
+  .cost-ingredient-head {
+    display: none;
+  }
+
+  .cost-ingredient-row {
+    grid-template-columns: minmax(0, 1fr) 104px;
+  }
+
+  .cost-ingredient-row button {
+    grid-column: 1 / -1;
+  }
+
   .report-link-controls {
     grid-template-columns: 1fr;
   }
