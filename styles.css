@@ -1113,6 +1113,17 @@ select,
   margin: 0 0 8px;
 }
 
+.owner-cost-report {
+  border: 1px solid rgba(98, 55, 31, 0.22);
+  border-radius: 8px;
+  padding: 12px;
+  background: rgba(255, 247, 232, 0.72);
+}
+
+.owner-cost-report .table-wrap {
+  margin-top: 10px;
+}
+
 .report-order-line {
   display: grid;
   gap: 5px;

@@ -7,7 +7,7 @@
     <title>Mustang Cafe Franchise POS</title>
     <base href="/" />
     <link rel="manifest" href="manifest.webmanifest?v=37" />
-    <link rel="stylesheet" href="styles.css?v=91" />
+    <link rel="stylesheet" href="styles.css?v=93" />
   </head>
   <body>
     <section id="loginScreen" class="login-screen hidden">
@@ -205,6 +205,25 @@
             <button class="secondary" id="exportCsv">Export CSV</button>
           </div>
           <div class="metric-grid" id="metricGrid"></div>
+          <section class="report-summary owner-cost-report hidden" id="ownerCostReport">
+            <h2>สรุปต้นทุนและส่วนต่าง</h2>
+            <div class="metric-grid" id="ownerCostMetricGrid"></div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>วันที่</th>
+                    <th>จำนวน</th>
+                    <th>ยอดขาย</th>
+                    <th>ต้นทุน</th>
+                    <th>ส่วนต่าง</th>
+                    <th>ส่วนต่าง %</th>
+                  </tr>
+                </thead>
+                <tbody id="ownerCostDailyRows"></tbody>
+              </table>
+            </div>
+          </section>
           <section class="report-summary">
             <h2>สรุปตามช่องทางชำระเงิน</h2>
             <div class="metric-grid" id="reportPaymentSummary"></div>
@@ -325,6 +344,6 @@
         type="audio/wav"
       />
     </audio>
-    <script src="app.js?v=91"></script>
+    <script src="app.js?v=93"></script>
   </body>
 </html>

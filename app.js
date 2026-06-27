@@ -788,6 +788,34 @@ function variantName(variant) {
   return state.language === "en" ? variant.en || variant.th : variant.th || variant.en;
 }
 
+function hasBrokenThaiText(value) {
+  return String(value || "").includes("�");
+}
+
+function lineCatalogMenu(line) {
+  const exact = state.menu.find((menuItem) => menuItem.id === line.menuId && isCatalogMenu(menuItem));
+  const skuMatches = state.menu.filter(
+    (menuItem) =>
+      isCatalogMenu(menuItem) &&
+      line.sku &&
+      menuItem.sku &&
+      menuItem.sku.toLowerCase() === String(line.sku).toLowerCase(),
+  );
+  const cleanSkuMatch = skuMatches.find((menuItem) => !hasBrokenThaiText(`${menuItem.th} ${menuItem.en}`));
+  if (exact && !hasBrokenThaiText(`${exact.th} ${exact.en}`)) return exact;
+  return cleanSkuMatch || exact || skuMatches[0] || null;
+}
+
+function lineCatalogVariant(line, item = lineCatalogMenu(line)) {
+  if (!line.variant || !item) return null;
+  const variants = activeVariants(item);
+  return (
+    variants.find((variant) => variant.id === line.variant.id) ||
+    variants.find((variant) => variant.th === line.variant.th || variant.en === line.variant.en) ||
+    null
+  );
+}
+
 function activeVariants(item) {
   const normalized = normalizeMenuItem(item);
   return normalized.variants.filter((variant) => variant.active !== false && variant.price > 0);
@@ -801,6 +829,10 @@ function hasRealVariants(item) {
   return activeVariants(item).some(
     (variant) => variant.id !== "default" || !["ราคาเดียว", "Single price"].includes(variant.th),
   );
+}
+
+function canViewCostReport() {
+  return ["super_admin", "branch_owner", "branch_manager"].includes(currentUser().role);
 }
 
 function menuPriceLabel(item) {
@@ -818,6 +850,33 @@ function costingVariants(item) {
 
 function ingredientCostTotal(ingredients) {
   return (ingredients || []).reduce((sum, ingredient) => sum + Number(ingredient.cost || 0), 0);
+}
+
+function variantCostIngredients(item, variantId) {
+  const costing = item?.costing || {};
+  const variants = costingVariants(item || {});
+  const fallbackId = variants[0]?.id || "default";
+  return costing[variantId] || costing[fallbackId] || costing.default || [];
+}
+
+function lineUnitCost(line) {
+  const item = lineCatalogMenu(line);
+  if (!item) return 0;
+  const catalogVariant = lineCatalogVariant(line, item);
+  const variantId =
+    catalogVariant?.id ||
+    (hasRealVariants(item) ? line.variant?.id : "") ||
+    activeVariants(item)[0]?.id ||
+    "default";
+  return ingredientCostTotal(variantCostIngredients(item, variantId));
+}
+
+function lineTotalCost(line) {
+  return lineUnitCost(line) * Number(line.qty || 0);
+}
+
+function orderCost(order) {
+  return (order.items || []).reduce((sum, line) => sum + lineTotalCost(line), 0);
 }
 
 function syncCostDraftFromModal() {
@@ -919,6 +978,12 @@ function renderMenuCostModal() {
 
 function lineDisplayName(line) {
   const item = lineMenu(line);
+  const catalogItem = lineCatalogMenu(line);
+  if (catalogItem) {
+    const variant = lineCatalogVariant(line, catalogItem) || (hasRealVariants(catalogItem) ? line.variant : null);
+    const itemName = menuName(catalogItem);
+    return variant ? `${itemName} - ${variantName(variant)}` : itemName;
+  }
   const variant = line.variant;
   return variant ? `${menuName(item)} - ${variantName(variant)}` : menuName(item);
 }
@@ -1048,12 +1113,12 @@ function addToCart(cartName, item, variant = null) {
 }
 
 function lineMenu(line) {
-  const item = state.menu.find((menuItem) => menuItem.id === line.menuId);
+  const item = lineCatalogMenu(line);
   return {
-    id: line.menuId,
+    id: item?.id || line.menuId,
     sku: line.sku || item?.sku || "",
-    th: line.nameTh || item?.th || "เมนู",
-    en: line.nameEn || item?.en || line.nameTh || "Menu",
+    th: item?.th || line.nameTh || "เมนู",
+    en: item?.en || line.nameEn || line.nameTh || "Menu",
     categoryId: line.categoryId || item?.categoryId || "",
     price: Number(line.basePrice ?? line.variant?.price ?? item?.price ?? 0),
     options: line.optionGroups || item?.options || [],
@@ -1067,14 +1132,14 @@ function lineCategoryName(line) {
 }
 
 function lineCategoryId(line) {
-  const exactMenu = state.menu.find((item) => item.id === line.menuId);
+  const exactMenu = lineCatalogMenu(line);
   const fallbackMenu = state.menu.find(
     (item) =>
       (line.sku && item.sku === line.sku) ||
       (line.nameTh && item.th === line.nameTh) ||
       (line.nameEn && item.en === line.nameEn),
   );
-  return line.categoryId || exactMenu?.categoryId || fallbackMenu?.categoryId || "";
+  return exactMenu?.categoryId || line.categoryId || fallbackMenu?.categoryId || "";
 }
 
 function linePrice(line) {
@@ -1948,6 +2013,7 @@ function renderReports() {
     <div class="metric"><span>จำนวนแก้ว/ชิ้นรวม</span><strong>${totalUnits}</strong></div>
     <div class="metric"><span>ยกเลิก</span><strong>${cancelled}</strong></div>
   `;
+  renderOwnerCostReport(paid);
   const paymentTotals = paid.reduce(
     (totals, order) => {
       const payment = orderPaymentBreakdown(order);
@@ -1968,9 +2034,13 @@ function renderReports() {
   paid.forEach((order) => {
     order.items.forEach((line) => {
       const item = lineMenu(line);
+      const catalogItem = lineCatalogMenu(line);
+      const catalogVariant = lineCatalogVariant(line, catalogItem);
       const name = lineDisplayName(line);
       const category = lineCategoryName(line);
-      const key = `${category}:${line.menuId}:${line.variant?.id || ""}:${name}`;
+      const keySku = String(item.sku || line.sku || catalogItem?.id || line.menuId || name).toLowerCase();
+      const keyVariant = catalogVariant?.id || (catalogItem && hasRealVariants(catalogItem) ? line.variant?.id || "" : "");
+      const key = `${lineCategoryId(line)}:${keySku}:${keyVariant}`;
       if (!menuSummary.has(key)) {
         menuSummary.set(key, {
           sku: item.sku || line.sku || "-",
@@ -2136,6 +2206,65 @@ function statusName(status) {
       cancelled: "ยกเลิก",
     }[status] || status
   );
+}
+
+function renderOwnerCostReport(paidOrders) {
+  const section = $("ownerCostReport");
+  const metricTarget = $("ownerCostMetricGrid");
+  const dailyTarget = $("ownerCostDailyRows");
+  if (!section || !metricTarget || !dailyTarget) return;
+  if (!canViewCostReport()) {
+    section.classList.add("hidden");
+    metricTarget.innerHTML = "";
+    dailyTarget.innerHTML = "";
+    return;
+  }
+  section.classList.remove("hidden");
+  const totals = paidOrders.reduce(
+    (summary, order) => {
+      const cost = orderCost(order);
+      summary.sales += Number(order.total || 0);
+      summary.cost += cost;
+      summary.qty += (order.items || []).reduce((sum, line) => sum + Number(line.qty || 0), 0);
+      return summary;
+    },
+    { sales: 0, cost: 0, qty: 0 },
+  );
+  const profit = totals.sales - totals.cost;
+  const margin = totals.sales > 0 ? (profit / totals.sales) * 100 : 0;
+  metricTarget.innerHTML = `
+    <div class="metric"><span>ยอดขาย</span><strong>${fmt.format(totals.sales)}</strong></div>
+    <div class="metric"><span>ต้นทุนรวม</span><strong>${costFmt.format(totals.cost)}</strong></div>
+    <div class="metric"><span>ส่วนต่าง</span><strong>${costFmt.format(profit)}</strong></div>
+    <div class="metric"><span>ส่วนต่าง %</span><strong>${margin.toFixed(1)}%</strong><small>${totals.qty} แก้ว/ชิ้น</small></div>
+  `;
+  const daily = new Map();
+  paidOrders.forEach((order) => {
+    const day = order.createdAt.slice(0, 10);
+    if (!daily.has(day)) daily.set(day, { day, qty: 0, sales: 0, cost: 0 });
+    const row = daily.get(day);
+    row.qty += (order.items || []).reduce((sum, line) => sum + Number(line.qty || 0), 0);
+    row.sales += Number(order.total || 0);
+    row.cost += orderCost(order);
+  });
+  dailyTarget.innerHTML =
+    Array.from(daily.values())
+      .sort((a, b) => a.day.localeCompare(b.day))
+      .map((row) => {
+        const rowProfit = row.sales - row.cost;
+        const rowMargin = row.sales > 0 ? (rowProfit / row.sales) * 100 : 0;
+        return `
+          <tr>
+            <td>${escapeHtml(row.day)}</td>
+            <td>${row.qty}</td>
+            <td>${fmt.format(row.sales)}</td>
+            <td>${costFmt.format(row.cost)}</td>
+            <td>${costFmt.format(rowProfit)}</td>
+            <td>${rowMargin.toFixed(1)}%</td>
+          </tr>
+        `;
+      })
+      .join("") || `<tr><td colspan="6">ไม่มีข้อมูลยอดขายในช่วงนี้</td></tr>`;
 }
 
 function renderAdmin() {
