@@ -1456,6 +1456,12 @@ input[readonly] {
   font-weight: 800;
 }
 
+.menu-admin-meta .menu-cost-pill {
+  color: #1f5f36;
+  background: #e7f4e8;
+  font-weight: 800;
+}
+
 .variant-chips span {
   color: var(--coffee);
   background: #fff7e8;

@@ -879,6 +879,16 @@ function orderCost(order) {
   return (order.items || []).reduce((sum, line) => sum + lineTotalCost(line), 0);
 }
 
+function menuVariantCost(item, variantId) {
+  return ingredientCostTotal(variantCostIngredients(item, variantId));
+}
+
+function menuCostLabel(item) {
+  const variants = costingVariants(item);
+  if (variants.length <= 1) return `ต้นทุน ${costFmt.format(menuVariantCost(item, variants[0]?.id || "default"))}`;
+  return `ต้นทุน ${variants.map((variant) => `${variant.th} ${costFmt.format(menuVariantCost(item, variant.id))}`).join(" / ")}`;
+}
+
 function syncCostDraftFromModal() {
   if (!costingVariantId || !$("costIngredientRows")) return;
   menuCostDraft[costingVariantId] = [...document.querySelectorAll("[data-cost-ingredient-row]")]
@@ -2559,6 +2569,7 @@ function renderMenuManagement() {
                       <div class="menu-admin-meta">
                         <span>${item.sku}</span>
                         <span>${menuPriceLabel(item)}</span>
+                        <span class="menu-cost-pill">${menuCostLabel(item)}</span>
                         <span>${item.options.length ? `${item.options.length} ตัวเลือก` : "ไม่มีตัวเลือก"}</span>
                       </div>
                       ${variantChips ? `<div class="variant-chips">${variantChips}</div>` : ""}
