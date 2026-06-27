@@ -744,6 +744,25 @@ select,
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.3);
 }
 
+.cost-master-dialog {
+  width: min(1120px, 100%);
+}
+
+.cost-master-table {
+  max-height: min(68dvh, 680px);
+}
+
+.cost-master-table td:nth-child(5) {
+  min-width: 260px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.cost-master-table td:last-child {
+  color: var(--espresso);
+  font-weight: 800;
+}
+
 .cost-modal-dialog > header {
   display: flex;
   align-items: flex-start;
@@ -1350,8 +1369,25 @@ input[readonly] {
   font-size: 13px;
 }
 
-.menu-transfer-tools .form-actions {
-  min-width: 180px;
+.menu-transfer-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  min-width: 190px;
+}
+
+.menu-transfer-actions button {
+  width: 100%;
+  min-height: 44px;
+  border-color: rgba(91, 47, 24, 0.32);
+  color: var(--espresso);
+  background: #fff4df;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.menu-transfer-actions button:hover {
+  background: #ffe8bd;
 }
 
 .menu-catalog-group {

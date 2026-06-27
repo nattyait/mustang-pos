@@ -930,6 +930,93 @@ function closeMenuCostModal() {
   $("menuCostModal")?.classList.add("hidden");
 }
 
+function openCostMasterModal() {
+  const modal = $("costMasterModal");
+  if (!modal) return;
+  const rows = state.menu
+    .filter(isCatalogMenu)
+    .sort(
+      (a, b) =>
+        lineCategoryName({ menuId: a.id, categoryId: a.categoryId }).localeCompare(
+          lineCategoryName({ menuId: b.id, categoryId: b.categoryId }),
+          "th",
+        ) ||
+        String(a.sku || "").localeCompare(String(b.sku || "")) ||
+        String(a.th || a.en || "").localeCompare(String(b.th || b.en || ""), "th"),
+    )
+    .flatMap((item) =>
+      costingVariants(item).map((variant) => {
+        const ingredients = variantCostIngredients(item, variant.id);
+        return {
+          category: lineCategoryName({ menuId: item.id, categoryId: item.categoryId }),
+          sku: item.sku || "-",
+          name: menuName(item),
+          variant: hasRealVariants(item) ? variantName(variant) : "ราคาเดียว",
+          ingredients,
+          total: ingredientCostTotal(ingredients),
+        };
+      }),
+    );
+  modal.innerHTML = `
+    <div class="cost-modal-dialog cost-master-dialog" role="dialog" aria-modal="true" aria-labelledby="costMasterTitle">
+      <header>
+        <div>
+          <p class="eyebrow">Master ต้นทุน / Cost master</p>
+          <h2 id="costMasterTitle">Master ต้นทุนเมนู</h2>
+          <span>ดูสูตรต้นทุนที่กรอกไว้ทั้งหมด ไม่รวมยอดขาย</span>
+        </div>
+        <button class="ghost cost-modal-close" type="button" data-close-cost-master aria-label="ปิด">×</button>
+      </header>
+      <div class="table-wrap cost-master-table">
+        <table>
+          <thead>
+            <tr>
+              <th>หมวดหมู่</th>
+              <th>SKU</th>
+              <th>เมนู</th>
+              <th>รูปแบบราคา</th>
+              <th>ส่วนผสม</th>
+              <th>ต้นทุนรวม</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${
+              rows
+                .map(
+                  (row) => `
+                    <tr>
+                      <td>${escapeHtml(row.category)}</td>
+                      <td>${escapeHtml(row.sku)}</td>
+                      <td>${escapeHtml(row.name)}</td>
+                      <td>${escapeHtml(row.variant)}</td>
+                      <td>${escapeHtml(
+                        row.ingredients.length
+                          ? row.ingredients
+                              .map((ingredient) => `${ingredient.ingredient || "-"} ${costFmt.format(ingredient.cost || 0)}`)
+                              .join(", ")
+                          : "ยังไม่ได้กรอก",
+                      )}</td>
+                      <td>${costFmt.format(row.total)}</td>
+                    </tr>
+                  `,
+                )
+                .join("") || `<tr><td colspan="6">ยังไม่มีเมนูสำหรับแสดงต้นทุน</td></tr>`
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="cost-modal-actions">
+        <button class="secondary" type="button" data-close-cost-master>ปิด</button>
+      </div>
+    </div>
+  `;
+  modal.classList.remove("hidden");
+}
+
+function closeCostMasterModal() {
+  $("costMasterModal")?.classList.add("hidden");
+}
+
 function renderMenuCostModal() {
   const modal = $("menuCostModal");
   const item = state.menu.find((menuItem) => menuItem.id === costingMenuId);
@@ -2526,7 +2613,8 @@ function renderMenuManagement() {
         <strong>นำเข้า / ส่งออกเมนู</strong>
         <span>ส่งออกข้อมูลตัวหนังสือ ราคา SKU หมวดหมู่ ตัวเลือก และต้นทุน ไม่รวมรูปภาพ</span>
       </div>
-      <div class="form-actions">
+      <div class="menu-transfer-actions">
+        <button class="secondary" type="button" id="openCostMaster">ดู Master ต้นทุน</button>
         <button class="secondary" type="button" id="exportMenuJson">Export menu JSON</button>
         <button class="primary" type="button" id="importMenuJsonButton">Import menu JSON</button>
         <input id="importMenuJsonFile" class="hidden" type="file" accept="application/json,.json">
@@ -2864,6 +2952,14 @@ document.addEventListener("click", async (event) => {
   }
   if (target.hasAttribute("data-close-cost-modal")) {
     closeMenuCostModal();
+    return;
+  }
+  if (target.id === "openCostMaster") {
+    openCostMasterModal();
+    return;
+  }
+  if (target.hasAttribute("data-close-cost-master")) {
+    closeCostMasterModal();
     return;
   }
   if (target.id === "addCostIngredient") {
@@ -3329,6 +3425,10 @@ document.addEventListener("click", async (event) => {
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !$("menuCostModal")?.classList.contains("hidden")) {
     closeMenuCostModal();
+    return;
+  }
+  if (event.key === "Escape" && !$("costMasterModal")?.classList.contains("hidden")) {
+    closeCostMasterModal();
     return;
   }
   if (event.key === "Enter" && event.target.closest("#loginScreen")) {
