@@ -298,6 +298,7 @@ const roles = {
   },
 };
 
+/* eslint-disable no-unused-vars -- Legacy slug migration is staged but not enabled until data rollout is planned. */
 let legacySlugMigrationApplied = false;
 let lastNormalizeMigratedLegacySlugs = false;
 let state = loadState();
@@ -455,6 +456,7 @@ function migrateLegacySlugs(next) {
     }),
   }));
 }
+/* eslint-enable no-unused-vars */
 
 function touchOrder(order) {
   order._updatedAt = Date.now();
@@ -1213,10 +1215,10 @@ function lineMenu(line) {
   const item = lineCatalogMenu(line);
   return {
     id: item?.id || line.menuId,
-    sku: line.sku || item?.sku || "",
+    sku: item?.sku || line.sku || "",
     th: item?.th || line.nameTh || "เมนู",
     en: item?.en || line.nameEn || line.nameTh || "Menu",
-    categoryId: line.categoryId || item?.categoryId || "",
+    categoryId: item?.categoryId || line.categoryId || "",
     price: Number(line.basePrice ?? line.variant?.price ?? item?.price ?? 0),
     options: line.optionGroups || item?.options || [],
   };
